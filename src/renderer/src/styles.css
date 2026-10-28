@@ -1,0 +1,98 @@
+@import 'tailwindcss';
+@import 'tw-animate-css';
+@import 'highlight.js/styles/github-dark.css';
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  --background: oklch(0.99 0 0);
+  --foreground: oklch(0.2 0.01 260);
+  --muted: oklch(0.96 0.005 260);
+  --muted-foreground: oklch(0.5 0.01 260);
+  --card: oklch(1 0 0);
+  --border: oklch(0.91 0.005 260);
+  --input: oklch(0.91 0.005 260);
+  --sidebar: oklch(0.975 0.004 260);
+  --destructive: oklch(0.58 0.22 27);
+  --primary-foreground: oklch(0.99 0 0);
+  --radius: 0.6rem;
+  --primary: oklch(0.55 0.2 260);
+}
+
+.dark {
+  --background: oklch(0.17 0.01 260);
+  --foreground: oklch(0.95 0.005 260);
+  --muted: oklch(0.24 0.01 260);
+  --muted-foreground: oklch(0.68 0.01 260);
+  --card: oklch(0.21 0.01 260);
+  --border: oklch(0.3 0.01 260);
+  --input: oklch(0.32 0.01 260);
+  --sidebar: oklch(0.2 0.01 260);
+  --destructive: oklch(0.65 0.2 25);
+}
+
+/* Màu nhấn do người dùng chọn */
+[data-accent='blue'] { --primary: oklch(0.55 0.2 260); }
+[data-accent='violet'] { --primary: oklch(0.55 0.22 295); }
+[data-accent='green'] { --primary: oklch(0.58 0.16 155); }
+[data-accent='orange'] { --primary: oklch(0.65 0.18 50); }
+[data-accent='rose'] { --primary: oklch(0.6 0.21 10); }
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-card: var(--card);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-sidebar: var(--sidebar);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-destructive: var(--destructive);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --font-sans: 'Segoe UI Variable Text', 'Segoe UI', system-ui, sans-serif;
+  --font-mono: 'Cascadia Code', Consolas, ui-monospace, monospace;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+  }
+}
+
+/* Nội dung Markdown của tin nhắn */
+.markdown {
+  line-height: 1.65;
+  overflow-wrap: anywhere;
+}
+.markdown > * + * { margin-top: 0.75em; }
+.markdown h1 { font-size: 1.35em; font-weight: 650; }
+.markdown h2 { font-size: 1.2em; font-weight: 650; }
+.markdown h3 { font-size: 1.05em; font-weight: 650; }
+.markdown ul { list-style: disc; padding-left: 1.4em; }
+.markdown ol { list-style: decimal; padding-left: 1.4em; }
+.markdown li + li { margin-top: 0.25em; }
+.markdown a { color: var(--primary); text-decoration: underline; }
+.markdown blockquote { border-left: 3px solid var(--border); padding-left: 0.9em; color: var(--muted-foreground); }
+.markdown :not(pre) > code {
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+  background: var(--muted);
+  padding: 0.1em 0.35em;
+  border-radius: 0.3em;
+}
+.markdown pre code.hljs { background: transparent; padding: 0; }
+.markdown table { border-collapse: collapse; display: block; overflow-x: auto; }
+.markdown th, .markdown td { border: 1px solid var(--border); padding: 0.35em 0.7em; }
+.markdown th { background: var(--muted); font-weight: 600; }

@@ -1,0 +1,17 @@
+{
+  "appName": "Team Working",
+  "actions": {
+    "save": "Lưu",
+    "saved": "Đã lưu",
+    "cancel": "Hủy",
+    "delete": "Xóa",
+    "rename": "Đổi tên",
+    "retry": "Thử lại",
+    "copy": "Sao chép",
+    "copied": "Đã chép"
+  },
+  "errors": {
+    "generic": "Có lỗi xảy ra: {{message}}",
+    "notFound": "Không tìm thấy trang"
+  }
+}

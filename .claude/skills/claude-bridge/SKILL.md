@@ -5,6 +5,8 @@ description: Quy ước gọi Claude từ app (ClaudeCliProvider / AnthropicApiP
 
 # Claude bridge
 
+Code: `src/main/ai/` (provider, parser, args, system prompt, skills) và `src/main/services/chatService.ts` (điều phối, lưu DB, emit IPC).
+
 ## Interface chung
 ```ts
 interface AIProvider {
@@ -15,29 +17,34 @@ type ChatEvent =
   | { type: 'session'; sessionId: string }
   | { type: 'text'; delta: string }
   | { type: 'tool'; name: string; input: unknown }
-  | { type: 'done'; usage?: unknown }
+  | { type: 'done'; usage?: ChatUsage }
   | { type: 'error'; message: string };
 ```
-Renderer chỉ thấy `ChatEvent` qua IPC — không bao giờ thấy chi tiết CLI.
+Renderer chỉ thấy `ChatEvent` qua IPC `chat:event` — không bao giờ thấy chi tiết CLI. `session` không gửi ra renderer. Dừng phản hồi = `error` với message `aborted`.
 
 ## ClaudeCliProvider (mặc định)
-- Spawn bằng `child_process.spawn` (không dùng `shell: true`, truyền args dạng mảng để tránh injection):
-  `claude -p <prompt> --output-format stream-json --verbose --append-system-prompt <system> [--resume <sessionId>] [--allowedTools ...]`
-- Trên Windows, tìm executable bằng `where claude`; xử lý cả `claude.cmd`.
-- Đọc stdout theo dòng, mỗi dòng là một JSON. Map: message `system/init` → `session` (lấy `session_id`), các block `text` của assistant → `text`, `tool_use` → `tool`, message `result` → `done`. Dòng không parse được → log, bỏ qua. **Kiểm tra lại format thực tế** bằng cách chạy CLI thử, viết test với fixture thật.
-- Abort: `signal` → `child.kill()`.
-- `cwd`: chế độ thường dùng thư mục workspace của app trong `%APPDATA%` (chứa `.claude/skills` copy từ `assistant-skills/`); chế độ Code dùng thư mục dự án người dùng chọn.
-- Quyền tool: chat thường → không cho Bash/Edit/Write. Chế độ Code chỉ đọc → `Read,Grep,Glob`. Cho sửa file chỉ khi người dùng bật rõ ràng.
-- `isAvailable`: chạy `claude --version`; lỗi → hướng dẫn cài & đăng nhập.
-- Không đọc, sao chép hay truyền đi file credential của Claude Code.
+- Args dựng bằng hàm thuần `buildCliArgs()` (`claudeCli.ts`):
+  `claude -p --output-format stream-json --verbose --include-partial-messages --restricted --strict-mcp-config --tools <list> (--system-prompt-file | --append-system-prompt-file) <file> [--allowedTools <list>] [--resume <id>]`
+- **Prompt đi qua stdin**, system prompt ghi ra file tạm → args chỉ chứa cờ cố định, UUID, tên tool, đường dẫn. Không bao giờ ghép chuỗi người dùng vào dòng lệnh.
+- `--restricted`: bỏ qua settings/hook/project của người dùng, **tắt auto-memory của CLI** (trí nhớ do app quản lý qua bước duyệt). `--strict-mcp-config`: không nạp MCP.
+- **Không dùng `--bare`** (bắt buộc API key, không dùng được subscription). Không dùng `--dangerously-skip-permissions`.
+- Chế độ thường thay system prompt (`--system-prompt-file`); chế độ Code giữ prompt mặc định của Claude Code (`--append-system-prompt-file`).
+- Windows: tìm bằng `where.exe claude`, ưu tiên `.exe`; shim `.cmd` chạy qua `cmd.exe /d /s /c` với `buildCmdLine()` (từ chối ký tự đặc biệt). Abort dùng `taskkill /T /F` để dừng cả cây tiến trình.
+- Parser `StreamJsonParser` (fixture thật trong `src/main/ai/__fixtures__/`): `system/init` → session; `stream_event` text_delta → text; `assistant` tool_use → tool (text của assistant chỉ dùng khi message đó không có delta); `result` → done/error (`errors[]`). Bỏ qua thinking, `rate_limit_event`, message subagent (`parent_tool_use_id` ≠ null), dòng hỏng.
+- CLI còn chạy một lúc sau `result`: `ChatService` chỉ phát done/error **sau khi tiến trình thoát** và đã nhả khóa hội thoại.
+- Session mất (`No conversation found`) → xóa `cli_session_id`, thử lại 1 lần kèm 12 tin gần nhất.
+- `cwd`: thường = `%APPDATA%/Team Working/workspace`; chế độ Code = thư mục dự án người dùng chọn.
+- Quyền tool: chat thường → `--tools ""`. Code chỉ đọc → `Read,Grep,Glob`. Cho sửa file chỉ khi người dùng bật rõ ràng.
+- `isAvailable`/`checkClaudeCli`: `claude --version` + `claude auth status` (JSON; chỉ giữ `loggedIn`, `subscriptionType`). Không đọc, sao chép hay truyền đi file credential của Claude Code.
+- Kiểm tra lại format khi nâng cấp CLI: chạy thử, cập nhật fixture (xóa đường dẫn/thông tin cá nhân).
 
 ## System prompt
-Ghép theo thứ tự, có giới hạn độ dài:
+`buildSystemPrompt()` (hàm thuần, có test) ghép theo thứ tự, giới hạn `DEFAULT_MAX_CHARS`:
 1. Danh tính: `Bạn là {assistantName}. Tính cách: {persona}. Trả lời bằng {language}.`
 2. Hồ sơ người dùng (tên, vai trò, mục tiêu).
-3. Memory liên quan (tối đa N mục, ưu tiên mới & khớp từ khóa).
-4. Ngữ cảnh chế độ (Học tập/Code/Quản lý) + dữ liệu cần thiết (task đang được giao…).
-Viết hàm thuần `buildSystemPrompt()` và test nó.
+3. Memory liên quan (tối đa 30, mới trước; thiếu chỗ thì bỏ cái cuối).
+4. Chế độ + nội dung skill của chế độ (`assistant-skills/<skill>/SKILL.md`, bỏ frontmatter — app tự chèn vì `--restricted` không nạp skill) + ngữ cảnh thêm.
+Khi vượt giới hạn: cắt ngữ cảnh thêm → cắt skill → bỏ bớt memory.
 
 ## AnthropicApiProvider (dự phòng)
 Dùng `@anthropic-ai/sdk`, streaming. Key người dùng tự nhập, lưu bằng `safeStorage`. Tra skill `claude-api` để lấy model ID mới nhất — không đoán.

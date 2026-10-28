@@ -1,0 +1,35 @@
+{
+  "title": "Cài đặt",
+  "assistant": {
+    "heading": "Trợ lý của bạn",
+    "description": "Tên, avatar và tính cách được dùng ở mọi nơi trong app và trong cách trợ lý trả lời.",
+    "name": "Tên trợ lý",
+    "avatar": "Avatar",
+    "upload": "Tải ảnh lên",
+    "uploadError": "Không đọc được ảnh này.",
+    "persona": "Tính cách",
+    "customPersona": "Mô tả tính cách",
+    "customPlaceholder": "Ví dụ: như một người anh hay động viên, thỉnh thoảng đùa nhẹ",
+    "language": "Ngôn ngữ",
+    "personas": {
+      "friendly": "Thân thiện",
+      "serious": "Nghiêm túc",
+      "humorous": "Hài hước",
+      "concise": "Ngắn gọn",
+      "custom": "Tự mô tả"
+    },
+    "languages": { "vi": "Tiếng Việt", "en": "English" }
+  },
+  "appearance": {
+    "heading": "Giao diện",
+    "theme": "Chủ đề",
+    "themes": { "system": "Theo hệ thống", "light": "Sáng", "dark": "Tối" },
+    "accent": "Màu nhấn",
+    "accents": { "blue": "Xanh dương", "violet": "Tím", "green": "Xanh lá", "orange": "Cam", "rose": "Hồng" }
+  },
+  "claude": {
+    "heading": "Kết nối AI",
+    "description": "Kiểm tra Claude Code CLI trên máy này.",
+    "open": "Kiểm tra Claude Code"
+  }
+}

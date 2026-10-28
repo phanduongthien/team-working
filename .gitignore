@@ -1,0 +1,16 @@
+node_modules/
+out/
+dist/
+release/
+coverage/
+test-results/
+playwright-report/
+.eslintcache
+*.log
+.env
+.env.*
+!.env.example
+.DS_Store
+Thumbs.db
+# Claude Code: chỉ commit skills, không commit cấu hình cá nhân
+.claude/settings.local.json

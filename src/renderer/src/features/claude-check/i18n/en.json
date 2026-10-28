@@ -1,0 +1,30 @@
+{
+  "title": "Claude Code",
+  "heading": "Connect Claude Code",
+  "intro": "Team Working uses the Claude Code CLI installed on your computer, signed in with your own Claude (Pro/Max) account. The app never reads or stores your Claude credentials.",
+  "checking": "Checking…",
+  "recheck": "Check again",
+  "continue": "Go to chat",
+  "docs": "Open setup guide",
+  "state": {
+    "ok": "Ready",
+    "not_installed": "Claude Code is not installed",
+    "not_logged_in": "Claude Code is not signed in",
+    "error": "Claude Code could not run"
+  },
+  "details": {
+    "version": "Version: {{version}}",
+    "plan": "Plan: {{plan}}",
+    "path": "Path: {{path}}"
+  },
+  "install": {
+    "step1": "Open PowerShell (no Administrator rights needed).",
+    "step2": "Run the official installer:",
+    "step3": "Close and reopen Team Working, then click “Check again”."
+  },
+  "login": {
+    "step1": "Open PowerShell or Terminal.",
+    "step2": "Run the command below and follow the browser sign-in with your Claude account:",
+    "step3": "Once signed in, come back and click “Check again”."
+  }
+}

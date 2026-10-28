@@ -5,17 +5,19 @@ App desktop Windows (Electron + React + TypeScript) — trợ lý AI cho học t
 ## Lệnh thường dùng
 - `npm run dev` — chạy app ở chế độ dev
 - `npm run lint` / `npm run typecheck` / `npm test` — phải pass trước mỗi commit
+- `npm run test:e2e` — build + Playwright for Electron (thêm `E2E_REAL_CLI=1` để chat thật qua Claude, tốn hạn mức)
 - `npm run build:win` — build installer Windows
 - `npm run db:generate` — sinh migration Drizzle (local SQLite)
 - `supabase migration new <tên>` — tạo migration Supabase
 
 ## Kiến trúc
-- `src/main/` — Electron main process: IPC handlers, `ai/` (AIProvider, ClaudeCliProvider, AnthropicApiProvider), SQLite, notifications, updater.
-- `src/preload/` — API có kiểu expose qua `contextBridge`. Renderer không bao giờ truy cập Node trực tiếp.
-- `src/renderer/` — React UI. `features/<tên>/` cho từng module, đăng ký trong `features/registry.ts`.
-- `src/shared/` — types, zod schemas dùng chung main/renderer.
+- `src/main/` — Electron main process: `ipc/register.ts` (handler + zod), `ai/` (AIProvider, ClaudeCliProvider, parser stream-json, system prompt), `db/` (SQLite + Drizzle, migrations), `services/` (chat, logger…).
+- `src/preload/` — API có kiểu expose qua `contextBridge` (`window.api`, kiểu `TeamWorkingApi` trong `src/shared/types.ts`). Renderer không bao giờ truy cập Node trực tiếp.
+- `src/renderer/src/` — React UI. `features/<tên>/` cho từng module, đăng ký trong `features/registry.ts`.
+- `src/shared/` — types, zod schemas, tên kênh IPC dùng chung main/renderer.
 - `supabase/migrations/` — schema dữ liệu team, **mọi bảng phải bật RLS**.
-- `assistant-skills/` — skill dành cho con trợ lý lúc chạy (được copy vào workspace của CLI).
+- `assistant-skills/` — skill dành cho con trợ lý lúc chạy; app đọc `SKILL.md` theo chế độ hội thoại và chèn vào system prompt (đóng gói qua `extraResources`).
+- Dữ liệu người dùng: `%APPDATA%/Team Working/` (`team-working.db`, `logs/main.log`, `workspace/`).
 
 ## Quy tắc
 - Mọi IPC input validate bằng zod. Không bật `nodeIntegration`.

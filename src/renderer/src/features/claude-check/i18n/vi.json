@@ -1,0 +1,30 @@
+{
+  "title": "Claude Code",
+  "heading": "Kết nối Claude Code",
+  "intro": "Team Working dùng Claude Code CLI cài trên máy bạn, đăng nhập bằng tài khoản Claude (Pro/Max) của chính bạn. App không bao giờ đọc hay lưu thông tin đăng nhập Claude.",
+  "checking": "Đang kiểm tra…",
+  "recheck": "Kiểm tra lại",
+  "continue": "Vào trò chuyện",
+  "docs": "Xem hướng dẫn cài đặt",
+  "state": {
+    "ok": "Đã sẵn sàng",
+    "not_installed": "Chưa cài Claude Code",
+    "not_logged_in": "Chưa đăng nhập Claude Code",
+    "error": "Không chạy được Claude Code"
+  },
+  "details": {
+    "version": "Phiên bản: {{version}}",
+    "plan": "Gói: {{plan}}",
+    "path": "Đường dẫn: {{path}}"
+  },
+  "install": {
+    "step1": "Mở PowerShell (không cần quyền Administrator).",
+    "step2": "Chạy lệnh cài đặt chính thức:",
+    "step3": "Đóng và mở lại Team Working, rồi bấm “Kiểm tra lại”."
+  },
+  "login": {
+    "step1": "Mở PowerShell hoặc Terminal.",
+    "step2": "Chạy lệnh dưới đây và làm theo hướng dẫn đăng nhập trên trình duyệt bằng tài khoản Claude của bạn:",
+    "step3": "Đăng nhập xong, quay lại đây và bấm “Kiểm tra lại”."
+  }
+}

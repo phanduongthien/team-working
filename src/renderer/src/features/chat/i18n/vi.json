@@ -1,0 +1,40 @@
+{
+  "title": "Trò chuyện",
+  "newChat": "Cuộc trò chuyện mới",
+  "search": "Tìm cuộc trò chuyện…",
+  "untitled": "Chưa có tiêu đề",
+  "noConversations": "Chưa có cuộc trò chuyện nào",
+  "noResults": "Không tìm thấy kết quả",
+  "pin": "Ghim",
+  "unpin": "Bỏ ghim",
+  "pinned": "Đã ghim",
+  "recent": "Gần đây",
+  "deleteTitle": "Xóa cuộc trò chuyện?",
+  "deleteDescription": "“{{title}}” và toàn bộ tin nhắn sẽ bị xóa vĩnh viễn trên máy này.",
+  "renameTitle": "Đổi tên cuộc trò chuyện",
+  "placeholder": "Nhắn cho {{name}}… (Enter để gửi, Shift+Enter xuống dòng)",
+  "send": "Gửi",
+  "stop": "Dừng",
+  "you": "Bạn",
+  "thinking": "{{name}} đang suy nghĩ…",
+  "stopped": "Đã dừng phản hồi",
+  "failed": "Không nhận được phản hồi: {{message}}",
+  "toolUsed": "Đã dùng công cụ {{name}}",
+  "welcome": "Xin chào, mình là {{name}}!",
+  "welcomeHint": "Chọn chế độ bên dưới rồi hỏi bất cứ điều gì về học tập, công việc hay code.",
+  "cliMissing": "Chưa kết nối được Claude Code CLI.",
+  "cliFix": "Kiểm tra kết nối",
+  "usageNote": "AI chạy bằng Claude Code trên tài khoản Claude của chính bạn; mức dùng tính vào gói của bạn.",
+  "mode": {
+    "label": "Chế độ",
+    "free": "Tự do",
+    "study": "Học tập",
+    "code": "Code",
+    "project": "Quản lý dự án"
+  },
+  "errors": {
+    "conversation_busy": "Cuộc trò chuyện này đang chờ phản hồi.",
+    "conversation_not_found": "Cuộc trò chuyện không còn tồn tại.",
+    "not_installed": "Chưa cài Claude Code CLI."
+  }
+}

@@ -1,0 +1,25 @@
+# Cấu hình đóng gói tối thiểu — auto-update/publish GitHub hoàn thiện ở Giai đoạn 6.
+appId: com.youragent.teamworking
+productName: Team Working
+directories:
+  buildResources: build
+  output: release/${version}
+files:
+  - out/**
+  - package.json
+  - '!**/*.{md,map}'
+extraResources:
+  - from: src/main/db/migrations
+    to: migrations
+  - from: assistant-skills
+    to: assistant-skills
+asarUnpack:
+  - node_modules/better-sqlite3/**
+# better-sqlite3 dùng N-API kèm bản build sẵn — không cần biên dịch lại cho Electron.
+npmRebuild: false
+win:
+  target: nsis
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  artifactName: ${name}-${version}-setup.${ext}

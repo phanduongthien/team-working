@@ -1,0 +1,35 @@
+{
+  "title": "Settings",
+  "assistant": {
+    "heading": "Your assistant",
+    "description": "Name, avatar and personality are used everywhere in the app and in how the assistant replies.",
+    "name": "Assistant name",
+    "avatar": "Avatar",
+    "upload": "Upload image",
+    "uploadError": "Could not read this image.",
+    "persona": "Personality",
+    "customPersona": "Describe the personality",
+    "customPlaceholder": "e.g. like an encouraging older sibling who jokes a little",
+    "language": "Language",
+    "personas": {
+      "friendly": "Friendly",
+      "serious": "Serious",
+      "humorous": "Humorous",
+      "concise": "Concise",
+      "custom": "Custom"
+    },
+    "languages": { "vi": "Tiếng Việt", "en": "English" }
+  },
+  "appearance": {
+    "heading": "Appearance",
+    "theme": "Theme",
+    "themes": { "system": "System", "light": "Light", "dark": "Dark" },
+    "accent": "Accent color",
+    "accents": { "blue": "Blue", "violet": "Violet", "green": "Green", "orange": "Orange", "rose": "Rose" }
+  },
+  "claude": {
+    "heading": "AI connection",
+    "description": "Check Claude Code CLI on this computer.",
+    "open": "Check Claude Code"
+  }
+}

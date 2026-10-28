@@ -1,0 +1,40 @@
+{
+  "title": "Chat",
+  "newChat": "New chat",
+  "search": "Search chats…",
+  "untitled": "Untitled",
+  "noConversations": "No chats yet",
+  "noResults": "No results",
+  "pin": "Pin",
+  "unpin": "Unpin",
+  "pinned": "Pinned",
+  "recent": "Recent",
+  "deleteTitle": "Delete chat?",
+  "deleteDescription": "“{{title}}” and all its messages will be permanently deleted from this computer.",
+  "renameTitle": "Rename chat",
+  "placeholder": "Message {{name}}… (Enter to send, Shift+Enter for a new line)",
+  "send": "Send",
+  "stop": "Stop",
+  "you": "You",
+  "thinking": "{{name}} is thinking…",
+  "stopped": "Response stopped",
+  "failed": "No response: {{message}}",
+  "toolUsed": "Used tool {{name}}",
+  "welcome": "Hi, I'm {{name}}!",
+  "welcomeHint": "Pick a mode below and ask anything about studying, work or code.",
+  "cliMissing": "Claude Code CLI is not connected.",
+  "cliFix": "Check connection",
+  "usageNote": "AI runs through Claude Code on your own Claude account; usage counts against your plan.",
+  "mode": {
+    "label": "Mode",
+    "free": "Free",
+    "study": "Study",
+    "code": "Code",
+    "project": "Project management"
+  },
+  "errors": {
+    "conversation_busy": "This chat is still waiting for a response.",
+    "conversation_not_found": "This chat no longer exists.",
+    "not_installed": "Claude Code CLI is not installed."
+  }
+}
