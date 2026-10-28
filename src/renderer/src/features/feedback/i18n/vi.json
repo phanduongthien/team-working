@@ -95,7 +95,11 @@
     "days": "{{count}} ngày qua",
     "run": "Tóm tắt",
     "running": "Trợ lý đang tóm tắt…",
-    "none": "Không có feedback nào trong phạm vi này.",
+    "withCount": "{{label}} ({{count}})",
+    "emptyScope": "“{{scope}}” chưa có feedback nào trong {{period}}. Lưu ý: góp ý gửi cho “Cả team / quy trình chung” không thuộc phạm vi một dự án hay một thành viên.",
+    "teamHas": "Cả team đang có {{count}} feedback.",
+    "useTeam": "Tóm tắt cả team",
+    "tryLonger": "Thử chọn khoảng thời gian dài hơn.",
     "copy": "Sao chép"
   },
   "errors": {

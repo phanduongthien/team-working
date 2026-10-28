@@ -95,7 +95,11 @@
     "days": "Last {{count}} days",
     "run": "Summarise",
     "running": "The assistant is summarising…",
-    "none": "No feedback in this scope.",
+    "withCount": "{{label}} ({{count}})",
+    "emptyScope": "“{{scope}}” has no feedback in the {{period}}. Note: feedback sent to “Whole team / general process” does not belong to a single project or member.",
+    "teamHas": "The whole team has {{count}} feedback items.",
+    "useTeam": "Summarise whole team",
+    "tryLonger": "Try a longer period.",
     "copy": "Copy"
   },
   "errors": {

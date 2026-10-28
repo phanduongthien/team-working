@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { FeedbackReplyRow, FeedbackRow } from '@shared/supabase.types'
-import { allowedVisibilities, canChangeStatus, filterTab, summaryItems } from '../logic'
+import { allowedVisibilities, canChangeStatus, countByScope, filterTab, summaryItems } from '../logic'
 
 let n = 0
 const fb = (patch: Partial<FeedbackRow>): FeedbackRow => ({
@@ -69,6 +69,21 @@ describe('summaryItems', () => {
       { date: '2026-10-10', kind: 'project', category: 'suggestion', status: 'open', body: 'Họp — quá dài', replies: ['Sẽ rút ngắn'] }
     ])
     expect(JSON.stringify(items)).not.toMatch(/someone|author|recipient/)
+  })
+
+  it('feedback rất ngắn vẫn được đưa vào tóm tắt (không lọc theo độ dài)', () => {
+    const short = fb({ category: 'improve', body: 'cần cải thiện thêm app', created_at: '2026-10-29T03:00:00+00:00' })
+    expect(summaryItems([short], [], { type: 'team' }, '2026-09-29')).toHaveLength(1)
+    // Feedback chung (không gắn dự án) KHÔNG thuộc phạm vi một dự án cụ thể → đây là lý do ra danh sách rỗng.
+    expect(summaryItems([short], [], { type: 'project', id: 'p1' }, '2026-09-29')).toHaveLength(0)
+  })
+
+  it('countByScope đếm theo từng phạm vi để giải thích khi trống', () => {
+    const general = fb({ body: 'cần cải thiện thêm app' })
+    const inP1 = fb({ project_id: 'p1' })
+    const toAn = fb({ kind: 'person', recipient_id: 'an' })
+    const counts = countByScope([general, inP1, toAn], ['team', 'project:p1', 'project:p2', 'person:an'], '2026-01-01')
+    expect(Object.fromEntries(counts)).toEqual({ team: 3, 'project:p1': 1, 'project:p2': 0, 'person:an': 1 })
   })
 
   it('phạm vi một người: chỉ feedback gửi cho người đó', () => {

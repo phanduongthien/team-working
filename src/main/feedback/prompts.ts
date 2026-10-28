@@ -43,6 +43,7 @@ export function buildSummaryPrompt(req: FeedbackSummaryRequest): string {
     `Tóm tắt feedback của "${req.scope}" trong kỳ ${req.period} theo hướng dẫn.`,
     `Viết bằng ${LANG[req.language]}, dùng Markdown ngắn gọn với các mục: Điểm mạnh được ghi nhận, Chủ đề lặp lại cần cải thiện, Đề xuất nổi bật, Việc cần làm tiếp.`,
     'Không suy đoán danh tính người viết. Không phán xét tính cách.',
+    'Luôn tóm tắt mọi feedback được liệt kê, kể cả khi chỉ có một mục hoặc feedback rất ngắn/chung chung: nêu những gì feedback cho thấy, rồi ghi rõ phần nào còn thiếu chi tiết và gợi ý cần hỏi thêm gì. Không bao giờ trả lời rằng không có feedback. Bỏ qua mục nào không có nội dung.',
     '',
     '## Feedback',
     items

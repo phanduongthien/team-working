@@ -45,6 +45,7 @@ describe('buildSummaryPrompt', () => {
       ]
     })
     expect(p).toContain('"Dự án Website" trong kỳ 30 ngày qua')
+    expect(p).toContain('kể cả khi chỉ có một mục hoặc feedback rất ngắn')
     expect(p).toContain('1. [2026-10-01] (góp ý về dự án/quy trình, cần cải thiện, trạng thái: open) Họp quá dài\n   Trả lời: Sẽ rút ngắn')
   })
 })

@@ -29,6 +29,18 @@ export function canChangeStatus(f: FeedbackRow, uid: string | undefined, isManag
 
 export type SummaryScope = { type: 'team' } | { type: 'project'; id: string } | { type: 'person'; id: string }
 
+/** "team" | "project:<id>" | "person:<id>" → phạm vi. */
+export function parseScopeKey(key: string): SummaryScope {
+  const [type, id] = key.split(':')
+  if ((type === 'project' || type === 'person') && id) return { type, id }
+  return { type: 'team' }
+}
+
+/** Số feedback trong từng phạm vi (để hiện cạnh lựa chọn và giải thích khi trống). */
+export function countByScope(list: FeedbackRow[], keys: string[], since: string): Map<string, number> {
+  return new Map(keys.map((k) => [k, summaryItems(list, [], parseScopeKey(k), since).length]))
+}
+
 /**
  * Feedback trong phạm vi + khoảng thời gian → dữ liệu gửi trợ lý tóm tắt.
  * KHÔNG kèm tên/ID người gửi hay người nhận.
