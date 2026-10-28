@@ -4,12 +4,14 @@
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-10-28
+
+Bản phát hành đầu tiên lên GitHub Releases (0.1.0 chỉ có tag, không phát hành). Chưa ký số: Windows SmartScreen có thể cảnh báo khi cài — chọn *More info → Run anyway*.
+
 ### Sửa lỗi
 - Máy chưa cài Claude Code CLI không còn bị kéo về màn hình "Kết nối Claude Code" mỗi lần bấm menu — vẫn dùng được Thời gian, Trí nhớ, Team….
 
 ## [0.1.0] - 2026-10-28
-
-Bản phát hành đầu tiên. Chưa ký số: Windows SmartScreen có thể cảnh báo khi cài — chọn *More info → Run anyway*.
 
 ### Thêm mới
 - Khung ứng dụng desktop Team Working (Electron + React + TypeScript), giao diện tiếng Việt mặc định, có tiếng Anh.
