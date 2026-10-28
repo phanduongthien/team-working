@@ -43,6 +43,25 @@
       "not_found": "không đọc được file"
     }
   },
+  "code": {
+    "chooseFolder": "Chọn thư mục dự án",
+    "changeFolder": "Đổi thư mục",
+    "noFolder": "Chưa chọn thư mục — trợ lý chỉ trò chuyện, không đọc được code của bạn.",
+    "readOnly": "Chỉ đọc",
+    "writeOn": "Được sửa file (duyệt từng thay đổi)",
+    "enableTitle": "Cho phép trợ lý sửa file?",
+    "enableBody": "Trợ lý sẽ được đề xuất sửa/tạo file trong {{folder}}.",
+    "rule1": "Mỗi lần sửa, app hiện diff — chỉ khi bạn bấm Đồng ý thì file mới thay đổi.",
+    "rule2": "Chỉ trong thư mục này; file bên ngoài luôn bị từ chối.",
+    "rule3": "Trợ lý không được chạy lệnh (terminal). Nên dùng git để dễ hoàn tác.",
+    "enable": "Cho phép",
+    "approveEdit": "Trợ lý muốn sửa file",
+    "approveCreate": "Trợ lý muốn tạo file",
+    "approveHint": "Cuộc trò chuyện: {{title}}. Xem kỹ thay đổi trước khi đồng ý.",
+    "accept": "Đồng ý thay đổi",
+    "reject": "Từ chối",
+    "more": "còn {{count}} yêu cầu"
+  },
   "suggest": {
     "button": "Gợi ý ghi nhớ",
     "hint": "Nhờ trợ lý đề xuất điều nên ghi nhớ từ cuộc trò chuyện này — bạn duyệt trước khi lưu",
@@ -63,6 +82,8 @@
     "network_error": "Không kết nối được tới Anthropic. Kiểm tra mạng.",
     "refusal": "Trợ lý từ chối yêu cầu này.",
     "invalid_output": "Trợ lý trả về sai định dạng, hãy thử lại.",
-    "already_running": "Đang lấy đề xuất, chờ chút nhé."
+    "already_running": "Đang lấy đề xuất, chờ chút nhé.",
+    "approval_unavailable": "Không khởi động được bước duyệt thay đổi file. Hãy tắt quyền sửa hoặc khởi động lại app.",
+    "no_project_folder": "Hãy chọn thư mục dự án trước."
   }
 }

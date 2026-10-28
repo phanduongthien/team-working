@@ -7,12 +7,14 @@ import { cn } from '@renderer/lib/utils'
 import { usePreferences } from '@renderer/stores/preferences'
 
 const noBadge = (): number => 0
+const noDot = (): boolean => false
 
 function NavItem({ feature }: { feature: FeatureDefinition }) {
   const { t } = useTranslation(feature.id)
   const Icon = feature.icon
   const label = t(feature.titleKey)
   const badge = (feature.useBadge ?? noBadge)()
+  const dot = (feature.useDot ?? noDot)()
   const to = feature.route.replace(/\/\*$/, '')
   return (
     <NavLink
@@ -33,6 +35,7 @@ function NavItem({ feature }: { feature: FeatureDefinition }) {
           {badge > 9 ? '9+' : badge}
         </span>
       )}
+      {dot && badge === 0 && <span className="absolute top-1 right-1 size-2 animate-pulse rounded-full bg-red-500" data-testid={`dot-${feature.id}`} />}
     </NavLink>
   )
 }
@@ -68,6 +71,7 @@ export function AppShell({ features }: { features: FeatureDefinition[] }) {
       <main className="min-w-0 flex-1">
         <Outlet />
       </main>
+      {features.map((f) => (f.overlay ? <f.overlay key={f.id} /> : null))}
     </div>
   )
 }

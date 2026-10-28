@@ -17,6 +17,10 @@ export type ChatRequest = {
   cwd: string
   /** Tool được phép; mặc định không tool nào. */
   tools?: string[]
+  /** Tool được tự duyệt (mặc định = tools). Tool còn lại cần người dùng duyệt (approval). */
+  allowedTools?: string[]
+  /** Bật duyệt từng thay đổi file qua app (chế độ Code có quyền sửa). */
+  approval?: { conversationId: string }
   /** Lượt gọi một lần (vd trích memory) — không lưu session. */
   ephemeral?: boolean
 }

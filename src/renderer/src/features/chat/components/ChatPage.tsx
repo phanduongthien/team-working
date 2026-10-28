@@ -9,6 +9,7 @@ import { useCliStatus } from '@renderer/stores/cli'
 import { usePreferences } from '@renderer/stores/preferences'
 import { useChat } from '../store'
 import { ChatHeader } from './ChatHeader'
+import { CodeBar } from './CodeBar'
 import { Composer } from './Composer'
 import { ConversationSidebar } from './ConversationSidebar'
 import { MessageItem } from './MessageItem'
@@ -81,6 +82,7 @@ export function ChatPage() {
               </Button>
             </div>
           )}
+          {mode === 'code' && <CodeBar conversation={active} busy={isStreaming} />}
           <Composer
             mode={mode}
             onModeChange={onModeChange}

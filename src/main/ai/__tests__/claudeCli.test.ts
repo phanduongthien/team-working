@@ -67,6 +67,23 @@ describe('buildCliArgs', () => {
     expect(args.slice(-2)).toEqual(['--resume', '5be8004f-e797-452d-89fb-45a17e2d25a1'])
   })
 
+  it('chế độ Code có sửa file: chỉ tự duyệt tool đọc, Edit/Write đi qua tool duyệt quyền', () => {
+    const args = buildCliArgs({
+      ...base,
+      mode: 'code',
+      tools: ['Read', 'Grep', 'Glob', 'Edit', 'Write'],
+      allowedTools: ['Read', 'Grep', 'Glob'],
+      mcpConfigFile: 'C:\\tmp\\mcp-1.json',
+      permissionTool: 'mcp__twperm__approve'
+    })
+    const at = (flag: string): string => args[args.indexOf(flag) + 1]
+    expect(at('--tools')).toBe('Read,Grep,Glob,Edit,Write')
+    expect(at('--allowedTools')).toBe('Read,Grep,Glob')
+    expect(at('--mcp-config')).toBe('C:\\tmp\\mcp-1.json')
+    expect(at('--permission-prompt-tool')).toBe('mcp__twperm__approve')
+    expect(args).toContain('--strict-mcp-config')
+  })
+
   it('lượt gọi một lần không lưu session', () => {
     expect(buildCliArgs({ ...base, mode: 'free', ephemeral: true }).at(-1)).toBe('--no-session-persistence')
   })

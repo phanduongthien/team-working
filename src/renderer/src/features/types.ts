@@ -23,4 +23,8 @@ export type FeatureDefinition = {
   setup?: () => () => void
   /** Hook trả về số hiển thị trên biểu tượng menu (0 = ẩn). */
   useBadge?: () => number
+  /** Hook: hiện chấm báo hiệu trên biểu tượng menu (vd đang bấm giờ). */
+  useDot?: () => boolean
+  /** Thành phần luôn gắn trong app (vd hộp thoại duyệt thay đổi file). */
+  overlay?: ComponentType
 }

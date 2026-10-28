@@ -1,7 +1,7 @@
 import { sql } from 'drizzle-orm'
 import { index, integer, sqliteTable, text } from 'drizzle-orm/sqlite-core'
 import type { ChatMode, ChatUsage } from '@shared/ai'
-import type { MemoryAction, MemoryCategory, SuggestionStatus } from '@shared/schemas'
+import type { MemoryAction, MemoryCategory, SuggestionStatus, TimeEntryKind } from '@shared/schemas'
 import type { MessageRole, MessageStatus, StoredAttachment, ToolEvent } from '@shared/types'
 
 const now = sql`(unixepoch('subsec') * 1000)`
@@ -24,6 +24,8 @@ export const conversations = sqliteTable(
     cwd: text('cwd'),
     /** Lần cuối trích đề xuất memory từ hội thoại này (tin sau mốc này là "mới"). */
     memoryExtractedAt: integer('memory_extracted_at'),
+    /** Chế độ Code: người dùng đã bật rõ ràng cho phép sửa file (mỗi lần sửa vẫn phải duyệt). */
+    codeWrite: integer('code_write', { mode: 'boolean' }).notNull().default(false),
     createdAt: integer('created_at').notNull().default(now),
     updatedAt: integer('updated_at').notNull().default(now)
   },
@@ -61,6 +63,23 @@ export const memories = sqliteTable(
     lastUsedAt: integer('last_used_at')
   },
   (t) => [index('memories_updated_idx').on(t.updatedAt)]
+)
+
+/** Chấm công: lưu trên máy để dùng offline. ended_at null = đang bấm giờ (tối đa một). */
+export const timeEntries = sqliteTable(
+  'time_entries',
+  {
+    id: text('id').primaryKey(),
+    taskId: text('task_id'),
+    projectId: text('project_id'),
+    title: text('title').notNull(),
+    projectName: text('project_name'),
+    kind: text('kind').$type<TimeEntryKind>().notNull().default('timer'),
+    note: text('note').notNull().default(''),
+    startedAt: integer('started_at').notNull(),
+    endedAt: integer('ended_at')
+  },
+  (t) => [index('time_entries_started_idx').on(t.startedAt)]
 )
 
 export const memorySuggestions = sqliteTable(

@@ -120,7 +120,7 @@ export function CreateOrJoin({ compact = false }: { compact?: boolean }) {
  * Bọc các màn hình cần team: chưa cấu hình → giải thích; chưa đăng nhập → đăng nhập GitHub;
  * chưa có team → tạo/tham gia; có team → hiện nội dung.
  */
-export function TeamGate({ children }: { children: ReactNode }) {
+export function TeamGate({ children, requireTeam = true }: { children: ReactNode; requireTeam?: boolean }) {
   const { t } = useTranslation('team')
   const status = useAuth((s) => s.status)
   const { loaded, currentTeamId } = useTeam()
@@ -141,7 +141,7 @@ export function TeamGate({ children }: { children: ReactNode }) {
     )
   }
   if (status !== 'signed_in') return <SignIn />
-  if (!currentTeamId) {
+  if (!currentTeamId && requireTeam) {
     return (
       <Card>
         <CreateOrJoin />

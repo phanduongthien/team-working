@@ -46,6 +46,13 @@ export type CliRunOptions = {
   tools: string[]
   /** Không lưu session (lượt gọi một lần). */
   ephemeral?: boolean
+  /** Tool được tự duyệt; mặc định = tools. Tool còn lại phải qua permissionTool. */
+  allowedTools?: string[]
+  /** File cấu hình MCP chứa server duyệt quyền (chế độ Code có sửa file). */
+  mcpConfigFile?: string
+  permissionTool?: string
+  /** Thư mục được đọc thêm ngoài cwd (vd thư mục file đính kèm). */
+  addDirs?: string[]
 }
 
 /**
@@ -70,10 +77,30 @@ export function buildCliArgs(opts: CliRunOptions): string[] {
     opts.mode === 'code' ? '--append-system-prompt-file' : '--system-prompt-file',
     opts.systemPromptFile
   ]
-  if (opts.tools.length > 0) args.push('--allowedTools', opts.tools.join(','))
+  const allowed = opts.allowedTools ?? opts.tools
+  if (allowed.length > 0) args.push('--allowedTools', allowed.join(','))
+  if (opts.mcpConfigFile && opts.permissionTool) {
+    args.push('--mcp-config', opts.mcpConfigFile, '--permission-prompt-tool', opts.permissionTool)
+  }
+  for (const dir of opts.addDirs ?? []) args.push('--add-dir', dir)
   if (opts.sessionId) args.push('--resume', opts.sessionId)
   if (opts.ephemeral) args.push('--no-session-persistence')
   return args
+}
+
+export const PERMISSION_TOOL = 'mcp__twperm__approve'
+
+/** Cấu hình MCP cho server duyệt quyền, chạy bằng chính Electron (ELECTRON_RUN_AS_NODE). */
+export function permissionMcpConfig(opts: { electronPath: string; script: string; url: string; token: string; conversationId: string }): string {
+  return JSON.stringify({
+    mcpServers: {
+      twperm: {
+        command: opts.electronPath,
+        args: [opts.script],
+        env: { ELECTRON_RUN_AS_NODE: '1', TW_PERM_URL: opts.url, TW_PERM_TOKEN: opts.token, TW_CONVERSATION: opts.conversationId }
+      }
+    }
+  })
 }
 
 /**

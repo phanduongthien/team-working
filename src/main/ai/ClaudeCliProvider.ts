@@ -2,7 +2,7 @@ import { spawn, type ChildProcessWithoutNullStreams } from 'node:child_process'
 import { randomUUID } from 'node:crypto'
 import { mkdir, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { dirname, join, relative, resolve } from 'node:path'
 import { createInterface } from 'node:readline'
 import type { ChatEvent } from '@shared/ai'
 import type { AIProvider, ChatRequest } from './AIProvider'
@@ -12,8 +12,17 @@ import {
   checkClaudeCli,
   findClaudeExecutable,
   isCmdShim,
+  PERMISSION_TOOL,
+  permissionMcpConfig,
   promptWithAttachments
 } from './claudeCli'
+
+export type ApprovalBridge = { electronPath: string; script: string; url: string; token: string }
+
+const isInside = (root: string, dir: string): boolean => {
+  const rel = relative(resolve(root), resolve(dir))
+  return !rel.startsWith('..') && !/^[a-zA-Z]:/.test(rel)
+}
 import { StreamJsonParser } from './streamJsonParser'
 import { AsyncQueue } from './asyncQueue'
 
@@ -37,7 +46,11 @@ export class ClaudeCliProvider implements AIProvider {
   readonly stateful = true
   private executable: string | null = null
 
-  constructor(private readonly log: Logger) {}
+  constructor(
+    private readonly log: Logger,
+    /** Cầu nối duyệt quyền (chế độ Code có sửa file); null nếu chưa sẵn sàng. */
+    private readonly getApprovalBridge: () => ApprovalBridge | null = () => null
+  ) {}
 
   async isAvailable(): Promise<{ ok: boolean; reason?: string }> {
     const status = await checkClaudeCli()
@@ -59,22 +72,46 @@ export class ClaudeCliProvider implements AIProvider {
     await writeFile(systemPromptFile, req.systemPrompt, 'utf8')
 
     const attachmentPaths = (req.attachments ?? []).map((a) => a.path)
-    const tools = [...new Set([...(req.tools ?? []), ...(attachmentPaths.length ? ['Read'] : [])])]
+    const withRead = (list: string[]): string[] => [...new Set([...list, ...(attachmentPaths.length ? ['Read'] : [])])]
+    const tools = withRead(req.tools ?? [])
+
+    // Duyệt từng lần sửa file qua app: MCP server chạy bằng chính Electron.
+    let mcpConfigFile: string | undefined
+    const bridge = req.approval ? this.getApprovalBridge() : null
+    if (req.approval && !bridge) {
+      await rm(systemPromptFile, { force: true })
+      yield { type: 'error', message: 'approval_unavailable' }
+      return
+    }
+    if (bridge && req.approval) {
+      mcpConfigFile = join(dir, `mcp-${randomUUID()}.json`)
+      await writeFile(mcpConfigFile, permissionMcpConfig({ ...bridge, conversationId: req.approval.conversationId }), 'utf8')
+    }
+
     const args = buildCliArgs({
       mode: req.mode,
       systemPromptFile,
       sessionId: req.sessionId,
       tools,
+      allowedTools: req.allowedTools ? withRead(req.allowedTools) : undefined,
+      mcpConfigFile,
+      permissionTool: mcpConfigFile ? PERMISSION_TOOL : undefined,
+      // File đính kèm nằm ở workspace; ở chế độ Code (cwd = dự án) phải cho phép đọc thêm thư mục đó.
+      addDirs: [...new Set(attachmentPaths.map((p) => dirname(p)))].filter((d) => !isInside(req.cwd, d)),
       ephemeral: req.ephemeral
     })
     const prompt = promptWithAttachments(req.prompt, attachmentPaths)
+    const cleanup = async (): Promise<void> => {
+      await rm(systemPromptFile, { force: true })
+      if (mcpConfigFile) await rm(mcpConfigFile, { force: true })
+    }
 
     const queue = new AsyncQueue<ChatEvent>()
     let child: ChildProcessWithoutNullStreams
     try {
       child = this.spawnCli(executable, args, req.cwd)
     } catch (err) {
-      await rm(systemPromptFile, { force: true })
+      await cleanup()
       yield { type: 'error', message: (err as Error).message }
       return
     }
@@ -114,7 +151,7 @@ export class ClaudeCliProvider implements AIProvider {
     } finally {
       signal.removeEventListener('abort', onAbort)
       if (child.exitCode === null) killTree(child)
-      await rm(systemPromptFile, { force: true })
+      await cleanup()
     }
   }
 

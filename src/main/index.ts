@@ -22,8 +22,11 @@ import {
   SettingsRepository,
   SuggestionRepository
 } from './db/repositories'
+import { CodeApprovals } from './code/approvals'
+import { TimeRepository } from './db/timeRepository'
 import { createHandle, registerIpc } from './ipc/register'
 import { registerTeamIpc } from './ipc/team'
+import { emitApproval, registerWorkIpc } from './ipc/work'
 import { OAuthLoopback } from './services/oauthLoopback'
 import { MemoryService } from './memory/memoryService'
 import { AttachmentStore } from './services/attachments'
@@ -82,7 +85,7 @@ function createWindow(): BrowserWindow {
   return win
 }
 
-function bootstrap(): void {
+async function bootstrap(): Promise<void> {
   const userData = app.getPath('userData')
   const workspaceDir = join(userData, 'workspace')
   mkdirSync(workspaceDir, { recursive: true })
@@ -102,8 +105,27 @@ function bootstrap(): void {
   if (interrupted) log.info(`Đánh dấu ${interrupted} tin nhắn bị gián đoạn`)
 
   const secrets = new SecretStore(join(userData, 'secrets'), safeStorage)
+
+  // Chế độ Code: mỗi lần Claude muốn sửa file, app hiện diff để người dùng duyệt.
+  const approvals = new CodeApprovals({
+    writableRoot: (id) => {
+      const conv = conversations.get(id)
+      return conv && conv.mode === 'code' && conv.codeWrite && conv.cwd ? conv.cwd : null
+    },
+    emit: (request) => emitApproval(mainWindow, request),
+    log
+  })
+  await approvals.start()
+  app.on('before-quit', () => approvals.stop())
+  const permissionScript = resourcePath('permission-mcp.cjs', 'resources/permission-mcp.cjs')
+
   const providers: Record<AiProviderId, AIProvider> = {
-    'claude-cli': new ClaudeCliProvider(log),
+    'claude-cli': new ClaudeCliProvider(log, () => ({
+      electronPath: process.execPath,
+      script: permissionScript,
+      url: approvals.url,
+      token: approvals.token
+    })),
     'anthropic-api': new AnthropicApiProvider(() => secrets.get())
   }
   const getProvider = (): AIProvider =>
@@ -131,7 +153,8 @@ function bootstrap(): void {
     loadModeSkill: (mode) => loadModeSkill(skillsDir, mode),
     workspaceDir,
     emit: (payload) => mainWindow?.webContents.send(IPC.chatEvent, payload),
-    log
+    log,
+    onRunEnd: (conversationId) => approvals.cancelConversation(conversationId)
   })
   app.on('before-quit', () => chat.abortAll())
 
@@ -163,6 +186,19 @@ function bootstrap(): void {
     workspaceDir,
     log
   })
+  registerWorkIpc({
+    handle,
+    conversations,
+    settings,
+    time: new TimeRepository(db),
+    approvals,
+    memory,
+    getProvider,
+    loadSkill: (name) => loadSkill(skillsDir, name),
+    workspaceDir,
+    getWindow,
+    log
+  })
 
   mainWindow = createWindow()
   log.info(`Khởi động Team Working ${app.getVersion()}`)
@@ -176,9 +212,9 @@ if (!app.requestSingleInstanceLock()) {
     mainWindow?.focus()
   })
   app.setAppUserModelId('com.youragent.teamworking')
-  void app.whenReady().then(() => {
+  void app.whenReady().then(async () => {
     try {
-      bootstrap()
+      await bootstrap()
     } catch (err) {
       const message = (err as Error).stack ?? String(err)
       log.error(`Khởi động thất bại: ${message}`)

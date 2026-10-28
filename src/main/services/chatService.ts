@@ -18,6 +18,8 @@ export type ChatServiceDeps = {
   workspaceDir: string
   emit(payload: ChatStreamPayload): void
   log: { info(msg: string): void; error(msg: string): void }
+  /** Lượt chạy kết thúc (xong/lỗi/dừng) — vd hủy các yêu cầu duyệt sửa file còn treo. */
+  onRunEnd?(conversationId: string): void
 }
 
 const TITLE_MAX = 60
@@ -52,6 +54,47 @@ export function promptWithHistory(history: Message[], text: string): string {
 }
 
 const isLostSession = (message: string): boolean => /no conversation found/i.test(message)
+
+export const READ_TOOLS = ['Read', 'Grep', 'Glob']
+export const WRITE_TOOLS = ['Edit', 'Write']
+
+export type RunOptions = {
+  cwd: string
+  tools?: string[]
+  allowedTools?: string[]
+  approval?: { conversationId: string }
+  context?: string
+}
+
+/**
+ * Chế độ Code có thư mục dự án: chỉ đọc → Read/Grep/Glob tự duyệt;
+ * bật sửa file → thêm Edit/Write nhưng MỖI lần sửa phải người dùng duyệt (không tự duyệt).
+ * Không bao giờ cho Bash/lệnh shell. Chế độ khác: workspace riêng của app, không tool.
+ */
+export function runOptions(input: {
+  mode: ChatMode
+  cwd: string | null
+  codeWrite: boolean
+  conversationId: string
+  workspaceDir: string
+}): RunOptions {
+  if (input.mode !== 'code' || !input.cwd) return { cwd: input.workspaceDir }
+  if (!input.codeWrite) {
+    return {
+      cwd: input.cwd,
+      tools: READ_TOOLS,
+      allowedTools: READ_TOOLS,
+      context: `Thư mục dự án: ${input.cwd}\nQuyền: CHỈ ĐỌC. Không sửa file; nếu cần thay đổi, đưa đề xuất dưới dạng diff để người dùng tự áp dụng.`
+    }
+  }
+  return {
+    cwd: input.cwd,
+    tools: [...READ_TOOLS, ...WRITE_TOOLS],
+    allowedTools: READ_TOOLS,
+    approval: { conversationId: input.conversationId },
+    context: `Thư mục dự án: ${input.cwd}\nQuyền: ĐƯỢC SỬA FILE trong thư mục này bằng Edit/Write; mỗi thay đổi người dùng sẽ xem diff và duyệt, có thể bị từ chối — khi bị từ chối thì dừng và hỏi lại. Không có lệnh shell.`
+  }
+}
 
 /** Tin nhắn cũ → lịch sử cho provider; file đính kèm cũ chỉ còn tên. */
 export function toHistory(messages: Message[]): HistoryMessage[] {
@@ -106,8 +149,18 @@ export class ChatService {
       text,
       history,
       attachments,
+      options: runOptions({
+        mode: conversation.mode,
+        cwd: conversation.cwd,
+        codeWrite: conversation.codeWrite,
+        conversationId,
+        workspaceDir: this.deps.workspaceDir
+      }),
       signal: controller.signal
-    }).finally(() => this.active.delete(requestId))
+    }).finally(() => {
+      this.active.delete(requestId)
+      this.deps.onRunEnd?.(conversationId)
+    })
 
     return { requestId, userMessage, assistantMessage }
   }
@@ -129,6 +182,7 @@ export class ChatService {
     text: string
     history: Message[]
     attachments: StoredAttachment[]
+    options: RunOptions
     signal: AbortSignal
   }): Promise<void> {
     const { deps } = this
@@ -151,7 +205,8 @@ export class ChatService {
       mode: args.mode,
       modeSkill: await deps.loadModeSkill(args.mode),
       user: memory.user,
-      memories: memory.memories
+      memories: memory.memories,
+      extraContext: args.options.context
     })
     // Provider có session (CLI) tự nhớ hội thoại; provider không session (API) cần lịch sử.
     const history = provider.stateful ? undefined : toHistory(args.history)
@@ -167,7 +222,10 @@ export class ChatService {
           sessionId,
           history,
           attachments: args.attachments,
-          cwd: deps.workspaceDir
+          cwd: args.options.cwd,
+          tools: args.options.tools,
+          allowedTools: args.options.allowedTools,
+          approval: args.options.approval
         },
         signal
       )

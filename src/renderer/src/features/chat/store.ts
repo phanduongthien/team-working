@@ -30,6 +30,9 @@ type ChatState = {
   rename(id: string, title: string): Promise<void>
   togglePin(id: string): Promise<void>
   setMode(id: string, mode: ChatMode): Promise<void>
+  /** Chế độ Code: chọn thư mục dự án (tạo hội thoại mới nếu chưa có). */
+  chooseFolder(): Promise<void>
+  setCodeWrite(id: string, enabled: boolean): Promise<void>
   remove(id: string): Promise<void>
   send(text: string, mode: ChatMode, attachmentIds?: string[]): Promise<boolean>
   stop(): Promise<void>
@@ -89,6 +92,22 @@ export const useChat = create<ChatState>((set, get) => {
 
     async setMode(id, mode) {
       replaceConversation(await api.conversations.update({ id, mode }))
+    },
+
+    async chooseFolder() {
+      let id = get().activeId
+      if (!id) id = (await get().create('code')).id
+      else if (get().conversations.find((c) => c.id === id)?.mode !== 'code') await get().setMode(id, 'code')
+      const updated = await api.code.chooseFolder(id)
+      if (updated) replaceConversation(updated)
+    },
+
+    async setCodeWrite(id, enabled) {
+      try {
+        replaceConversation(await api.code.setWrite(id, enabled))
+      } catch (err) {
+        set({ error: errorCode(err) })
+      }
     },
 
     async remove(id) {

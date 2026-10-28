@@ -240,6 +240,127 @@ export const desktopNotificationSchema = z.object({
 
 export type DesktopNotification = z.infer<typeof desktopNotificationSchema>
 
+// ---- Học tập & kế hoạch (yêu cầu gửi trợ lý) ----
+
+const lang = z.enum(['vi', 'en']).default('vi')
+
+export const learningPathRequestSchema = z.object({
+  goal: z.string().trim().min(1).max(1000),
+  level: z.string().max(300).default(''),
+  hoursPerWeek: z.number().min(1).max(80),
+  deadline: isoDate.nullable().default(null),
+  today: isoDate,
+  language: lang
+})
+
+export const quizRequestSchema = z.object({
+  topic: z.string().trim().min(1).max(300),
+  context: z.string().max(6000).default(''),
+  count: z.number().int().min(3).max(15).default(6),
+  language: lang
+})
+
+export const quizQuestionSchema = z.object({
+  q: z.string().min(1).max(2000),
+  /** Rỗng = câu tự luận ngắn. */
+  choices: z.array(z.string().max(500)).max(8),
+  answer: z.string().max(2000),
+  explain: z.string().max(3000)
+})
+
+export const quizGradeRequestSchema = z.object({
+  topic: z.string().max(300),
+  language: lang,
+  items: z
+    .array(
+      quizQuestionSchema.extend({
+        userAnswer: z.string().max(3000),
+        /** Trắc nghiệm đã chấm ở máy; null = câu tự luận cần trợ lý chấm. */
+        localCorrect: z.boolean().nullable()
+      })
+    )
+    .min(1)
+    .max(15)
+})
+
+export const dayPlanRequestSchema = z.object({
+  today: isoDate,
+  now: z.string().regex(/^\d{2}:\d{2}$/),
+  workday: z.object({ start: z.string().regex(/^\d{2}:\d{2}$/), end: z.string().regex(/^\d{2}:\d{2}$/) }),
+  loggedMinutesToday: z.number().min(0).max(1440),
+  language: lang,
+  tasks: z
+    .array(
+      z.object({
+        id: z.string().max(64),
+        title: z.string().max(200),
+        project: z.string().max(120).default(''),
+        priority: z.enum(TASK_PRIORITIES),
+        status: z.enum(TASK_STATUSES),
+        dueDate: isoDate.nullable(),
+        estimateHours: z.number().nullable()
+      })
+    )
+    .max(60)
+})
+
+export const reportRequestSchema = z.object({
+  periodType: z.enum(['day', 'week']),
+  periodLabel: z.string().max(60),
+  language: lang,
+  done: z.array(z.string().max(200)).max(100),
+  inProgress: z.array(z.string().max(200)).max(100),
+  blocked: z.array(z.string().max(200)).max(100),
+  timeByTask: z.array(z.object({ title: z.string().max(200), minutes: z.number().min(0) })).max(100),
+  notes: z.string().max(3000).default('')
+})
+
+export type LearningPathRequest = z.infer<typeof learningPathRequestSchema>
+export type QuizRequest = z.infer<typeof quizRequestSchema>
+export type QuizQuestion = z.infer<typeof quizQuestionSchema>
+export type QuizGradeRequest = z.infer<typeof quizGradeRequestSchema>
+export type DayPlanRequest = z.infer<typeof dayPlanRequestSchema>
+export type ReportRequest = z.infer<typeof reportRequestSchema>
+
+export type PlannedStep = { title: string; description: string; resources: string[]; estimatedHours: number | null; dueDate: string | null }
+export type QuizGrade = { results: { index: number; correct: boolean; feedback: string }[]; weakPoints: string[] }
+export type DayBlock = { start: string; end: string; taskId: string | null; note: string }
+
+export type AiResult<T> = T | { error: string }
+
+// ---- Thời gian ----
+
+export const TIME_ENTRY_KINDS = ['timer', 'pomodoro', 'manual'] as const
+export type TimeEntryKind = (typeof TIME_ENTRY_KINDS)[number]
+
+const taskRef = {
+  taskId: idSchema.nullable().default(null),
+  projectId: idSchema.nullable().default(null),
+  title: z.string().trim().min(1).max(200),
+  projectName: z.string().max(120).nullable().default(null)
+}
+
+export const timeStartSchema = z.object({ ...taskRef, kind: z.enum(['timer', 'pomodoro']).default('timer') })
+
+export const timeManualSchema = z
+  .object({ ...taskRef, startedAt: z.number().int().positive(), endedAt: z.number().int().positive(), note: z.string().max(500).default('') })
+  .refine((v) => v.endedAt > v.startedAt && v.endedAt - v.startedAt <= 24 * 3600_000, 'invalid_range')
+
+export const timeUpdateSchema = z
+  .object({ id: idSchema, title: z.string().trim().min(1).max(200), note: z.string().max(500), startedAt: z.number().int().positive(), endedAt: z.number().int().positive() })
+  .refine((v) => v.endedAt > v.startedAt && v.endedAt - v.startedAt <= 24 * 3600_000, 'invalid_range')
+
+export const timeRangeSchema = z.object({ from: z.number().int(), to: z.number().int() }).refine((v) => v.to > v.from, 'invalid_range')
+
+export const workdaySchema = z.object({
+  start: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/),
+  end: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/),
+  focusMinutes: z.number().int().min(5).max(120),
+  breakMinutes: z.number().int().min(1).max(60)
+})
+export type Workday = z.infer<typeof workdaySchema>
+export const DEFAULT_WORKDAY: Workday = { start: '09:00', end: '17:30', focusMinutes: 25, breakMinutes: 5 }
+
 // ---- Cấu hình AI ----
 
 export const AI_PROVIDERS = ['claude-cli', 'anthropic-api'] as const

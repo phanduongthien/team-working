@@ -1,6 +1,19 @@
 import type { ChatEvent, ChatMode, ChatUsage, CliStatus } from './ai'
+import type { CsvHeaders, TimeEntry } from './timesheet'
 import type {
+  AiResult,
   AiSettings,
+  DayBlock,
+  DayPlanRequest,
+  LearningPathRequest,
+  PlannedStep,
+  QuizGrade,
+  QuizGradeRequest,
+  QuizQuestion,
+  QuizRequest,
+  ReportRequest,
+  TimeEntryKind,
+  Workday,
   Appearance,
   AssistantProfile,
   DesktopNotification,
@@ -20,6 +33,10 @@ export type Conversation = {
   title: string
   mode: ChatMode
   pinned: boolean
+  /** Chế độ Code: thư mục dự án đã chọn. */
+  cwd: string | null
+  /** Chế độ Code: người dùng đã bật cho phép sửa file (mỗi lần sửa vẫn phải duyệt). */
+  codeWrite: boolean
   createdAt: number
   updatedAt: number
 }
@@ -99,6 +116,14 @@ export type MemorySuggestion = {
 
 export type ExtractResult = { added: number } | { error: string }
 
+/** Yêu cầu sửa file ở chế độ Code đang chờ người dùng duyệt. */
+export type CodeApprovalRequest = {
+  id: string
+  conversationId: string
+  toolName: string
+  change: { path: string; isNewFile: boolean; patch: string; added: number; removed: number }
+}
+
 /** Sự kiện main → renderer khi danh sách đề xuất memory thay đổi. */
 export type MemoryEventPayload =
   | { type: 'suggestions'; pending: number }
@@ -172,4 +197,39 @@ export interface TeamWorkingApi {
     coach(request: FeedbackCoachRequest): Promise<TextResult>
     summarize(request: FeedbackSummaryRequest): Promise<TextResult>
   }
+  code: {
+    /** Mở hộp thoại chọn thư mục dự án cho hội thoại (đổi thư mục → tắt quyền sửa). */
+    chooseFolder(conversationId: string): Promise<Conversation | null>
+    setWrite(conversationId: string, enabled: boolean): Promise<Conversation>
+    respond(id: string, allow: boolean): Promise<void>
+    onApproval(listener: (request: CodeApprovalRequest) => void): () => void
+  }
+  time: {
+    current(): Promise<TimeEntry | null>
+    start(input: TimeStartInput): Promise<TimeEntry>
+    stop(): Promise<TimeEntry | null>
+    list(from: number, to: number): Promise<TimeEntry[]>
+    addManual(input: TimeManualInput): Promise<TimeEntry>
+    update(input: TimeUpdateInput): Promise<TimeEntry>
+    remove(id: string): Promise<void>
+    exportCsv(input: { from: number; to: number; headers: CsvHeaders; kinds: Record<TimeEntryKind, string> }): Promise<string | null>
+    onChanged(listener: () => void): () => void
+    getWorkday(): Promise<Workday>
+    setWorkday(workday: Workday): Promise<Workday>
+  }
+  learning: {
+    planPath(request: LearningPathRequest): Promise<AiResult<{ steps: PlannedStep[] }>>
+    makeQuiz(request: QuizRequest): Promise<AiResult<{ questions: QuizQuestion[] }>>
+    grade(request: QuizGradeRequest): Promise<AiResult<QuizGrade>>
+    /** Đề xuất memory (vào hàng chờ duyệt, không tự lưu). */
+    suggestMemory(content: string, category: MemoryCategory): Promise<void>
+  }
+  dayPlanner: {
+    plan(request: DayPlanRequest): Promise<AiResult<{ blocks: DayBlock[] }>>
+    report(request: ReportRequest): Promise<TextResult>
+  }
 }
+
+export type TimeStartInput = { taskId?: string | null; projectId?: string | null; title: string; projectName?: string | null; kind?: 'timer' | 'pomodoro' }
+export type TimeManualInput = { taskId?: string | null; projectId?: string | null; title: string; projectName?: string | null; startedAt: number; endedAt: number; note?: string }
+export type TimeUpdateInput = { id: string; title: string; note: string; startedAt: number; endedAt: number }

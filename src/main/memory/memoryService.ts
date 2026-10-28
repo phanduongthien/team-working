@@ -142,6 +142,14 @@ export class MemoryService {
     this.emitCount()
   }
 
+  /** Đề xuất một memory (vd "cần ôn: …" sau quiz) vào hàng chờ duyệt — không tự lưu. */
+  suggest(content: string, category: MemoryCategory): void {
+    const exists = this.deps.memories.list().some((m) => m.content.trim().toLowerCase() === content.trim().toLowerCase())
+    if (exists) return
+    this.deps.suggestions.insertMany([{ conversationId: null, action: 'add', targetMemoryId: null, content, category }])
+    this.emitCount()
+  }
+
   exportData(): { app: string; exportedAt: string; profile: UserProfile; memories: Memory[] } {
     return {
       app: 'Team Working',

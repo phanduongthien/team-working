@@ -25,6 +25,8 @@ const toConversation = (r: ConversationRow): Conversation => ({
   title: r.title,
   mode: r.mode,
   pinned: r.pinned,
+  cwd: r.cwd,
+  codeWrite: r.codeWrite,
   createdAt: r.createdAt,
   updatedAt: r.updatedAt
 })
@@ -85,13 +87,20 @@ export class ConversationRepository {
       .map(toConversation)
   }
 
-  get(
-    id: string
-  ): (Conversation & { cliSessionId: string | null; cwd: string | null; memoryExtractedAt: number | null }) | null {
+  get(id: string): (Conversation & { cliSessionId: string | null; memoryExtractedAt: number | null }) | null {
     const row = this.db.select().from(conversations).where(eq(conversations.id, id)).get()
-    return row
-      ? { ...toConversation(row), cliSessionId: row.cliSessionId, cwd: row.cwd, memoryExtractedAt: row.memoryExtractedAt }
-      : null
+    return row ? { ...toConversation(row), cliSessionId: row.cliSessionId, memoryExtractedAt: row.memoryExtractedAt } : null
+  }
+
+  /** Chọn thư mục dự án mới → tắt quyền sửa (phải bật lại cho thư mục mới). */
+  setCwd(id: string, cwd: string): Conversation | null {
+    const row = this.db.update(conversations).set({ cwd, codeWrite: false }).where(eq(conversations.id, id)).returning().get()
+    return row ? toConversation(row) : null
+  }
+
+  setCodeWrite(id: string, enabled: boolean): Conversation | null {
+    const row = this.db.update(conversations).set({ codeWrite: enabled }).where(eq(conversations.id, id)).returning().get()
+    return row ? toConversation(row) : null
   }
 
   setMemoryExtractedAt(id: string, at: number): void {

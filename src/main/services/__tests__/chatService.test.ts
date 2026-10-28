@@ -6,7 +6,7 @@ import type { ChatStreamPayload } from '@shared/types'
 import type { AIProvider, ChatRequest } from '../../ai/AIProvider'
 import { openDatabase } from '../../db/client'
 import { ConversationRepository, MessageRepository } from '../../db/repositories'
-import { ChatBusyError, ChatService, promptWithHistory, titleFromText, toHistory } from '../chatService'
+import { ChatBusyError, ChatService, promptWithHistory, runOptions, titleFromText, toHistory } from '../chatService'
 
 type Script = (req: ChatRequest, signal: AbortSignal) => AsyncIterable<ChatEvent>
 
@@ -216,6 +216,30 @@ describe('ChatService', () => {
     service.abort(requestId)
     await waitForStatus(conv.id, 'aborted')
     expect(msgs.list(conv.id).at(-1)?.content).toBe('đang viết')
+  })
+})
+
+describe('runOptions (chế độ Code)', () => {
+  const base = { conversationId: 'c1', workspaceDir: 'C:\\ws' }
+
+  it('không phải Code hoặc chưa chọn thư mục → workspace riêng, không tool', () => {
+    expect(runOptions({ ...base, mode: 'free', cwd: 'D:\\proj', codeWrite: true })).toEqual({ cwd: 'C:\\ws' })
+    expect(runOptions({ ...base, mode: 'code', cwd: null, codeWrite: true })).toEqual({ cwd: 'C:\\ws' })
+  })
+
+  it('chỉ đọc: Read/Grep/Glob tự duyệt, không Edit/Write, không duyệt quyền', () => {
+    const o = runOptions({ ...base, mode: 'code', cwd: 'D:\\proj', codeWrite: false })
+    expect(o).toMatchObject({ cwd: 'D:\\proj', tools: ['Read', 'Grep', 'Glob'], allowedTools: ['Read', 'Grep', 'Glob'] })
+    expect(o.approval).toBeUndefined()
+    expect(o.context).toContain('CHỈ ĐỌC')
+  })
+
+  it('được sửa: Edit/Write có nhưng KHÔNG tự duyệt; bật duyệt từng thay đổi; không bao giờ có Bash', () => {
+    const o = runOptions({ ...base, mode: 'code', cwd: 'D:\\proj', codeWrite: true })
+    expect(o.tools).toEqual(['Read', 'Grep', 'Glob', 'Edit', 'Write'])
+    expect(o.allowedTools).toEqual(['Read', 'Grep', 'Glob'])
+    expect(o.approval).toEqual({ conversationId: 'c1' })
+    expect(JSON.stringify(o)).not.toMatch(/Bash|PowerShell/)
   })
 })
 

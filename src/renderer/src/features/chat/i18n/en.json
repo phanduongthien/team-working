@@ -43,6 +43,25 @@
       "not_found": "file could not be read"
     }
   },
+  "code": {
+    "chooseFolder": "Choose project folder",
+    "changeFolder": "Change folder",
+    "noFolder": "No folder chosen — the assistant can only chat and cannot read your code.",
+    "readOnly": "Read only",
+    "writeOn": "Can edit files (each change approved)",
+    "enableTitle": "Allow the assistant to edit files?",
+    "enableBody": "The assistant will be able to propose edits/new files in {{folder}}.",
+    "rule1": "For every change the app shows a diff — files change only when you click Accept.",
+    "rule2": "Only inside this folder; files outside are always rejected.",
+    "rule3": "The assistant cannot run commands (terminal). Using git makes undo easy.",
+    "enable": "Allow",
+    "approveEdit": "The assistant wants to edit a file",
+    "approveCreate": "The assistant wants to create a file",
+    "approveHint": "Chat: {{title}}. Review the change before accepting.",
+    "accept": "Accept change",
+    "reject": "Reject",
+    "more": "{{count}} more requests"
+  },
   "suggest": {
     "button": "Suggest memories",
     "hint": "Ask the assistant what is worth remembering from this chat — you review before anything is saved",
@@ -63,6 +82,8 @@
     "network_error": "Could not reach Anthropic. Check your connection.",
     "refusal": "The assistant declined this request.",
     "invalid_output": "The assistant returned an unexpected format, please retry.",
-    "already_running": "Already fetching suggestions, hang on."
+    "already_running": "Already fetching suggestions, hang on.",
+    "approval_unavailable": "Could not start file-change approval. Turn off editing or restart the app.",
+    "no_project_folder": "Choose a project folder first."
   }
 }
