@@ -2,7 +2,15 @@ import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { DEFAULT_ASSISTANT, assistantProfileSchema } from '@shared/schemas'
 import { openDatabase } from '../client'
-import { ConversationRepository, MessageRepository, SettingsRepository } from '../repositories'
+import { ConversationRepository, MessageRepository, SettingsRepository, ftsQuery } from '../repositories'
+
+describe('ftsQuery', () => {
+  it('bọc từng từ thành cụm tiền tố, bỏ toán tử và ký tự cú pháp', () => {
+    expect(ftsQuery('học  react')).toBe('"học"* "react"*')
+    expect(ftsQuery('a OR b "c"')).toBe('"a"* "b"* "c"*')
+    expect(ftsQuery('"*()')).toBe('')
+  })
+})
 
 const migrations = join(__dirname, '..', 'migrations')
 
@@ -39,9 +47,32 @@ describe('repositories (SQLite in-memory)', () => {
 
     expect(convs.list('react').map((c) => c.id)).toEqual([a.id])
     expect(convs.list('50%').map((c) => c.id)).toEqual([b.id])
-    // '%' và '_' được hiểu theo nghĩa đen, không phải wildcard
+    // Trong tiêu đề, '%' và '_' được hiểu theo nghĩa đen, không phải wildcard
+    convs.update({ id: b.id, title: 'Giảm 50%' })
     expect(convs.list('%').map((c) => c.id)).toEqual([b.id])
     expect(convs.list('_')).toHaveLength(0)
+  })
+
+  it('tìm toàn văn trong tin nhắn không phân biệt dấu, khớp tiền tố, cập nhật theo nội dung mới', () => {
+    const a = convs.create('free')
+    const m = msgs.insert({ conversationId: a.id, role: 'assistant', content: 'Lộ trình học lập trình' })
+    expect(convs.list('hoc lap').map((c) => c.id)).toEqual([a.id])
+    expect(convs.list('trin').map((c) => c.id)).toEqual([a.id])
+    expect(convs.list('python')).toEqual([])
+
+    msgs.update(m.id, { content: 'Giờ là Python' })
+    expect(convs.list('python').map((c) => c.id)).toEqual([a.id])
+    expect(convs.list('lộ trình')).toEqual([])
+
+    convs.remove(a.id)
+    expect(convs.list('python')).toEqual([])
+  })
+
+  it('truy vấn có ký tự cú pháp FTS không gây lỗi', () => {
+    const a = convs.create('free')
+    msgs.insert({ conversationId: a.id, role: 'user', content: 'C++ "khó" lắm' })
+    for (const q of ['"', 'c++ AND', '(khó*', 'NOT', ':^']) expect(() => convs.list(q)).not.toThrow()
+    expect(convs.list('"khó"').map((c) => c.id)).toEqual([a.id])
   })
 
   it('xóa hội thoại xóa luôn tin nhắn (cascade)', () => {

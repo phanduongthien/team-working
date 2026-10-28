@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest'
-import { buildCliArgs, buildCmdLine, parseAuthStatus, parseVersion, pickClaudeExecutable } from '../claudeCli'
+import {
+  buildCliArgs,
+  buildCmdLine,
+  parseAuthStatus,
+  parseVersion,
+  pickClaudeExecutable,
+  promptWithAttachments
+} from '../claudeCli'
 
 describe('pickClaudeExecutable', () => {
   it('ưu tiên .exe hơn shim .cmd', () => {
@@ -58,6 +65,17 @@ describe('buildCliArgs', () => {
   it('thêm --resume khi có session', () => {
     const args = buildCliArgs({ ...base, mode: 'study', sessionId: '5be8004f-e797-452d-89fb-45a17e2d25a1' })
     expect(args.slice(-2)).toEqual(['--resume', '5be8004f-e797-452d-89fb-45a17e2d25a1'])
+  })
+
+  it('lượt gọi một lần không lưu session', () => {
+    expect(buildCliArgs({ ...base, mode: 'free', ephemeral: true }).at(-1)).toBe('--no-session-persistence')
+  })
+
+  it('liệt kê file đính kèm trong prompt (đi qua stdin)', () => {
+    expect(promptWithAttachments('Tóm tắt', [])).toBe('Tóm tắt')
+    const p = promptWithAttachments('Tóm tắt', ['C:\\ws\\a.pdf', 'C:\\ws\\b.png'])
+    expect(p).toContain('đính kèm 2 file')
+    expect(p.endsWith('- C:\\ws\\a.pdf\n- C:\\ws\\b.png')).toBe(true)
   })
 
   it('không bao giờ dùng --dangerously-skip-permissions hay --bare', () => {

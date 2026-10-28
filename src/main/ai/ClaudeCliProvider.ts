@@ -6,7 +6,14 @@ import { join } from 'node:path'
 import { createInterface } from 'node:readline'
 import type { ChatEvent } from '@shared/ai'
 import type { AIProvider, ChatRequest } from './AIProvider'
-import { buildCliArgs, buildCmdLine, checkClaudeCli, findClaudeExecutable, isCmdShim } from './claudeCli'
+import {
+  buildCliArgs,
+  buildCmdLine,
+  checkClaudeCli,
+  findClaudeExecutable,
+  isCmdShim,
+  promptWithAttachments
+} from './claudeCli'
 import { StreamJsonParser } from './streamJsonParser'
 import { AsyncQueue } from './asyncQueue'
 
@@ -27,6 +34,7 @@ function killTree(child: ChildProcessWithoutNullStreams): void {
 
 export class ClaudeCliProvider implements AIProvider {
   readonly id = 'claude-cli'
+  readonly stateful = true
   private executable: string | null = null
 
   constructor(private readonly log: Logger) {}
@@ -50,12 +58,16 @@ export class ClaudeCliProvider implements AIProvider {
     const systemPromptFile = join(dir, `system-${randomUUID()}.md`)
     await writeFile(systemPromptFile, req.systemPrompt, 'utf8')
 
+    const attachmentPaths = (req.attachments ?? []).map((a) => a.path)
+    const tools = [...new Set([...(req.tools ?? []), ...(attachmentPaths.length ? ['Read'] : [])])]
     const args = buildCliArgs({
       mode: req.mode,
       systemPromptFile,
       sessionId: req.sessionId,
-      tools: req.tools ?? []
+      tools,
+      ephemeral: req.ephemeral
     })
+    const prompt = promptWithAttachments(req.prompt, attachmentPaths)
 
     const queue = new AsyncQueue<ChatEvent>()
     let child: ChildProcessWithoutNullStreams
@@ -92,7 +104,7 @@ export class ClaudeCliProvider implements AIProvider {
     })
 
     child.stdin.on('error', () => {})
-    child.stdin.end(req.prompt, 'utf8')
+    child.stdin.end(prompt, 'utf8')
 
     try {
       for await (const event of queue) {

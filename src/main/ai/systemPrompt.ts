@@ -5,6 +5,8 @@ export type UserProfileContext = {
   name?: string
   role?: string
   goals?: string
+  skills?: string
+  interests?: string
   answerStyle?: string
 }
 
@@ -68,6 +70,8 @@ export function buildSystemPrompt(input: SystemPromptInput): string {
   if (u?.name) userLines.push(`- Tên: ${u.name}`)
   if (u?.role) userLines.push(`- Vai trò: ${u.role}`)
   if (u?.goals) userLines.push(`- Mục tiêu: ${u.goals}`)
+  if (u?.skills) userLines.push(`- Kỹ năng: ${u.skills}`)
+  if (u?.interests) userLines.push(`- Sở thích: ${u.interests}`)
   if (u?.answerStyle) userLines.push(`- Muốn được trả lời: ${u.answerStyle}`)
   const userSection = userLines.length ? `## Người dùng\n${userLines.join('\n')}` : ''
 

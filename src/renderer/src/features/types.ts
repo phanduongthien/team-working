@@ -21,4 +21,6 @@ export type FeatureDefinition = {
   nav: 'top' | 'bottom' | false
   /** Chạy một lần khi app khởi động (đăng ký listener…); trả về hàm dọn dẹp. */
   setup?: () => () => void
+  /** Hook trả về số hiển thị trên biểu tượng menu (0 = ẩn). */
+  useBadge?: () => number
 }

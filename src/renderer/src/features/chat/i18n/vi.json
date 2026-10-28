@@ -32,9 +32,37 @@
     "code": "Code",
     "project": "Quản lý dự án"
   },
+  "attach": {
+    "button": "Đính kèm file (ảnh, PDF, file chữ/code — tối đa 10 MB)",
+    "remove": "Bỏ {{name}}",
+    "rejected": "Không đính kèm được {{name}}: {{reason}}",
+    "tooMany": "Tối đa {{max}} file mỗi tin nhắn.",
+    "reasons": {
+      "unsupported_type": "loại file chưa hỗ trợ",
+      "too_large": "file lớn hơn 10 MB",
+      "not_found": "không đọc được file"
+    }
+  },
+  "suggest": {
+    "button": "Gợi ý ghi nhớ",
+    "hint": "Nhờ trợ lý đề xuất điều nên ghi nhớ từ cuộc trò chuyện này — bạn duyệt trước khi lưu",
+    "found_one": "Có {{count}} đề xuất — xem để duyệt",
+    "found_other": "Có {{count}} đề xuất — xem để duyệt",
+    "none": "Không có gì mới để ghi nhớ",
+    "failed": "Không lấy được đề xuất: {{message}}"
+  },
   "errors": {
     "conversation_busy": "Cuộc trò chuyện này đang chờ phản hồi.",
     "conversation_not_found": "Cuộc trò chuyện không còn tồn tại.",
-    "not_installed": "Chưa cài Claude Code CLI."
+    "not_installed": "Chưa cài Claude Code CLI.",
+    "attachment_not_found": "File đính kèm đã hết hạn, hãy chọn lại.",
+    "missing_api_key": "Chưa nhập Anthropic API key (Cài đặt → Kết nối AI).",
+    "invalid_api_key": "API key không hợp lệ hoặc đã bị thu hồi.",
+    "api_permission_denied": "API key không có quyền dùng model này.",
+    "rate_limit": "Đã chạm giới hạn sử dụng, hãy thử lại sau ít phút.",
+    "network_error": "Không kết nối được tới Anthropic. Kiểm tra mạng.",
+    "refusal": "Trợ lý từ chối yêu cầu này.",
+    "invalid_output": "Trợ lý trả về sai định dạng, hãy thử lại.",
+    "already_running": "Đang lấy đề xuất, chờ chút nhé."
   }
 }

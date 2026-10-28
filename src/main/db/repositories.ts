@@ -1,10 +1,21 @@
 import { randomUUID } from 'node:crypto'
-import { and, asc, desc, eq, exists, or, sql } from 'drizzle-orm'
+import { and, asc, desc, eq, gt, inArray, or, sql } from 'drizzle-orm'
 import type { z } from 'zod'
 import type { ChatMode, ChatUsage } from '@shared/ai'
-import type { Conversation, ConversationUpdate, Message, MessageRole, MessageStatus, ToolEvent } from '@shared/types'
+import type { MemoryAction, MemoryCategory } from '@shared/schemas'
+import type {
+  Conversation,
+  ConversationUpdate,
+  Memory,
+  MemorySuggestion,
+  Message,
+  MessageRole,
+  MessageStatus,
+  StoredAttachment,
+  ToolEvent
+} from '@shared/types'
 import type { AppDatabase } from './client'
-import { conversations, messages, settings } from './schema'
+import { conversations, memories, memorySuggestions, messages, settings } from './schema'
 
 type ConversationRow = typeof conversations.$inferSelect
 type MessageRow = typeof messages.$inferSelect
@@ -18,6 +29,7 @@ const toConversation = (r: ConversationRow): Conversation => ({
   updatedAt: r.updatedAt
 })
 
+/** Renderer không cần (và không được thấy) đường dẫn file trên máy. */
 const toMessage = (r: MessageRow): Message => ({
   id: r.id,
   conversationId: r.conversationId,
@@ -26,6 +38,7 @@ const toMessage = (r: MessageRow): Message => ({
   status: r.status,
   error: r.error,
   toolEvents: r.toolEvents,
+  attachments: r.attachments.map(({ id, name, mimeType, size }) => ({ id, name, mimeType, size })),
   usage: r.usage ?? null,
   createdAt: r.createdAt
 })
@@ -35,27 +48,34 @@ function likePattern(query: string): string {
   return `%${query.replace(/[\\%_]/g, (c) => `\\${c}`)}%`
 }
 
+/**
+ * Chuỗi người dùng nhập → truy vấn FTS5 an toàn: mỗi từ thành cụm "từ"* (khớp tiền tố),
+ * các từ nối bằng AND. Bỏ ký tự cú pháp FTS để không lỗi/không bị chèn toán tử.
+ */
+export function ftsQuery(input: string): string {
+  return input
+    .replace(/["*^:(){}[\]]/g, ' ')
+    .split(/\s+/)
+    .filter((t) => t && !/^(AND|OR|NOT|NEAR)$/.test(t))
+    .map((t) => `"${t}"*`)
+    .join(' ')
+}
+
 export class ConversationRepository {
   constructor(private readonly db: AppDatabase) {}
 
   list(query?: string): Conversation[] {
     const q = query?.trim()
-    const where = q
-      ? or(
-          sql`${conversations.title} LIKE ${likePattern(q)} ESCAPE '\\'`,
-          exists(
-            this.db
-              .select({ one: sql`1` })
-              .from(messages)
-              .where(
-                and(
-                  eq(messages.conversationId, conversations.id),
-                  sql`${messages.content} LIKE ${likePattern(q)} ESCAPE '\\'`
-                )
-              )
+    const match = q ? ftsQuery(q) : ''
+    const titleLike = sql`${conversations.title} LIKE ${likePattern(q ?? '')} ESCAPE '\\'`
+    const where = !q
+      ? undefined
+      : match
+        ? or(
+            titleLike,
+            sql`${conversations.id} IN (SELECT conversation_id FROM messages_fts WHERE messages_fts MATCH ${match})`
           )
-        )
-      : undefined
+        : titleLike
     return this.db
       .select()
       .from(conversations)
@@ -65,9 +85,17 @@ export class ConversationRepository {
       .map(toConversation)
   }
 
-  get(id: string): (Conversation & { cliSessionId: string | null; cwd: string | null }) | null {
+  get(
+    id: string
+  ): (Conversation & { cliSessionId: string | null; cwd: string | null; memoryExtractedAt: number | null }) | null {
     const row = this.db.select().from(conversations).where(eq(conversations.id, id)).get()
-    return row ? { ...toConversation(row), cliSessionId: row.cliSessionId, cwd: row.cwd } : null
+    return row
+      ? { ...toConversation(row), cliSessionId: row.cliSessionId, cwd: row.cwd, memoryExtractedAt: row.memoryExtractedAt }
+      : null
+  }
+
+  setMemoryExtractedAt(id: string, at: number): void {
+    this.db.update(conversations).set({ memoryExtractedAt: at }).where(eq(conversations.id, id)).run()
   }
 
   create(mode: ChatMode): Conversation {
@@ -113,6 +141,7 @@ export type NewMessage = {
   role: MessageRole
   content: string
   status?: MessageStatus
+  attachments?: StoredAttachment[]
 }
 
 export type MessagePatch = {
@@ -149,6 +178,19 @@ export class MessageRepository {
       .reverse()
   }
 
+  /** Tin nhắn tạo sau mốc thời gian (null = tất cả), theo thứ tự thời gian. */
+  since(conversationId: string, after: number | null): Message[] {
+    return this.db
+      .select()
+      .from(messages)
+      .where(
+        and(eq(messages.conversationId, conversationId), after === null ? undefined : gt(messages.createdAt, after))
+      )
+      .orderBy(asc(messages.createdAt), asc(sql`rowid`))
+      .all()
+      .map(toMessage)
+  }
+
   insert(input: NewMessage): Message {
     const row = this.db
       .insert(messages)
@@ -158,6 +200,7 @@ export class MessageRepository {
         role: input.role,
         content: input.content,
         status: input.status ?? 'done',
+        attachments: input.attachments ?? [],
         createdAt: Date.now()
       })
       .returning()
@@ -177,6 +220,116 @@ export class MessageRepository {
       .set({ status: 'aborted' })
       .where(eq(messages.status, 'streaming'))
       .run().changes
+  }
+}
+
+type MemoryRow = typeof memories.$inferSelect
+
+const toMemory = (r: MemoryRow): Memory => ({
+  id: r.id,
+  content: r.content,
+  category: r.category,
+  sourceConversationId: r.sourceConversationId,
+  createdAt: r.createdAt,
+  updatedAt: r.updatedAt,
+  lastUsedAt: r.lastUsedAt
+})
+
+export class MemoryRepository {
+  constructor(private readonly db: AppDatabase) {}
+
+  list(query?: string): Memory[] {
+    const q = query?.trim()
+    return this.db
+      .select()
+      .from(memories)
+      .where(q ? sql`${memories.content} LIKE ${likePattern(q)} ESCAPE '\\'` : undefined)
+      .orderBy(desc(memories.updatedAt))
+      .all()
+      .map(toMemory)
+  }
+
+  get(id: string): Memory | null {
+    const row = this.db.select().from(memories).where(eq(memories.id, id)).get()
+    return row ? toMemory(row) : null
+  }
+
+  create(content: string, category: MemoryCategory, sourceConversationId: string | null = null): Memory {
+    const ts = Date.now()
+    return toMemory(
+      this.db
+        .insert(memories)
+        .values({ id: randomUUID(), content, category, sourceConversationId, createdAt: ts, updatedAt: ts })
+        .returning()
+        .get()
+    )
+  }
+
+  update(id: string, content: string, category: MemoryCategory): Memory | null {
+    const row = this.db
+      .update(memories)
+      .set({ content, category, updatedAt: Date.now() })
+      .where(eq(memories.id, id))
+      .returning()
+      .get()
+    return row ? toMemory(row) : null
+  }
+
+  remove(id: string): void {
+    this.db.delete(memories).where(eq(memories.id, id)).run()
+  }
+
+  markUsed(ids: string[]): void {
+    if (ids.length === 0) return
+    this.db.update(memories).set({ lastUsedAt: Date.now() }).where(inArray(memories.id, ids)).run()
+  }
+}
+
+export type NewSuggestion = {
+  conversationId: string | null
+  action: MemoryAction
+  targetMemoryId: string | null
+  content: string
+  category: MemoryCategory
+}
+
+export class SuggestionRepository {
+  constructor(private readonly db: AppDatabase) {}
+
+  pending(): MemorySuggestion[] {
+    const rows = this.db
+      .select({ s: memorySuggestions, targetContent: memories.content })
+      .from(memorySuggestions)
+      .leftJoin(memories, eq(memories.id, memorySuggestions.targetMemoryId))
+      .where(eq(memorySuggestions.status, 'pending'))
+      .orderBy(asc(memorySuggestions.createdAt), asc(sql`memory_suggestions.rowid`))
+      .all()
+    return rows.map(({ s, targetContent }) => ({ ...s, targetContent: targetContent ?? null }))
+  }
+
+  countPending(): number {
+    return this.db
+      .select({ n: sql<number>`count(*)` })
+      .from(memorySuggestions)
+      .where(eq(memorySuggestions.status, 'pending'))
+      .get()!.n
+  }
+
+  /** Chỉ đề xuất còn chờ duyệt mới xử lý được. */
+  getPending(id: string): MemorySuggestion | null {
+    return this.pending().find((s) => s.id === id) ?? null
+  }
+
+  insertMany(items: NewSuggestion[]): number {
+    const ts = Date.now()
+    for (const item of items) {
+      this.db.insert(memorySuggestions).values({ id: randomUUID(), createdAt: ts, ...item }).run()
+    }
+    return items.length
+  }
+
+  setStatus(id: string, status: 'accepted' | 'rejected'): void {
+    this.db.update(memorySuggestions).set({ status }).where(eq(memorySuggestions.id, id)).run()
   }
 }
 

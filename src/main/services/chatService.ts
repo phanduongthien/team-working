@@ -1,16 +1,19 @@
 import { randomUUID } from 'node:crypto'
 import type { ChatEvent, ChatMode, ChatUsage } from '@shared/ai'
 import type { AssistantProfile } from '@shared/schemas'
-import type { ChatSendResult, ChatStreamPayload, Message, ToolEvent } from '@shared/types'
-import type { AIProvider } from '../ai/AIProvider'
-import { buildSystemPrompt } from '../ai/systemPrompt'
+import type { ChatSendResult, ChatStreamPayload, Message, StoredAttachment, ToolEvent } from '@shared/types'
+import type { AIProvider, HistoryMessage } from '../ai/AIProvider'
+import { buildSystemPrompt, type UserProfileContext } from '../ai/systemPrompt'
 import type { ConversationRepository, MessageRepository } from '../db/repositories'
 
 export type ChatServiceDeps = {
   conversations: ConversationRepository
   messages: MessageRepository
-  provider: AIProvider
+  /** Provider theo cài đặt hiện tại (CLI hoặc API key). */
+  getProvider(): AIProvider
   getAssistant(): AssistantProfile
+  /** Hồ sơ + memory liên quan tới câu hỏi để chèn vào system prompt. */
+  getMemoryContext(query: string): { user: UserProfileContext; memories: string[] }
   loadModeSkill(mode: ChatMode): Promise<string | undefined>
   workspaceDir: string
   emit(payload: ChatStreamPayload): void
@@ -19,7 +22,8 @@ export type ChatServiceDeps = {
 
 const TITLE_MAX = 60
 const PERSIST_INTERVAL_MS = 1_000
-const HISTORY_ON_LOST_SESSION = 12
+/** Số tin gửi kèm khi provider không giữ session (API) hoặc khi session CLI bị mất. */
+const HISTORY_LIMIT = 30
 
 export class ChatBusyError extends Error {
   constructor() {
@@ -49,6 +53,18 @@ export function promptWithHistory(history: Message[], text: string): string {
 
 const isLostSession = (message: string): boolean => /no conversation found/i.test(message)
 
+/** Tin nhắn cũ → lịch sử cho provider; file đính kèm cũ chỉ còn tên. */
+export function toHistory(messages: Message[]): HistoryMessage[] {
+  return messages
+    .filter((m) => m.status === 'done' || m.role === 'user')
+    .map((m) => ({
+      role: m.role,
+      content: m.attachments.length
+        ? `${m.content}\n[Đã đính kèm: ${m.attachments.map((a) => a.name).join(', ')}]`
+        : m.content
+    }))
+}
+
 type ActiveRequest = { controller: AbortController; conversationId: string }
 
 export class ChatService {
@@ -56,14 +72,18 @@ export class ChatService {
 
   constructor(private readonly deps: ChatServiceDeps) {}
 
-  send(conversationId: string, text: string): ChatSendResult {
+  isBusy(conversationId: string): boolean {
+    return [...this.active.values()].some((r) => r.conversationId === conversationId)
+  }
+
+  send(conversationId: string, text: string, attachments: StoredAttachment[] = []): ChatSendResult {
     const { conversations, messages } = this.deps
     const conversation = conversations.get(conversationId)
     if (!conversation) throw new ConversationNotFoundError()
-    if ([...this.active.values()].some((r) => r.conversationId === conversationId)) throw new ChatBusyError()
+    if (this.isBusy(conversationId)) throw new ChatBusyError()
 
-    const history = messages.recent(conversationId, HISTORY_ON_LOST_SESSION)
-    const userMessage = messages.insert({ conversationId, role: 'user', content: text })
+    const history = messages.recent(conversationId, HISTORY_LIMIT)
+    const userMessage = messages.insert({ conversationId, role: 'user', content: text, attachments })
     const assistantMessage = messages.insert({
       conversationId,
       role: 'assistant',
@@ -85,6 +105,7 @@ export class ChatService {
       sessionId: conversation.cliSessionId ?? undefined,
       text,
       history,
+      attachments,
       signal: controller.signal
     }).finally(() => this.active.delete(requestId))
 
@@ -107,6 +128,7 @@ export class ChatService {
     sessionId?: string
     text: string
     history: Message[]
+    attachments: StoredAttachment[]
     signal: AbortSignal
   }): Promise<void> {
     const { deps } = this
@@ -122,16 +144,31 @@ export class ChatService {
     // để UI không cho gửi tin mới khi hội thoại vẫn đang bận.
     let terminal: ChatEvent | null = null
 
+    const provider = deps.getProvider()
+    const memory = deps.getMemoryContext(args.text)
     const systemPrompt = buildSystemPrompt({
       assistant: deps.getAssistant(),
       mode: args.mode,
-      modeSkill: await deps.loadModeSkill(args.mode)
+      modeSkill: await deps.loadModeSkill(args.mode),
+      user: memory.user,
+      memories: memory.memories
     })
+    // Provider có session (CLI) tự nhớ hội thoại; provider không session (API) cần lịch sử.
+    const history = provider.stateful ? undefined : toHistory(args.history)
+    const initialSession = provider.stateful ? args.sessionId : undefined
 
     const attempt = async (prompt: string, sessionId: string | undefined): Promise<void> => {
       error = null
-      const stream = deps.provider.chat(
-        { prompt, systemPrompt, mode: args.mode, sessionId, cwd: deps.workspaceDir },
+      const stream = provider.chat(
+        {
+          prompt,
+          systemPrompt,
+          mode: args.mode,
+          sessionId,
+          history,
+          attachments: args.attachments,
+          cwd: deps.workspaceDir
+        },
         signal
       )
       for await (const event of stream) {
@@ -164,9 +201,9 @@ export class ChatService {
     }
 
     try {
-      await attempt(args.text, args.sessionId)
-      if (error && args.sessionId && isLostSession(error) && !signal.aborted) {
-        deps.log.info(`Session ${args.sessionId} không còn, tạo session mới cho ${conversationId}`)
+      await attempt(args.text, initialSession)
+      if (error && initialSession && isLostSession(error) && !signal.aborted) {
+        deps.log.info(`Session ${initialSession} không còn, tạo session mới cho ${conversationId}`)
         deps.conversations.setSession(conversationId, null)
         await attempt(promptWithHistory(args.history, args.text), undefined)
       }

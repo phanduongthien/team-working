@@ -5,10 +5,13 @@ import { AssistantAvatar } from '@renderer/components/AssistantAvatar'
 import { cn } from '@renderer/lib/utils'
 import { usePreferences } from '@renderer/stores/preferences'
 
+const noBadge = (): number => 0
+
 function NavItem({ feature }: { feature: FeatureDefinition }) {
   const { t } = useTranslation(feature.id)
   const Icon = feature.icon
   const label = t(feature.titleKey)
+  const badge = (feature.useBadge ?? noBadge)()
   return (
     <NavLink
       to={feature.route}
@@ -17,12 +20,17 @@ function NavItem({ feature }: { feature: FeatureDefinition }) {
       aria-label={label}
       className={({ isActive }) =>
         cn(
-          'flex size-10 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground',
+          'relative flex size-10 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground',
           isActive && 'bg-primary/10 text-primary'
         )
       }
     >
       <Icon className="size-5" />
+      {badge > 0 && (
+        <span className="absolute -top-0.5 -right-0.5 min-w-4 rounded-full bg-primary px-1 text-center text-[10px] leading-4 font-semibold text-primary-foreground">
+          {badge > 9 ? '9+' : badge}
+        </span>
+      )}
     </NavLink>
   )
 }

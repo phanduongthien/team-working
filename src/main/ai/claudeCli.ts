@@ -44,6 +44,8 @@ export type CliRunOptions = {
   sessionId?: string
   /** Tool được phép; rỗng = không tool nào. */
   tools: string[]
+  /** Không lưu session (lượt gọi một lần). */
+  ephemeral?: boolean
 }
 
 /**
@@ -70,7 +72,18 @@ export function buildCliArgs(opts: CliRunOptions): string[] {
   ]
   if (opts.tools.length > 0) args.push('--allowedTools', opts.tools.join(','))
   if (opts.sessionId) args.push('--resume', opts.sessionId)
+  if (opts.ephemeral) args.push('--no-session-persistence')
   return args
+}
+
+/**
+ * CLI đọc file đính kèm bằng tool Read (ảnh, PDF, text đều được). File đã nằm trong
+ * workspace (cwd) nên --restricted vẫn cho đọc; prompt chỉ liệt kê đường dẫn.
+ */
+export function promptWithAttachments(prompt: string, paths: string[]): string {
+  if (paths.length === 0) return prompt
+  const list = paths.map((p) => `- ${p}`).join('\n')
+  return `${prompt}\n\n[Người dùng đính kèm ${paths.length} file — hãy đọc bằng công cụ Read trước khi trả lời]\n${list}`
 }
 
 const SAFE_ARG = /^[\w\-.:\\/ ,]*$/

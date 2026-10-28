@@ -6,14 +6,17 @@ import type { ChatStreamPayload } from '@shared/types'
 import type { AIProvider, ChatRequest } from '../../ai/AIProvider'
 import { openDatabase } from '../../db/client'
 import { ConversationRepository, MessageRepository } from '../../db/repositories'
-import { ChatBusyError, ChatService, promptWithHistory, titleFromText } from '../chatService'
+import { ChatBusyError, ChatService, promptWithHistory, titleFromText, toHistory } from '../chatService'
 
 type Script = (req: ChatRequest, signal: AbortSignal) => AsyncIterable<ChatEvent>
 
 class FakeProvider implements AIProvider {
   readonly id = 'fake'
   calls: ChatRequest[] = []
-  constructor(private script: Script) {}
+  constructor(
+    private script: Script,
+    readonly stateful = true
+  ) {}
   async isAvailable(): Promise<{ ok: boolean }> {
     return { ok: true }
   }
@@ -39,8 +42,12 @@ describe('ChatService', () => {
     new ChatService({
       conversations: convs,
       messages: msgs,
-      provider,
+      getProvider: () => provider,
       getAssistant: () => ({ ...DEFAULT_ASSISTANT, name: 'Bông' }),
+      getMemoryContext: (query) => ({
+        user: { name: 'An' },
+        memories: query.includes('React') ? ['Đang học React'] : []
+      }),
       loadModeSkill: async (mode) => (mode === 'study' ? '# Gia sư' : undefined),
       workspaceDir: 'C:\\ws',
       emit: (p) => emitted.push(p),
@@ -152,6 +159,41 @@ describe('ChatService', () => {
     await vi.waitFor(() => expect(sentAgain).toBe(true))
   })
 
+  it('chèn hồ sơ + memory liên quan vào system prompt', async () => {
+    const provider = new FakeProvider(() => events({ type: 'done' }))
+    const conv = convs.create('free')
+    makeService(provider).send(conv.id, 'Ôn React giúp mình')
+    await waitForStatus(conv.id, 'done')
+    expect(provider.calls[0].systemPrompt).toContain('- Tên: An')
+    expect(provider.calls[0].systemPrompt).toContain('- Đang học React')
+  })
+
+  it('provider không session (API): gửi lịch sử, không dùng --resume', async () => {
+    const provider = new FakeProvider(() => events({ type: 'done' }), false)
+    const conv = convs.create('free')
+    convs.setSession(conv.id, 's-cli')
+    msgs.insert({ conversationId: conv.id, role: 'user', content: 'Tôi tên An' })
+    msgs.insert({ conversationId: conv.id, role: 'assistant', content: 'Chào An' })
+    makeService(provider).send(conv.id, 'Tôi tên gì?')
+    await waitForStatus(conv.id, 'done')
+    expect(provider.calls[0].sessionId).toBeUndefined()
+    expect(provider.calls[0].history).toEqual([
+      { role: 'user', content: 'Tôi tên An' },
+      { role: 'assistant', content: 'Chào An' }
+    ])
+  })
+
+  it('lưu file đính kèm vào tin nhắn và chuyển cho provider; renderer không thấy đường dẫn', async () => {
+    const provider = new FakeProvider(() => events({ type: 'done' }))
+    const conv = convs.create('free')
+    const file = { id: '6f1d1b9e-0000-4000-8000-000000000001', name: 'bai.pdf', mimeType: 'application/pdf', size: 10, path: 'C:\\ws\\a.pdf' }
+    const res = makeService(provider).send(conv.id, 'Tóm tắt giúp', [file])
+    await waitForStatus(conv.id, 'done')
+    expect(provider.calls[0].attachments).toEqual([file])
+    expect(res.userMessage.attachments).toEqual([{ id: file.id, name: 'bai.pdf', mimeType: 'application/pdf', size: 10 }])
+    expect(JSON.stringify(msgs.list(conv.id))).not.toContain('a.pdf')
+  })
+
   it('lỗi từ provider → tin nhắn status error', async () => {
     const provider = new FakeProvider(() => events({ type: 'error', message: 'rate_limit' }))
     const conv = convs.create('free')
@@ -178,6 +220,19 @@ describe('ChatService', () => {
 })
 
 describe('helpers', () => {
+  it('toHistory bỏ tin trợ lý lỗi/dừng và ghi chú file đính kèm cũ', () => {
+    const base = { conversationId: 'c', error: null, toolEvents: [], usage: null, createdAt: 0 }
+    const history = toHistory([
+      { ...base, id: '1', role: 'user', content: 'xem file', status: 'done', attachments: [{ id: 'a', name: 'x.png', mimeType: 'image/png', size: 1 }] },
+      { ...base, id: '2', role: 'assistant', content: 'lỗi giữa chừng', status: 'error', attachments: [] },
+      { ...base, id: '3', role: 'assistant', content: 'ok', status: 'done', attachments: [] }
+    ])
+    expect(history).toEqual([
+      { role: 'user', content: 'xem file\n[Đã đính kèm: x.png]' },
+      { role: 'assistant', content: 'ok' }
+    ])
+  })
+
   it('titleFromText gộp khoảng trắng và cắt 60 ký tự', () => {
     expect(titleFromText('  a\n\nb  ')).toBe('a b')
     expect(titleFromText('x'.repeat(100))).toHaveLength(60)

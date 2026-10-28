@@ -1,0 +1,47 @@
+{
+  "title": "Memory",
+  "heading": "What {{name}} remembers about me",
+  "intro": "Everything here stays on your computer. The assistant only suggests — nothing is remembered until you approve it.",
+  "export": "Export JSON",
+  "exported": "Exported to {{path}}",
+  "categories": {
+    "goal": "Goal",
+    "skill": "Skill",
+    "preference": "Answer preference",
+    "project": "Project",
+    "deadline": "Deadline",
+    "other": "Other"
+  },
+  "suggestions": {
+    "heading": "Suggestions to review",
+    "empty": "No suggestions. After each chat, the assistant will suggest things worth remembering.",
+    "add": "New memory",
+    "update": "Update",
+    "delete": "Forget",
+    "current": "Current: {{content}}",
+    "accept": "Accept",
+    "reject": "Dismiss",
+    "acceptAll": "Accept all"
+  },
+  "profile": {
+    "heading": "Personal profile",
+    "description": "The assistant always reads this profile before answering.",
+    "name": "Name",
+    "role": "Role",
+    "rolePlaceholder": "e.g. 3rd-year CS student, frontend developer…",
+    "goals": "Study / work goals",
+    "skills": "Skills",
+    "interests": "Interests",
+    "answerStyle": "How you like answers",
+    "answerStylePlaceholder": "e.g. short, with code examples, explained from the basics"
+  },
+  "list": {
+    "heading": "Things remembered",
+    "search": "Search memory…",
+    "empty": "Nothing remembered yet.",
+    "addPlaceholder": "Add something the assistant should remember…",
+    "add": "Add",
+    "edit": "Edit",
+    "lastUsed": "Last used {{date}}"
+  }
+}

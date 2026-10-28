@@ -6,6 +6,12 @@ import { applyChatEvent, isTerminalEvent } from './chatEvents'
 
 type Streaming = { requestId: string; messageId: string }
 
+/** Lỗi IPC có dạng "Error invoking remote method 'x': Error: code" → lấy phần code. */
+export function errorCode(err: unknown): string {
+  const message = (err as Error).message ?? String(err)
+  return message.match(/Error: ([\w-]+)$/)?.[1] ?? message
+}
+
 /** Sự kiện tới trước khi `send` trả về (hiếm) — đệm lại theo messageId rồi áp sau. */
 const early = new Map<string, ChatStreamPayload[]>()
 
@@ -25,7 +31,7 @@ type ChatState = {
   togglePin(id: string): Promise<void>
   setMode(id: string, mode: ChatMode): Promise<void>
   remove(id: string): Promise<void>
-  send(text: string, mode: ChatMode): Promise<void>
+  send(text: string, mode: ChatMode, attachmentIds?: string[]): Promise<boolean>
   stop(): Promise<void>
   handleEvent(payload: ChatStreamPayload): void
   clearError(): void
@@ -54,6 +60,9 @@ export const useChat = create<ChatState>((set, get) => {
     },
 
     async select(id) {
+      const previous = get().activeId
+      // Rời cuộc trò chuyện cũ → main có thể tự đề xuất memory (nếu bật).
+      if (previous && previous !== id) void api.memory.conversationLeft(previous)
       set({ activeId: id })
       if (id && !get().streaming[id]) {
         const list = await api.messages.list(id)
@@ -97,14 +106,14 @@ export const useChat = create<ChatState>((set, get) => {
       })
     },
 
-    async send(text, mode) {
+    async send(text, mode, attachmentIds = []) {
       let id = get().activeId
       if (!id) id = (await get().create(mode)).id
       else if (get().conversations.find((c) => c.id === id)?.mode !== mode) await get().setMode(id, mode)
       const conversationId = id
 
       try {
-        const res = await api.chat.send(conversationId, text)
+        const res = await api.chat.send(conversationId, text, attachmentIds)
         set((s) => ({
           messages: {
             ...s.messages,
@@ -119,8 +128,10 @@ export const useChat = create<ChatState>((set, get) => {
         early.delete(res.assistantMessage.id)
         for (const payload of buffered) get().handleEvent(payload)
         await get().loadConversations()
+        return true
       } catch (err) {
-        set({ error: (err as Error).message })
+        set({ error: errorCode(err) })
+        return false
       }
     },
 

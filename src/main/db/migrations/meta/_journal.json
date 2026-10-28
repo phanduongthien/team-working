@@ -8,6 +8,20 @@
       "when": 1793160085675,
       "tag": "0000_init",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1793161346922,
+      "tag": "0001_memory_attachments",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1793161347983,
+      "tag": "0002_messages_fts",
+      "breakpoints": true
     }
   ]
 }

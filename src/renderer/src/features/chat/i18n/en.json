@@ -32,9 +32,37 @@
     "code": "Code",
     "project": "Project management"
   },
+  "attach": {
+    "button": "Attach files (images, PDF, text/code — up to 10 MB)",
+    "remove": "Remove {{name}}",
+    "rejected": "Could not attach {{name}}: {{reason}}",
+    "tooMany": "At most {{max}} files per message.",
+    "reasons": {
+      "unsupported_type": "file type not supported",
+      "too_large": "file is larger than 10 MB",
+      "not_found": "file could not be read"
+    }
+  },
+  "suggest": {
+    "button": "Suggest memories",
+    "hint": "Ask the assistant what is worth remembering from this chat — you review before anything is saved",
+    "found_one": "{{count}} suggestion — review it",
+    "found_other": "{{count}} suggestions — review them",
+    "none": "Nothing new to remember",
+    "failed": "Could not get suggestions: {{message}}"
+  },
   "errors": {
     "conversation_busy": "This chat is still waiting for a response.",
     "conversation_not_found": "This chat no longer exists.",
-    "not_installed": "Claude Code CLI is not installed."
+    "not_installed": "Claude Code CLI is not installed.",
+    "attachment_not_found": "The attachment expired, please pick it again.",
+    "missing_api_key": "No Anthropic API key set (Settings → AI connection).",
+    "invalid_api_key": "The API key is invalid or revoked.",
+    "api_permission_denied": "The API key cannot use this model.",
+    "rate_limit": "Usage limit reached, please try again in a few minutes.",
+    "network_error": "Could not reach Anthropic. Check your connection.",
+    "refusal": "The assistant declined this request.",
+    "invalid_output": "The assistant returned an unexpected format, please retry.",
+    "already_running": "Already fetching suggestions, hang on."
   }
 }

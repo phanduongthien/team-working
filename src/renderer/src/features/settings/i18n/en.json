@@ -29,7 +29,29 @@
   },
   "claude": {
     "heading": "AI connection",
-    "description": "Check Claude Code CLI on this computer.",
-    "open": "Check Claude Code"
+    "description": "Choose how the assistant runs. Everyone uses their own account or key.",
+    "open": "Check Claude Code CLI"
+  },
+  "ai": {
+    "provider": "Run the assistant with",
+    "providers": {
+      "claude-cli": {
+        "name": "Claude Code CLI (recommended)",
+        "description": "Uses your Claude Pro/Max plan through Claude Code signed in on this computer."
+      },
+      "anthropic-api": {
+        "name": "Anthropic API key (fallback)",
+        "description": "Uses an API key you create on Claude Console; usage is billed to your own account."
+      }
+    },
+    "apiKey": "Anthropic API key",
+    "keySaved": "Key saved (encrypted by Windows)",
+    "removeKey": "Remove key",
+    "invalidKey": "Invalid key format (should start with sk-ant-).",
+    "noSecureStorage": "This computer has no secure storage, so the API key cannot be saved.",
+    "keyHelp": "The key is encrypted, stays on this computer, and is only ever sent to Anthropic.",
+    "getKey": "Create a key on Claude Console",
+    "autoSuggest": "Suggest memories automatically",
+    "autoSuggestHelp": "When you leave a chat with 2+ new messages, the assistant suggests what to remember (uses one extra AI call). You still review before saving."
   }
 }

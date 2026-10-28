@@ -1,7 +1,6 @@
 import { Check, Upload } from 'lucide-react'
 import { useState, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Link } from 'react-router'
 import {
   ACCENTS,
   LANGUAGES,
@@ -16,6 +15,7 @@ import { Input, Label, Select, Textarea } from '@renderer/components/ui/input'
 import { cn } from '@renderer/lib/utils'
 import { usePreferences } from '@renderer/stores/preferences'
 import { PRESET_AVATARS, imageFileToAvatar } from '../avatar'
+import { AiSection } from './AiSection'
 
 function Section({ title, description, children }: { title: string; description?: string; children: ReactNode }) {
   return (
@@ -209,9 +209,7 @@ export function SettingsPage() {
         <AssistantSection />
         <AppearanceSection />
         <Section title={t('claude.heading')} description={t('claude.description')}>
-          <Button asChild variant="outline">
-            <Link to="/claude">{t('claude.open')}</Link>
-          </Button>
+          <AiSection />
         </Section>
       </div>
     </div>

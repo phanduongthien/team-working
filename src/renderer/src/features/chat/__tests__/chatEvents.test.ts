@@ -10,6 +10,7 @@ const msg = (id: string, patch: Partial<Message> = {}): Message => ({
   status: 'streaming',
   error: null,
   toolEvents: [],
+  attachments: [],
   usage: null,
   createdAt: 0,
   ...patch

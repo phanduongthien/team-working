@@ -8,7 +8,7 @@
 4. Nhánh chính `main`. Repo Releases: tên `your-agent` (GitHub không cho dấu cách trong tên repo); owner sẽ chốt ở Giai đoạn 6.
 5. Dữ liệu học tập lưu trên **Supabase**.
 6. Lịch: chỉ dựa trên task + deadline trong app; tích hợp Google/Outlook để sau.
-7. Feedback có 2 loại: **công khai** (hiện người gửi) và **ẩn danh** (không ai thấy người gửi, kể cả Manager — `author_id` chỉ đọc được bởi chính tác giả). Bỏ cột `teams.feedback_anonymity`.
+7. Feedback có 2 loại: **công khai** (hiện người gửi) và **ẩn danh** (Member khác không thấy người gửi; **Manager/Owner vẫn thấy** để quản lý). Bỏ cột `teams.feedback_anonymity`.
 8. Tên app: **Team Working**. Chưa có code signing → ghi chú cảnh báo SmartScreen trong release.
 
 ## 1. Môi trường (kiểm tra 2026-10-28)
@@ -100,7 +100,7 @@ Helper (security definer): `is_team_member(team_id)`, `has_team_role(team_id, ro
 | task_comments | id, task_id, author_id, body | xem: member; sửa/xóa: tác giả |
 | task_attachments | id, task_id, storage_path, name, size, uploaded_by | + Storage bucket `task-files` có policy theo team |
 | time_entries | id, user_id, team_id, task_id, started_at, ended_at, duration_sec | ghi: chính mình; xem: chính mình + manager/owner |
-| feedback | id, team_id, kind `member_to_project\|manager_to_member\|periodic_review`, category `praise\|improve\|suggestion`, project_id?, task_id?, author_id, recipient_id?, is_anonymous, body, status `open\|read\|resolved` | xem: tác giả, người nhận, manager/owner; ẩn danh → mọi người (kể cả Manager) đọc qua view `feedback_visible` không có author_id; chỉ tác giả thấy feedback ẩn danh của mình là của mình |
+| feedback | id, team_id, kind `member_to_project\|manager_to_member\|periodic_review`, category `praise\|improve\|suggestion`, project_id?, task_id?, author_id, recipient_id?, is_anonymous, body, status `open\|read\|resolved` | xem: tác giả, người nhận, manager/owner; ẩn danh → Member đọc qua view `feedback_visible` (author_id = null nếu không phải tác giả); Manager/Owner thấy author_id |
 | feedback_replies | id, feedback_id, author_id, body | ai xem được feedback thì xem/trả lời được |
 | learning_paths / learning_steps | owner_id, team_id?, goal, shared bool / title, status, due_date, notes, resources | chủ sở hữu toàn quyền; manager xem khi shared |
 | quiz_attempts | owner_id, path_id?, topic, score, weak_points JSON, shared | như learning |

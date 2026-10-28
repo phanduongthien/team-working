@@ -8,6 +8,7 @@ import { Button } from '@renderer/components/ui/button'
 import { useCliStatus } from '@renderer/stores/cli'
 import { usePreferences } from '@renderer/stores/preferences'
 import { useChat } from '../store'
+import { ChatHeader } from './ChatHeader'
 import { Composer } from './Composer'
 import { ConversationSidebar } from './ConversationSidebar'
 import { MessageItem } from './MessageItem'
@@ -44,6 +45,7 @@ export function ChatPage() {
     <div className="flex h-full min-h-0">
       <ConversationSidebar />
       <section className="flex min-w-0 flex-1 flex-col">
+        {active && messages.length > 0 && <ChatHeader key={active.id} conversation={active} busy={isStreaming} />}
         <div className="flex-1 overflow-y-auto">
           <div className="mx-auto max-w-3xl space-y-6 px-6 py-6">
             {messages.length === 0 ? (
@@ -84,7 +86,7 @@ export function ChatPage() {
             onModeChange={onModeChange}
             streaming={isStreaming}
             disabled={!cliOk}
-            onSend={(text) => void send(text, mode)}
+            onSend={(text, attachmentIds) => void send(text, mode, attachmentIds)}
             onStop={() => void stop()}
           />
           <p className="text-center text-[11px] text-muted-foreground">{t('usageNote')}</p>

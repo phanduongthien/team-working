@@ -1,6 +1,13 @@
 import { contextBridge, ipcRenderer, type IpcRendererEvent } from 'electron'
 import { IPC } from '@shared/ipc'
-import type { ChatStreamPayload, TeamWorkingApi } from '@shared/types'
+import type { ChatStreamPayload, MemoryEventPayload, TeamWorkingApi } from '@shared/types'
+
+/** Đăng ký nghe sự kiện main → renderer; trả về hàm hủy. */
+function subscribe<T>(channel: string, listener: (payload: T) => void): () => void {
+  const wrapped = (_e: IpcRendererEvent, payload: T): void => listener(payload)
+  ipcRenderer.on(channel, wrapped)
+  return () => ipcRenderer.removeListener(channel, wrapped)
+}
 
 /** Chỉ expose các hàm có tên rõ ràng — renderer không bao giờ chạm ipcRenderer trực tiếp. */
 const api: TeamWorkingApi = {
@@ -17,19 +24,35 @@ const api: TeamWorkingApi = {
     list: (conversationId) => ipcRenderer.invoke(IPC.messagesList, conversationId)
   },
   chat: {
-    send: (conversationId, text) => ipcRenderer.invoke(IPC.chatSend, { conversationId, text }),
+    send: (conversationId, text, attachmentIds = []) =>
+      ipcRenderer.invoke(IPC.chatSend, { conversationId, text, attachmentIds }),
     abort: (requestId) => ipcRenderer.invoke(IPC.chatAbort, { requestId }),
-    onEvent: (listener) => {
-      const wrapped = (_e: IpcRendererEvent, payload: ChatStreamPayload): void => listener(payload)
-      ipcRenderer.on(IPC.chatEvent, wrapped)
-      return () => ipcRenderer.removeListener(IPC.chatEvent, wrapped)
-    }
+    onEvent: (listener) => subscribe<ChatStreamPayload>(IPC.chatEvent, listener),
+    pickAttachments: () => ipcRenderer.invoke(IPC.chatPickAttachments)
+  },
+  memory: {
+    getProfile: () => ipcRenderer.invoke(IPC.memoryGetProfile),
+    setProfile: (profile) => ipcRenderer.invoke(IPC.memorySetProfile, profile),
+    list: (query) => ipcRenderer.invoke(IPC.memoryList, query),
+    create: (content, category) => ipcRenderer.invoke(IPC.memoryCreate, { content, category }),
+    update: (id, content, category) => ipcRenderer.invoke(IPC.memoryUpdate, { id, content, category }),
+    remove: (id) => ipcRenderer.invoke(IPC.memoryRemove, id),
+    suggestions: () => ipcRenderer.invoke(IPC.memorySuggestions),
+    resolve: (input) => ipcRenderer.invoke(IPC.memoryResolve, input),
+    extract: (conversationId) => ipcRenderer.invoke(IPC.memoryExtract, conversationId),
+    conversationLeft: (conversationId) => ipcRenderer.invoke(IPC.memoryConversationLeft, conversationId),
+    export: () => ipcRenderer.invoke(IPC.memoryExport),
+    onEvent: (listener) => subscribe<MemoryEventPayload>(IPC.memoryEvent, listener)
   },
   settings: {
     getAssistant: () => ipcRenderer.invoke(IPC.settingsGetAssistant),
     setAssistant: (profile) => ipcRenderer.invoke(IPC.settingsSetAssistant, profile),
     getAppearance: () => ipcRenderer.invoke(IPC.settingsGetAppearance),
-    setAppearance: (appearance) => ipcRenderer.invoke(IPC.settingsSetAppearance, appearance)
+    setAppearance: (appearance) => ipcRenderer.invoke(IPC.settingsSetAppearance, appearance),
+    getAi: () => ipcRenderer.invoke(IPC.settingsGetAi),
+    setAi: (settings) => ipcRenderer.invoke(IPC.settingsSetAi, settings),
+    setApiKey: (key) => ipcRenderer.invoke(IPC.settingsSetApiKey, key),
+    clearApiKey: () => ipcRenderer.invoke(IPC.settingsClearApiKey)
   },
   app: {
     openExternal: (url) => ipcRenderer.invoke(IPC.appOpenExternal, url)

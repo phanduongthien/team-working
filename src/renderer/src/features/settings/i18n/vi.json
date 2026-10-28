@@ -29,7 +29,29 @@
   },
   "claude": {
     "heading": "Kết nối AI",
-    "description": "Kiểm tra Claude Code CLI trên máy này.",
-    "open": "Kiểm tra Claude Code"
+    "description": "Chọn cách trợ lý chạy. Mỗi người dùng tài khoản/key của chính mình.",
+    "open": "Kiểm tra Claude Code CLI"
+  },
+  "ai": {
+    "provider": "Chạy trợ lý bằng",
+    "providers": {
+      "claude-cli": {
+        "name": "Claude Code CLI (khuyến nghị)",
+        "description": "Dùng gói Claude Pro/Max của bạn qua Claude Code đã đăng nhập trên máy."
+      },
+      "anthropic-api": {
+        "name": "Anthropic API key (dự phòng)",
+        "description": "Dùng API key do bạn tự tạo trên Claude Console; tính phí theo mức dùng vào tài khoản của bạn."
+      }
+    },
+    "apiKey": "Anthropic API key",
+    "keySaved": "Đã lưu key (mã hóa bằng Windows)",
+    "removeKey": "Xóa key",
+    "invalidKey": "Key không đúng định dạng (bắt đầu bằng sk-ant-).",
+    "noSecureStorage": "Máy này không hỗ trợ lưu bí mật an toàn nên không thể lưu API key.",
+    "keyHelp": "Key được mã hóa và chỉ lưu trên máy này, không bao giờ gửi cho ai khác ngoài Anthropic.",
+    "getKey": "Tạo key trên Claude Console",
+    "autoSuggest": "Tự đề xuất ghi nhớ",
+    "autoSuggestHelp": "Khi bạn rời một cuộc trò chuyện có từ 2 tin nhắn mới, trợ lý đề xuất điều nên nhớ (dùng thêm một lượt gọi AI). Bạn vẫn duyệt trước khi lưu."
   }
 }

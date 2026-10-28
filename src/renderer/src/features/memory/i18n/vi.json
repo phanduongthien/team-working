@@ -1,0 +1,47 @@
+{
+  "title": "Trí nhớ",
+  "heading": "{{name}} nhớ gì về tôi",
+  "intro": "Mọi thứ ở đây chỉ lưu trên máy bạn. Trợ lý chỉ đề xuất — bạn duyệt thì mới được ghi nhớ.",
+  "export": "Xuất JSON",
+  "exported": "Đã xuất ra {{path}}",
+  "categories": {
+    "goal": "Mục tiêu",
+    "skill": "Kỹ năng",
+    "preference": "Sở thích trả lời",
+    "project": "Dự án",
+    "deadline": "Deadline",
+    "other": "Khác"
+  },
+  "suggestions": {
+    "heading": "Đề xuất chờ duyệt",
+    "empty": "Không có đề xuất nào. Sau mỗi cuộc trò chuyện, trợ lý sẽ gợi ý điều nên ghi nhớ.",
+    "add": "Ghi nhớ mới",
+    "update": "Cập nhật",
+    "delete": "Quên đi",
+    "current": "Hiện tại: {{content}}",
+    "accept": "Đồng ý",
+    "reject": "Bỏ qua",
+    "acceptAll": "Đồng ý tất cả"
+  },
+  "profile": {
+    "heading": "Hồ sơ cá nhân",
+    "description": "Trợ lý luôn đọc hồ sơ này trước khi trả lời.",
+    "name": "Tên",
+    "role": "Vai trò",
+    "rolePlaceholder": "Ví dụ: sinh viên năm 3 CNTT, frontend dev…",
+    "goals": "Mục tiêu học tập / công việc",
+    "skills": "Kỹ năng",
+    "interests": "Sở thích",
+    "answerStyle": "Muốn được trả lời thế nào",
+    "answerStylePlaceholder": "Ví dụ: ngắn gọn, có ví dụ code, giải thích từ cơ bản"
+  },
+  "list": {
+    "heading": "Những điều đã ghi nhớ",
+    "search": "Tìm trong trí nhớ…",
+    "empty": "Chưa ghi nhớ điều gì.",
+    "addPlaceholder": "Thêm điều trợ lý nên nhớ…",
+    "add": "Thêm",
+    "edit": "Sửa",
+    "lastUsed": "Dùng lần cuối {{date}}"
+  }
+}

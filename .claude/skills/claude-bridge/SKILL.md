@@ -46,5 +46,15 @@ Renderer chỉ thấy `ChatEvent` qua IPC `chat:event` — không bao giờ th�
 4. Chế độ + nội dung skill của chế độ (`assistant-skills/<skill>/SKILL.md`, bỏ frontmatter — app tự chèn vì `--restricted` không nạp skill) + ngữ cảnh thêm.
 Khi vượt giới hạn: cắt ngữ cảnh thêm → cắt skill → bỏ bớt memory.
 
+## File đính kèm
+- Renderer **không bao giờ gửi đường dẫn**: main mở hộp thoại (`chat:pickAttachments`), kiểm tra loại/kích thước (≤10 MB; ảnh, PDF, file chữ/code), copy vào `workspace/attachments/<uuid>.<ext>`, trả ID. `chat:send` chỉ nhận ID (`AttachmentStore.take`).
+- CLI: liệt kê đường dẫn trong prompt (stdin) và bật tool `Read` cho lượt đó (file nằm trong cwd nên `--restricted` vẫn cho đọc).
+- API: ảnh → `image` base64, PDF → `document` base64, file chữ → `text`.
+
+## Tác vụ nền (trích memory)
+`completeText()` + `ephemeral: true` (CLI: `--no-session-persistence`) — không tạo session rác. Kết quả chỉ là **đề xuất** vào `memory_suggestions`; người dùng duyệt ở trang Trí nhớ.
+
 ## AnthropicApiProvider (dự phòng)
-Dùng `@anthropic-ai/sdk`, streaming. Key người dùng tự nhập, lưu bằng `safeStorage`. Tra skill `claude-api` để lấy model ID mới nhất — không đoán.
+- `@anthropic-ai/sdk` `client.beta.messages.stream(...)`, model `claude-opus-5-5` (theo skill `claude-api` — không đoán ID), `output_config.effort: 'medium'`, `fallbacks: 'default'` + beta `server-side-fallback-2026-07-01` (tự chạy lại trên model dự phòng khi bị từ chối vì an toàn), `signal` để hủy.
+- Không có session → `ChatService` gửi kèm 30 tin gần nhất (`provider.stateful === false`).
+- Key người dùng tự nhập, lưu mã hóa bằng `safeStorage` (`SecretStore`), không bao giờ trả về renderer. Lỗi map sang mã: `invalid_api_key`, `rate_limit`, `network_error`, `refusal`…
