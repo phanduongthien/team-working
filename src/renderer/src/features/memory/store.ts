@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import type { MemoryCategory, UserProfile } from '@shared/schemas'
 import type { Memory, MemoryEventPayload, MemorySuggestion } from '@shared/types'
 import { api } from '@renderer/lib/api'
+import { pushProfileIfSignedIn, syncProfile } from '@renderer/stores/assistantSync'
 import { scheduleBackup } from './backup'
 
 type MemoryState = {
@@ -21,6 +22,10 @@ type MemoryState = {
   remove(id: string): Promise<void>
   resolve(id: string, accept: boolean, edits?: { content?: string; category?: MemoryCategory }): Promise<void>
   saveProfile(profile: UserProfile): Promise<UserProfile>
+  /** Đổi tài khoản: main đổi phạm vi trí nhớ, đồng bộ hồ sơ, tải lại. */
+  switchAccount(uid: string | null): Promise<void>
+  /** Tăng khi hồ sơ có thể đã đổi từ bên ngoài (đổi tài khoản / đồng bộ) → form tải lại. */
+  profileVersion: number
   handleEvent(payload: MemoryEventPayload): void
 }
 
@@ -30,6 +35,7 @@ export const useMemory = create<MemoryState>((set, get) => ({
   pendingCount: 0,
   extracting: {},
   query: '',
+  profileVersion: 0,
 
   async loadAll() {
     await Promise.all([get().loadMemories(), get().loadSuggestions()])
@@ -73,8 +79,19 @@ export const useMemory = create<MemoryState>((set, get) => ({
     if (accept) scheduleBackup()
   },
 
-  saveProfile(profile) {
-    return api.memory.setProfile(profile)
+  async saveProfile(profile) {
+    const saved = await api.memory.setProfile(profile)
+    // Hồ sơ đi theo tài khoản GitHub (chỉ chính chủ đọc).
+    void pushProfileIfSignedIn(saved)
+    return saved
+  },
+
+  async switchAccount(uid) {
+    set({ memories: [], suggestions: [], pendingCount: 0, query: '' })
+    await api.account.set(uid)
+    if (uid) await syncProfile(uid)
+    await get().loadAll()
+    set((s) => ({ profileVersion: s.profileVersion + 1 }))
   },
 
   handleEvent(payload) {

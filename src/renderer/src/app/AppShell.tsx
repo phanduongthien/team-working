@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { NavLink, Outlet } from 'react-router'
 import type { FeatureDefinition } from '@renderer/features/types'
 import { AssistantAvatar } from '@renderer/components/AssistantAvatar'
+import { ThemeToggle } from '@renderer/components/ThemeToggle'
 import { appEnv, supabaseConfig } from '@renderer/lib/supabase'
 import { cn } from '@renderer/lib/utils'
 import { usePreferences } from '@renderer/stores/preferences'
@@ -55,6 +56,7 @@ export function AppShell({ features }: { features: FeatureDefinition[] }) {
           <NavItem key={f.id} feature={f} />
         ))}
         <div className="flex-1" />
+        <ThemeToggle />
         {bottom.map((f) => (
           <NavItem key={f.id} feature={f} />
         ))}

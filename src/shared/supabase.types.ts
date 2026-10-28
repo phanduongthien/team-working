@@ -140,7 +140,13 @@ export type NotificationRow = {
 
 export type UserMemoryRow = { user_id: string; id: string; content: string; category: string; updated_at: string }
 
-export type UserSettingsRow = { user_id: string; assistant: unknown; updated_at: string }
+export type UserSettingsRow = {
+  user_id: string
+  assistant: unknown | null
+  updated_at: string
+  profile: unknown | null
+  profile_updated_at: string | null
+}
 
 export type LearningPathRow = {
   id: string
@@ -287,7 +293,7 @@ export type Database = {
       task_attachments: Table<TaskAttachmentRow, Optional<TaskAttachmentRow, 'id' | 'team_id' | 'uploaded_by' | 'created_at'>>
       notifications: Table<NotificationRow, never, Pick<NotificationRow, 'read_at'>>
       user_memories: Table<UserMemoryRow, Optional<UserMemoryRow, 'user_id' | 'updated_at'>>
-      user_settings: Table<UserSettingsRow, Optional<UserSettingsRow, 'user_id' | 'updated_at'>>
+      user_settings: Table<UserSettingsRow, Optional<UserSettingsRow, 'user_id' | 'updated_at' | 'assistant' | 'profile' | 'profile_updated_at'>>
       learning_paths: Table<LearningPathRow, Optional<LearningPathRow, 'id' | 'owner_id' | 'team_id' | 'goal' | 'level' | 'shared' | 'created_at' | 'updated_at'>>
       learning_steps: Table<
         LearningStepRow,

@@ -34,3 +34,5 @@
 - Chế độ Code: chọn thư mục dự án; mặc định chỉ đọc; bật quyền sửa thì mỗi thay đổi hiện diff để bạn đồng ý/từ chối. Trợ lý không chạy lệnh terminal.
 - Thời gian: bấm giờ theo task, Pomodoro, bảng chấm công theo tuần, nhập/sửa giờ, xuất CSV — dùng được khi offline.
 - Hôm nay: việc được giao, trợ lý gợi ý kế hoạch ngày và nhắc khi tới giờ; trợ lý viết báo cáo cuối ngày/tuần để gửi quản lý.
+- Trí nhớ riêng theo tài khoản GitHub: mỗi thành viên có hồ sơ, ghi nhớ và đề xuất riêng — kể cả khi dùng chung máy. Hồ sơ cá nhân đi theo tài khoản (đổi máy vẫn giữ), chỉ chính chủ đọc được.
+- Chế độ sáng/tối: đưa lên đầu Cài đặt và thêm nút chuyển nhanh ở thanh bên.

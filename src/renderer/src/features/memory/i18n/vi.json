@@ -1,7 +1,9 @@
 {
   "title": "Trí nhớ",
   "heading": "{{name}} nhớ gì về tôi",
-  "intro": "Mọi thứ ở đây chỉ lưu trên máy bạn. Trợ lý chỉ đề xuất — bạn duyệt thì mới được ghi nhớ.",
+  "intro": "Trí nhớ riêng của từng tài khoản: mỗi thành viên có hồ sơ và ghi nhớ của mình, người khác (kể cả quản lý) không thấy. Trợ lý chỉ đề xuất — bạn duyệt thì mới được ghi nhớ.",
+  "account": "Đang xem trí nhớ của tài khoản {{name}}",
+  "accountLocal": "Chưa đăng nhập — trí nhớ này chỉ dùng trên máy cho tới khi bạn đăng nhập GitHub.",
   "export": "Xuất JSON",
   "exported": "Đã xuất ra {{path}}",
   "categories": {
@@ -25,7 +27,7 @@
   },
   "profile": {
     "heading": "Hồ sơ cá nhân",
-    "description": "Trợ lý luôn đọc hồ sơ này trước khi trả lời.",
+    "description": "Trợ lý luôn đọc hồ sơ này trước khi trả lời. Hồ sơ đi theo tài khoản GitHub của bạn (đổi máy vẫn giữ) và chỉ bạn đọc được.",
     "name": "Tên",
     "role": "Vai trò",
     "rolePlaceholder": "Ví dụ: sinh viên năm 3 CNTT, frontend dev…",

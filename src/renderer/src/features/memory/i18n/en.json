@@ -1,7 +1,9 @@
 {
   "title": "Memory",
   "heading": "What {{name}} remembers about me",
-  "intro": "Everything here stays on your computer. The assistant only suggests — nothing is remembered until you approve it.",
+  "intro": "Memory is per account: each member has their own profile and memories, which others (managers included) cannot see. The assistant only suggests — nothing is remembered until you approve it.",
+  "account": "Showing memory of account {{name}}",
+  "accountLocal": "Not signed in — this memory stays on this computer until you sign in with GitHub.",
   "export": "Export JSON",
   "exported": "Exported to {{path}}",
   "categories": {
@@ -25,7 +27,7 @@
   },
   "profile": {
     "heading": "Personal profile",
-    "description": "The assistant always reads this profile before answering.",
+    "description": "The assistant always reads this profile before answering. It follows your GitHub account (kept across computers) and only you can read it.",
     "name": "Name",
     "role": "Role",
     "rolePlaceholder": "e.g. 3rd-year CS student, frontend developer…",

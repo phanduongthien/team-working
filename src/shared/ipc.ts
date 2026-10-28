@@ -58,5 +58,6 @@ export const IPC = {
   learningGrade: 'learning:grade',
   plannerDay: 'planner:day',
   plannerReport: 'planner:report',
-  memorySuggest: 'memory:suggest'
+  memorySuggest: 'memory:suggest',
+  accountSet: 'account:set'
 } as const

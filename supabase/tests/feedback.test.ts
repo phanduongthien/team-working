@@ -166,4 +166,16 @@ describe('user_settings', () => {
     expect(mine[0].assistant.name).toBe('Bông')
     expect(await errorOf(db.as(bob, (tx) => tx.query(`insert into user_settings (user_id, assistant) values ($1, '{}')`, [alice.id])))).not.toBeNull()
   })
+
+  it('hồ sơ cá nhân theo tài khoản: chỉ chính chủ đọc/ghi, lưu được khi chưa có cài đặt trợ lý', async () => {
+    await db.as(bob, (tx) =>
+      tx.query(`insert into user_settings (profile, profile_updated_at) values ($1, now())`, [JSON.stringify({ name: 'Bob', goals: 'Học Go' })])
+    )
+    const mine = await db.as(bob, (tx) => rows<{ profile: { name: string }; assistant: unknown }>(tx, `select profile, assistant from user_settings`))
+    expect(mine).toEqual([{ profile: { name: 'Bob', goals: 'Học Go' }, assistant: null }])
+    for (const u of [owner, manager, alice]) {
+      const seen = await db.as(u, (tx) => rows<{ profile: unknown }>(tx, `select profile from user_settings where user_id = $1`, [bob.id]))
+      expect(seen, u.name).toEqual([])
+    }
+  })
 })

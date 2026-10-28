@@ -100,6 +100,9 @@ const api: TeamWorkingApi = {
   dayPlanner: {
     plan: (request) => ipcRenderer.invoke(IPC.plannerDay, request),
     report: (request) => ipcRenderer.invoke(IPC.plannerReport, request)
+  },
+  account: {
+    set: (uid) => ipcRenderer.invoke(IPC.accountSet, uid)
   }
 }
 

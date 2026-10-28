@@ -22,8 +22,9 @@
   },
   "appearance": {
     "heading": "Giao diện",
-    "theme": "Chủ đề",
+    "theme": "Chế độ sáng / tối",
     "themes": { "system": "Theo hệ thống", "light": "Sáng", "dark": "Tối" },
+    "toggle": "Chuyển sang chế độ {{mode}}",
     "accent": "Màu nhấn",
     "accents": { "blue": "Xanh dương", "violet": "Tím", "green": "Xanh lá", "orange": "Cam", "rose": "Hồng" }
   },

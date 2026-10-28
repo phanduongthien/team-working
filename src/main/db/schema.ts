@@ -55,6 +55,8 @@ export const memories = sqliteTable(
   'memories',
   {
     id: text('id').primaryKey(),
+    /** Tài khoản sở hữu: id GitHub/Supabase của người đăng nhập, 'local' khi chưa đăng nhập. */
+    owner: text('owner').notNull().default('local'),
     content: text('content').notNull(),
     category: text('category').$type<MemoryCategory>().notNull().default('other'),
     sourceConversationId: text('source_conversation_id'),
@@ -62,7 +64,7 @@ export const memories = sqliteTable(
     updatedAt: integer('updated_at').notNull().default(now),
     lastUsedAt: integer('last_used_at')
   },
-  (t) => [index('memories_updated_idx').on(t.updatedAt)]
+  (t) => [index('memories_updated_idx').on(t.updatedAt), index('memories_owner_idx').on(t.owner)]
 )
 
 /** Chấm công: lưu trên máy để dùng offline. ended_at null = đang bấm giờ (tối đa một). */
@@ -86,6 +88,7 @@ export const memorySuggestions = sqliteTable(
   'memory_suggestions',
   {
     id: text('id').primaryKey(),
+    owner: text('owner').notNull().default('local'),
     conversationId: text('conversation_id').references(() => conversations.id, { onDelete: 'set null' }),
     action: text('action').$type<MemoryAction>().notNull(),
     targetMemoryId: text('target_memory_id'),

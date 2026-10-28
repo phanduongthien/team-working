@@ -244,22 +244,36 @@ const toMemory = (r: MemoryRow): Memory => ({
   lastUsedAt: r.lastUsedAt
 })
 
+/** Chủ sở hữu dữ liệu cá nhân trên máy khi chưa đăng nhập. */
+export const LOCAL_OWNER = 'local'
+
+/**
+ * Trí nhớ cá nhân theo TÀI KHOẢN: mọi truy vấn đều lọc theo người đang đăng nhập (getOwner),
+ * nên hai người dùng chung máy không thấy trí nhớ của nhau.
+ */
 export class MemoryRepository {
-  constructor(private readonly db: AppDatabase) {}
+  constructor(
+    private readonly db: AppDatabase,
+    private readonly getOwner: () => string = () => LOCAL_OWNER
+  ) {}
+
+  private mine() {
+    return eq(memories.owner, this.getOwner())
+  }
 
   list(query?: string): Memory[] {
     const q = query?.trim()
     return this.db
       .select()
       .from(memories)
-      .where(q ? sql`${memories.content} LIKE ${likePattern(q)} ESCAPE '\\'` : undefined)
+      .where(and(this.mine(), q ? sql`${memories.content} LIKE ${likePattern(q)} ESCAPE '\\'` : undefined))
       .orderBy(desc(memories.updatedAt))
       .all()
       .map(toMemory)
   }
 
   get(id: string): Memory | null {
-    const row = this.db.select().from(memories).where(eq(memories.id, id)).get()
+    const row = this.db.select().from(memories).where(and(this.mine(), eq(memories.id, id))).get()
     return row ? toMemory(row) : null
   }
 
@@ -268,7 +282,7 @@ export class MemoryRepository {
     return toMemory(
       this.db
         .insert(memories)
-        .values({ id: randomUUID(), content, category, sourceConversationId, createdAt: ts, updatedAt: ts })
+        .values({ id: randomUUID(), owner: this.getOwner(), content, category, sourceConversationId, createdAt: ts, updatedAt: ts })
         .returning()
         .get()
     )
@@ -278,19 +292,29 @@ export class MemoryRepository {
     const row = this.db
       .update(memories)
       .set({ content, category, updatedAt: Date.now() })
-      .where(eq(memories.id, id))
+      .where(and(this.mine(), eq(memories.id, id)))
       .returning()
       .get()
     return row ? toMemory(row) : null
   }
 
   remove(id: string): void {
-    this.db.delete(memories).where(eq(memories.id, id)).run()
+    this.db.delete(memories).where(and(this.mine(), eq(memories.id, id))).run()
   }
 
   markUsed(ids: string[]): void {
     if (ids.length === 0) return
-    this.db.update(memories).set({ lastUsedAt: Date.now() }).where(inArray(memories.id, ids)).run()
+    this.db.update(memories).set({ lastUsedAt: Date.now() }).where(and(this.mine(), inArray(memories.id, ids))).run()
+  }
+
+  countFor(owner: string): number {
+    return this.db.select({ n: sql<number>`count(*)` }).from(memories).where(eq(memories.owner, owner)).get()!.n
+  }
+
+  /** Chuyển dữ liệu của chủ sở hữu `from` sang `to` (dùng khi nhận dữ liệu tạo trước lúc đăng nhập). */
+  reassign(from: string, to: string): void {
+    this.db.update(memories).set({ owner: to }).where(eq(memories.owner, from)).run()
+    this.db.update(memorySuggestions).set({ owner: to }).where(eq(memorySuggestions.owner, from)).run()
   }
 }
 
@@ -303,24 +327,31 @@ export type NewSuggestion = {
 }
 
 export class SuggestionRepository {
-  constructor(private readonly db: AppDatabase) {}
+  constructor(
+    private readonly db: AppDatabase,
+    private readonly getOwner: () => string = () => LOCAL_OWNER
+  ) {}
+
+  private minePending() {
+    return and(eq(memorySuggestions.owner, this.getOwner()), eq(memorySuggestions.status, 'pending'))
+  }
 
   pending(): MemorySuggestion[] {
     const rows = this.db
       .select({ s: memorySuggestions, targetContent: memories.content })
       .from(memorySuggestions)
-      .leftJoin(memories, eq(memories.id, memorySuggestions.targetMemoryId))
-      .where(eq(memorySuggestions.status, 'pending'))
+      .leftJoin(memories, and(eq(memories.id, memorySuggestions.targetMemoryId), eq(memories.owner, memorySuggestions.owner)))
+      .where(this.minePending())
       .orderBy(asc(memorySuggestions.createdAt), asc(sql`memory_suggestions.rowid`))
       .all()
-    return rows.map(({ s, targetContent }) => ({ ...s, targetContent: targetContent ?? null }))
+    return rows.map(({ s: { owner: _owner, ...s }, targetContent }) => ({ ...s, targetContent: targetContent ?? null }))
   }
 
   countPending(): number {
     return this.db
       .select({ n: sql<number>`count(*)` })
       .from(memorySuggestions)
-      .where(eq(memorySuggestions.status, 'pending'))
+      .where(this.minePending())
       .get()!.n
   }
 
@@ -332,13 +363,17 @@ export class SuggestionRepository {
   insertMany(items: NewSuggestion[]): number {
     const ts = Date.now()
     for (const item of items) {
-      this.db.insert(memorySuggestions).values({ id: randomUUID(), createdAt: ts, ...item }).run()
+      this.db.insert(memorySuggestions).values({ id: randomUUID(), owner: this.getOwner(), createdAt: ts, ...item }).run()
     }
     return items.length
   }
 
   setStatus(id: string, status: 'accepted' | 'rejected'): void {
-    this.db.update(memorySuggestions).set({ status }).where(eq(memorySuggestions.id, id)).run()
+    this.db
+      .update(memorySuggestions)
+      .set({ status })
+      .where(and(eq(memorySuggestions.owner, this.getOwner()), eq(memorySuggestions.id, id)))
+      .run()
   }
 }
 

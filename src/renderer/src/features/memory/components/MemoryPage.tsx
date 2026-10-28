@@ -3,6 +3,7 @@ import { useEffect, useState, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@renderer/components/ui/button'
 import { api } from '@renderer/lib/api'
+import { useAuth } from '@renderer/stores/auth'
 import { usePreferences } from '@renderer/stores/preferences'
 import { useMemory } from '../store'
 import { BackupSection } from './BackupSection'
@@ -36,6 +37,7 @@ function Section({
 export function MemoryPage() {
   const { t } = useTranslation('memory')
   const name = usePreferences((s) => s.assistant.name)
+  const profile = useAuth((s) => s.profile)
   const loadAll = useMemory((s) => s.loadAll)
   const pending = useMemory((s) => s.pendingCount)
   const [exported, setExported] = useState<string | null>(null)
@@ -51,6 +53,9 @@ export function MemoryPage() {
           <div>
             <h1 className="text-2xl font-semibold">{t('heading', { name })}</h1>
             <p className="mt-1 text-sm text-muted-foreground">{t('intro')}</p>
+            <p className="mt-1 text-sm font-medium" data-testid="memory-account">
+              {profile ? t('account', { name: profile.github_username ? `@${profile.github_username}` : profile.display_name }) : t('accountLocal')}
+            </p>
           </div>
           <Button
             variant="outline"

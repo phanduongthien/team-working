@@ -22,8 +22,9 @@
   },
   "appearance": {
     "heading": "Appearance",
-    "theme": "Theme",
+    "theme": "Light / dark mode",
     "themes": { "system": "System", "light": "Light", "dark": "Dark" },
+    "toggle": "Switch to {{mode}} mode",
     "accent": "Accent color",
     "accents": { "blue": "Blue", "violet": "Violet", "green": "Green", "orange": "Orange", "rose": "Rose" }
   },

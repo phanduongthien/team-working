@@ -228,6 +228,10 @@ export interface TeamWorkingApi {
     plan(request: DayPlanRequest): Promise<AiResult<{ blocks: DayBlock[] }>>
     report(request: ReportRequest): Promise<TextResult>
   }
+  account: {
+    /** Báo main tài khoản đang đăng nhập (null = đăng xuất) — trí nhớ/hồ sơ đổi theo. */
+    set(uid: string | null): Promise<{ owner: string; claimed: boolean }>
+  }
 }
 
 export type TimeStartInput = { taskId?: string | null; projectId?: string | null; title: string; projectName?: string | null; kind?: 'timer' | 'pomodoro' }

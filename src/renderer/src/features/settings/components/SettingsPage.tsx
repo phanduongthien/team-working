@@ -206,8 +206,8 @@ export function SettingsPage() {
     <div className="h-full overflow-y-auto">
       <div className="mx-auto max-w-2xl space-y-5 px-6 py-8">
         <h1 className="text-2xl font-semibold">{t('title')}</h1>
-        <AssistantSection />
         <AppearanceSection />
+        <AssistantSection />
         <Section title={t('claude.heading')} description={t('claude.description')}>
           <AiSection />
         </Section>

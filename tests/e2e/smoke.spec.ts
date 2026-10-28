@@ -93,9 +93,22 @@ test('Thời gian (offline): bấm giờ, chấm đỏ trên menu, dừng, thêm
   await page.screenshot({ path: 'test-results/time.png' })
 })
 
+test('nút sáng/tối ở thanh bên đổi giao diện và lưu vào Cài đặt', async () => {
+  const isDark = (): Promise<boolean> => page.evaluate(() => document.documentElement.classList.contains('dark'))
+  const before = await isDark()
+  await page.getByTestId('theme-toggle').click()
+  await expect.poll(isDark).toBe(!before)
+  await go('#/settings')
+  await expect(page.getByText('Chế độ sáng / tối')).toBeVisible()
+  await expect(page.getByRole('button', { name: before ? 'Sáng' : 'Tối', exact: true })).toHaveClass(/bg-primary/)
+  await page.getByTestId('theme-toggle').click()
+  await expect.poll(isDark).toBe(before)
+})
+
 test('trang Trí nhớ: hồ sơ, thêm/sửa/xóa memory thủ công', async () => {
   await go('#/memory')
   await expect(page.getByRole('heading', { name: 'Bông nhớ gì về tôi' })).toBeVisible()
+  await expect(page.getByTestId('memory-account')).toContainText('Chưa đăng nhập')
 
   await page.getByLabel('Tên', { exact: true }).fill('An')
   await page.getByRole('button', { name: 'Lưu' }).click()

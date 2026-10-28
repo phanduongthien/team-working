@@ -8,6 +8,7 @@ import {
   DEFAULT_ASSISTANT,
   aiSettingsSchema,
   assistantProfileSchema,
+  idSchema,
   type AiProviderId
 } from '@shared/schemas'
 import type { AIProvider } from './ai/AIProvider'
@@ -16,6 +17,7 @@ import { ClaudeCliProvider } from './ai/ClaudeCliProvider'
 import { loadModeSkill, loadSkill } from './ai/skills'
 import { openDatabase } from './db/client'
 import {
+  LOCAL_OWNER,
   ConversationRepository,
   MemoryRepository,
   MessageRepository,
@@ -28,6 +30,7 @@ import { createHandle, registerIpc } from './ipc/register'
 import { registerTeamIpc } from './ipc/team'
 import { emitApproval, registerWorkIpc } from './ipc/work'
 import { OAuthLoopback } from './services/oauthLoopback'
+import { AccountScope } from './memory/accountScope'
 import { MemoryService } from './memory/memoryService'
 import { AttachmentStore } from './services/attachments'
 import { ChatService } from './services/chatService'
@@ -98,9 +101,14 @@ async function bootstrap(): Promise<void> {
 
   const conversations = new ConversationRepository(db)
   const messages = new MessageRepository(db)
-  const memories = new MemoryRepository(db)
-  const suggestions = new SuggestionRepository(db)
+  // Trí nhớ cá nhân theo tài khoản đang đăng nhập (renderer báo qua account:set).
+  let scope: AccountScope | null = null
+  const getOwner = (): string => scope?.current ?? LOCAL_OWNER
+  const memories = new MemoryRepository(db, getOwner)
+  const suggestions = new SuggestionRepository(db, getOwner)
   const settings = new SettingsRepository(db)
+  scope = new AccountScope({ memories, settings })
+  const accountScope = scope
   const interrupted = messages.markInterrupted()
   if (interrupted) log.info(`Đánh dấu ${interrupted} tin nhắn bị gián đoạn`)
 
@@ -142,7 +150,8 @@ async function bootstrap(): Promise<void> {
     loadSkill: (name) => loadSkill(skillsDir, name),
     workspaceDir,
     emit: (payload) => mainWindow?.webContents.send(IPC.memoryEvent, payload),
-    log
+    log,
+    getOwner
   })
   const chat = new ChatService({
     conversations,
@@ -185,6 +194,12 @@ async function bootstrap(): Promise<void> {
     loadSkill: (name) => loadSkill(skillsDir, name),
     workspaceDir,
     log
+  })
+  handle(IPC.accountSet, idSchema.nullable(), (uid) => {
+    const result = accountScope.set(uid)
+    if (result.claimed) log.info('Đã giao trí nhớ tạo trước khi đăng nhập cho tài khoản đầu tiên')
+    memory.emitCount()
+    return result
   })
   registerWorkIpc({
     handle,

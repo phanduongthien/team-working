@@ -9,13 +9,15 @@ import {
 import type { ExtractResult, Memory, MemoryEventPayload } from '@shared/types'
 import { completeText, type AIProvider } from '../ai/AIProvider'
 import type { UserProfileContext } from '../ai/systemPrompt'
-import type {
-  ConversationRepository,
-  MemoryRepository,
-  MessageRepository,
-  SettingsRepository,
-  SuggestionRepository
+import {
+  LOCAL_OWNER,
+  type ConversationRepository,
+  type MemoryRepository,
+  type MessageRepository,
+  type SettingsRepository,
+  type SuggestionRepository
 } from '../db/repositories'
+import { profileKey } from './accountScope'
 import { buildExtractionPrompt, parseSuggestions } from './extraction'
 import { selectMemories } from './selectMemories'
 
@@ -30,6 +32,8 @@ export type MemoryServiceDeps = {
   workspaceDir: string
   emit(payload: MemoryEventPayload): void
   log: { info(msg: string): void; warn(msg: string): void }
+  /** Tài khoản đang đăng nhập (repository cũng lọc theo cùng hàm này). */
+  getOwner?(): string
 }
 
 /** Số tin nhắn mới của người dùng tối thiểu để tự đề xuất khi rời cuộc trò chuyện. */
@@ -43,12 +47,13 @@ export class MemoryService {
 
   constructor(private readonly deps: MemoryServiceDeps) {}
 
+  /** Hồ sơ của NGƯỜI ĐANG ĐĂNG NHẬP (khóa theo tài khoản). */
   getProfile(): UserProfile {
-    return this.deps.settings.get('profile', userProfileSchema, DEFAULT_PROFILE)
+    return this.deps.settings.get(profileKey(this.deps.getOwner?.() ?? LOCAL_OWNER), userProfileSchema, DEFAULT_PROFILE)
   }
 
   setProfile(profile: UserProfile): UserProfile {
-    return this.deps.settings.set('profile', profile)
+    return this.deps.settings.set(profileKey(this.deps.getOwner?.() ?? LOCAL_OWNER), profile)
   }
 
   /** Hồ sơ + memory liên quan để chèn vào system prompt; đánh dấu memory đã dùng. */

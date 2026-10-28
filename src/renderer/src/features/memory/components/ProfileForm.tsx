@@ -21,6 +21,8 @@ const FIELDS: Field[] = [
 export function ProfileForm() {
   const { t } = useTranslation('memory')
   const saveProfile = useMemory((s) => s.saveProfile)
+  // Đổi tài khoản / đồng bộ xong → tải lại hồ sơ của người đang đăng nhập.
+  const profileVersion = useMemory((s) => s.profileVersion)
   const [saved, setSaved] = useState<UserProfile>(DEFAULT_PROFILE)
   const [draft, setDraft] = useState<UserProfile>(DEFAULT_PROFILE)
   const [justSaved, setJustSaved] = useState(false)
@@ -30,7 +32,7 @@ export function ProfileForm() {
       setSaved(p)
       setDraft(p)
     })
-  }, [])
+  }, [profileVersion])
 
   const dirty = JSON.stringify(draft) !== JSON.stringify(saved)
 

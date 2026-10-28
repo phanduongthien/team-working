@@ -2,6 +2,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { HashRouter, Route, Routes, useNavigate } from 'react-router'
+import { useMemory } from '@renderer/features/memory/store'
 import type { FeatureDefinition } from '@renderer/features/types'
 import { api } from '@renderer/lib/api'
 import { syncAssistant } from '@renderer/stores/assistantSync'
@@ -49,6 +50,8 @@ function useAuthLifecycle(): void {
       if (uid === lastUid) return
       lastUid = uid
       queryClient.clear()
+      // Trí nhớ + hồ sơ cá nhân đổi theo tài khoản đang đăng nhập.
+      void useMemory.getState().switchAccount(uid)
       if (uid) {
         void useTeam.getState().load()
         void syncAssistant(uid)
