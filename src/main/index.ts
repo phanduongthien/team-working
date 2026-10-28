@@ -237,7 +237,7 @@ if (!app.requestSingleInstanceLock()) {
     if (mainWindow?.isMinimized()) mainWindow.restore()
     mainWindow?.focus()
   })
-  app.setAppUserModelId('com.youragent.teamworking')
+  app.setAppUserModelId('com.phanduongthien.teamworking')
   void app.whenReady().then(async () => {
     try {
       await bootstrap()

@@ -5,7 +5,7 @@
 1. Chỉ dùng **nội bộ team**: mặc định `ClaudeCliProvider` (subscription riêng mỗi người), `AnthropicApiProvider` dự phòng.
 2. Supabase **cloud** (đã có tài khoản); chưa có Docker → test RLS trên một project Supabase riêng cho dev.
 3. Đăng nhập team bằng **GitHub OAuth** (Supabase Auth provider GitHub).
-4. Nhánh chính `main`. Repo Releases: tên `your-agent` (GitHub không cho dấu cách trong tên repo); owner sẽ chốt ở Giai đoạn 6.
+4. Nhánh chính `main`. Repo (code + Releases): `phanduongthien/team-working` (public, để app tải bản cập nhật không cần token).
 5. Dữ liệu học tập lưu trên **Supabase**.
 6. Lịch: chỉ dựa trên task + deadline trong app; tích hợp Google/Outlook để sau.
 7. Feedback có 2 loại: **công khai** (hiện người gửi) và **ẩn danh** (Member khác không thấy người gửi; **Manager/Owner vẫn thấy** để quản lý). Bỏ cột `teams.feedback_anonymity`.

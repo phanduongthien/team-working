@@ -3,9 +3,9 @@ import { newIssueUrl, parseGithubRepo, sanitizeLog } from '../release'
 
 describe('parseGithubRepo', () => {
   it('chỉ nhận dạng owner/repo hợp lệ', () => {
-    expect(parseGithubRepo('team-working/your-agent')).toEqual({ owner: 'team-working', repo: 'your-agent' })
+    expect(parseGithubRepo('phanduongthien/team-working')).toEqual({ owner: 'phanduongthien', repo: 'team-working' })
     expect(parseGithubRepo(' a/b ')).toEqual({ owner: 'a', repo: 'b' })
-    for (const bad of [undefined, '', 'your-agent', 'a/b/c', 'a/Your agent', '-a/b', 'a/../b']) {
+    for (const bad of [undefined, '', 'team-working', 'a/b/c', 'a/Team working', '-a/b', 'a/../b']) {
       expect(parseGithubRepo(bad), String(bad)).toBeNull()
     }
   })

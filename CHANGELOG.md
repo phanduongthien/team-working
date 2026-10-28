@@ -4,6 +4,10 @@
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-10-28
+
+Bản phát hành đầu tiên. Chưa ký số: Windows SmartScreen có thể cảnh báo khi cài — chọn *More info → Run anyway*.
+
 ### Thêm mới
 - Khung ứng dụng desktop Team Working (Electron + React + TypeScript), giao diện tiếng Việt mặc định, có tiếng Anh.
 - Trò chuyện với trợ lý AI qua Claude Code CLI trên tài khoản Claude của chính bạn: chữ hiện dần theo thời gian thực, nút dừng, nhớ ngữ cảnh giữa các tin nhắn.

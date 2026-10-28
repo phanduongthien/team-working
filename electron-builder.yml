@@ -1,7 +1,7 @@
 # Đóng gói Windows (NSIS) + tự cập nhật qua GitHub Releases.
 # Cấu hình publish (GitHub owner/repo) truyền qua -c.publish.* trong .github/workflows/release.yml,
 # để build cục bộ không cần biết repo; bản build cục bộ vì vậy không tự cập nhật.
-appId: com.youragent.teamworking
+appId: com.phanduongthien.teamworking
 productName: Team Working
 directories:
   buildResources: build

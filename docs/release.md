@@ -8,7 +8,7 @@ App tự cập nhật từ **GitHub Releases** (electron-builder + electron-upda
 
 1. **Remote & đẩy code**
    ```powershell
-   git remote add origin https://github.com/<owner>/your-agent.git
+   git remote add origin https://github.com/phanduongthien/team-working.git
    git push -u origin main
    ```
 2. **Settings → Secrets and variables → Actions → Secrets**
@@ -23,8 +23,8 @@ App tự cập nhật từ **GitHub Releases** (electron-builder + electron-upda
    - Require a pull request before merging (1 approval, require review from Code Owners).
    - Require status checks to pass: `Lint, typecheck, test` (và `E2E smoke (Electron)`).
    - Block force pushes, restrict deletions.
-5. Sửa `.github/CODEOWNERS`: thay `@OWNER` bằng tài khoản/nhóm thật.
-6. Muốn nút "Mở trang tạo issue" chạy ở bản dev: thêm `VITE_GITHUB_REPO=<owner>/your-agent` vào `.env` (bản release tự điền).
+5. `.github/CODEOWNERS` đang để `@phanduongthien` — thêm người duyệt khác nếu cần.
+6. Muốn nút "Mở trang tạo issue" chạy ở bản dev: thêm `VITE_GITHUB_REPO=phanduongthien/team-working` vào `.env` (bản release tự điền).
 
 ## Project Supabase production
 

@@ -7,6 +7,10 @@
   "main": "./out/main/index.js",
   "author": "Team Working",
   "license": "UNLICENSED",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/phanduongthien/team-working.git"
+  },
   "scripts": {
     "dev": "electron-vite dev",
     "start": "electron-vite preview",
