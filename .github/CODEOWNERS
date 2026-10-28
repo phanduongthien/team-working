@@ -1,0 +1,8 @@
+# Người duyệt mặc định cho mọi thay đổi. Thay @OWNER bằng tài khoản/nhóm GitHub thật sau khi tạo repo.
+* @OWNER
+
+# Phần nhạy cảm: schema & quyền dữ liệu team, pipeline phát hành, cách gọi AI.
+/supabase/ @OWNER
+/.github/ @OWNER
+/electron-builder.yml @OWNER
+/src/main/ai/ @OWNER

@@ -3,6 +3,9 @@ import { NavLink, Outlet } from 'react-router'
 import type { FeatureDefinition } from '@renderer/features/types'
 import { AssistantAvatar } from '@renderer/components/AssistantAvatar'
 import { ThemeToggle } from '@renderer/components/ThemeToggle'
+import { UpdateBanner } from '@renderer/components/UpdateBanner'
+import { canSeeFeature } from '@renderer/features/access'
+import { useMyRole } from '@renderer/stores/team'
 import { appEnv, supabaseConfig } from '@renderer/lib/supabase'
 import { cn } from '@renderer/lib/utils'
 import { usePreferences } from '@renderer/stores/preferences'
@@ -43,8 +46,10 @@ function NavItem({ feature }: { feature: FeatureDefinition }) {
 
 export function AppShell({ features }: { features: FeatureDefinition[] }) {
   const assistant = usePreferences((s) => s.assistant)
-  const top = features.filter((f) => f.nav === 'top')
-  const bottom = features.filter((f) => f.nav === 'bottom')
+  const role = useMyRole()
+  const visible = features.filter((f) => canSeeFeature(f, role))
+  const top = visible.filter((f) => f.nav === 'top')
+  const bottom = visible.filter((f) => f.nav === 'bottom')
 
   return (
     <div className="flex h-full">
@@ -74,6 +79,7 @@ export function AppShell({ features }: { features: FeatureDefinition[] }) {
         <Outlet />
       </main>
       {features.map((f) => (f.overlay ? <f.overlay key={f.id} /> : null))}
+      <UpdateBanner />
     </div>
   )
 }

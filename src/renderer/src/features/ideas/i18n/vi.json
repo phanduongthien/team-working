@@ -1,0 +1,44 @@
+{
+  "title": "Góp ý & báo lỗi",
+  "heading": "Đề xuất ý tưởng & báo lỗi",
+  "intro": "Viết theo cách của bạn, trợ lý sẽ chuẩn hóa thành issue GitHub. Bạn xem và sửa bản nháp trước khi mở trang GitHub để gửi — app không tự gửi gì.",
+  "kind": {
+    "idea": "Ý tưởng",
+    "bug": "Báo lỗi"
+  },
+  "form": {
+    "title": "Tiêu đề",
+    "titlePlaceholder": {
+      "idea": "Ví dụ: Nhắc deadline qua thông báo",
+      "bug": "Ví dụ: Không lưu được flashcard"
+    },
+    "description": "Mô tả",
+    "descriptionPlaceholder": {
+      "idea": "Bạn muốn có gì, để làm gì, ai sẽ dùng…",
+      "bug": "Bạn đã làm gì, mong đợi gì, thực tế xảy ra gì…"
+    },
+    "format": "Nhờ trợ lý chuẩn hóa",
+    "manual": "Tự viết, không cần trợ lý"
+  },
+  "draft": {
+    "heading": "Bản nháp issue",
+    "body": "Nội dung (Markdown)",
+    "labels": "Nhãn: {{list}}",
+    "attach": "Đính kèm phiên bản app, hệ điều hành và log gần nhất",
+    "noLog": "(log trống)",
+    "privacy": "Đường dẫn thư mục cá nhân và email trong log đã được che. Vẫn nên đọc lại trước khi gửi.",
+    "open": "Mở trang tạo issue trên GitHub",
+    "copy": "Sao chép",
+    "copied": "Đã chép",
+    "noRepo": "Bản build này chưa cấu hình repo GitHub (VITE_GITHUB_REPO) — hãy sao chép và gửi cho người quản lý app."
+  },
+  "issue": {
+    "env": "Môi trường",
+    "log": "Log gần nhất"
+  },
+  "failed": "Trợ lý không chuẩn hóa được: {{message}}",
+  "errors": {
+    "invalid_output": "Trợ lý trả về sai định dạng, hãy thử lại.",
+    "rate_limit": "Đã chạm giới hạn sử dụng AI, thử lại sau ít phút."
+  }
+}

@@ -127,6 +127,19 @@ test('trang Trí nhớ: hồ sơ, thêm/sửa/xóa memory thủ công', async ()
   await page.screenshot({ path: 'test-results/memory.png' })
 })
 
+test('Cài đặt → Gửi báo lỗi: bản nháp tự viết kèm phiên bản và log đã che', async () => {
+  await go('#/settings')
+  await page.getByTestId('report-bug').click()
+  await expect(page.getByRole('tab', { name: 'Báo lỗi' })).toHaveAttribute('aria-selected', 'true')
+  await page.getByLabel('Tiêu đề').fill('Không lưu được flashcard')
+  await page.getByLabel('Mô tả').fill('Bấm Lưu nhưng thẻ biến mất')
+  await page.getByRole('button', { name: 'Tự viết, không cần trợ lý' }).click()
+  await expect(page.getByTestId('issue-draft')).toBeVisible()
+  await expect(page.getByTestId('bug-info')).toContainText('Team Working')
+  await expect(page.getByTestId('bug-info')).not.toContainText(/C:\\Users\\[^%]/)
+  await page.screenshot({ path: 'test-results/ideas.png' })
+})
+
 // Gọi Claude thật (tốn hạn mức subscription) — chỉ chạy khi bật E2E_REAL_CLI=1.
 test('chat thật qua Claude Code CLI: stream, lưu lịch sử, resume', async () => {
   test.skip(process.env.E2E_REAL_CLI !== '1', 'Đặt E2E_REAL_CLI=1 để gọi Claude thật')

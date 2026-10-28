@@ -9,7 +9,7 @@
 
 - App hiện nhãn **DEV** (góc dưới thanh bên) khi `VITE_APP_ENV` không phải `production` — tránh phát hành nhầm bản trỏ về dev.
 - Chỉ dùng anon/publishable key. App **từ chối** service-role / `sb_secret_` key.
-- Cả hai file đều bị `.gitignore`; CI (Giai đoạn 6) lấy giá trị prod từ GitHub Secrets.
+- Cả hai file đều bị `.gitignore`. CI tự tạo chúng từ GitHub Secrets (`DEV_SUPABASE_*` cho e2e, `PROD_SUPABASE_*` khi phát hành) — xem `docs/release.md`.
 
 ## Cấu hình trên dashboard (làm cho từng project)
 
@@ -19,7 +19,7 @@
    `http://127.0.0.1:47823/auth/callback`
    (app mở trình duyệt hệ thống, nhận mã qua cổng loopback này — chỉ mở trong lúc đăng nhập).
 3. **Áp schema** (`supabase/migrations/*.sql`, theo thứ tự tên file):
-   - **Dev (nhanh):** SQL Editor → chạy lần lượt `20261028120000_team_core.sql` rồi `20261028120100_storage_realtime.sql`.
+   - **Dev (nhanh):** SQL Editor → chạy lần lượt từng file trong `supabase/migrations/` theo thứ tự tên (file nào đã chạy thì bỏ qua).
    - **Prod (khuyến nghị CLI để có lịch sử migration):**
      ```
      npx supabase login

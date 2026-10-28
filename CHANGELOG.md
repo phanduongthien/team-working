@@ -36,3 +36,7 @@
 - Hôm nay: việc được giao, trợ lý gợi ý kế hoạch ngày và nhắc khi tới giờ; trợ lý viết báo cáo cuối ngày/tuần để gửi quản lý.
 - Trí nhớ riêng theo tài khoản GitHub: mỗi thành viên có hồ sơ, ghi nhớ và đề xuất riêng — kể cả khi dùng chung máy. Hồ sơ cá nhân đi theo tài khoản (đổi máy vẫn giữ), chỉ chính chủ đọc được.
 - Chế độ sáng/tối: đưa lên đầu Cài đặt và thêm nút chuyển nhanh ở thanh bên.
+- Góp ý & báo lỗi: trợ lý chuẩn hóa ý tưởng/lỗi thành GitHub issue, bạn sửa rồi mở trang tạo issue; báo lỗi kèm phiên bản, hệ điều hành và log gần nhất (đã che đường dẫn cá nhân, email). Nút "Gửi báo lỗi" trong Cài đặt.
+- Tự cập nhật từ GitHub Releases: tải nền, báo "Có bản mới — khởi động lại để cập nhật".
+- Lỗi giao diện được ghi vào file log để dễ báo lỗi.
+- Menu chỉ hiện tính năng hợp với vai trò của bạn trong team.

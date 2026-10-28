@@ -2,6 +2,7 @@ import { chatFeature } from './chat'
 import { claudeCheckFeature } from './claude-check'
 import { dashboardFeature } from './dashboard'
 import { feedbackFeature } from './feedback'
+import { ideasFeature } from './ideas'
 import { learningFeature } from './learning'
 import { memoryFeature } from './memory'
 import { notificationsFeature } from './notifications'
@@ -27,6 +28,7 @@ export const features: FeatureDefinition[] = [
   timeFeature,
   teamFeature,
   notificationsFeature,
+  ideasFeature,
   claudeCheckFeature,
   settingsFeature
 ]

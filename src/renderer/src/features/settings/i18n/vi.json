@@ -33,6 +33,11 @@
     "description": "Chọn cách trợ lý chạy. Mỗi người dùng tài khoản/key của chính mình.",
     "open": "Kiểm tra Claude Code CLI"
   },
+  "support": {
+    "heading": "Hỗ trợ",
+    "description": "Gặp lỗi? Gửi báo lỗi kèm phiên bản và log gần nhất (đã che thông tin cá nhân) để team sửa.",
+    "reportBug": "Gửi báo lỗi"
+  },
   "ai": {
     "provider": "Chạy trợ lý bằng",
     "providers": {

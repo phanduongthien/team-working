@@ -1,0 +1,53 @@
+name: Release
+
+# Đẩy tag vX.Y.Z (tạo bằng `npm version`) → build installer Windows và đăng lên GitHub Releases.
+# App đã cài tự kiểm tra bản mới qua electron-updater.
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm test
+
+      - name: Kiểm tra tag khớp version trong package.json
+        shell: pwsh
+        run: |
+          $version = (Get-Content package.json -Raw | ConvertFrom-Json).version
+          if ("v$version" -ne "${{ github.ref_name }}") { Write-Error "Tag ${{ github.ref_name }} khác version $version"; exit 1 }
+
+      - name: Tạo .env.production (chỉ anon key — không bao giờ dùng service-role key)
+        shell: pwsh
+        env:
+          SUPABASE_URL: ${{ secrets.PROD_SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.PROD_SUPABASE_ANON_KEY }}
+        run: |
+          if (-not $env:SUPABASE_URL) { Write-Error 'Thiếu secret PROD_SUPABASE_URL / PROD_SUPABASE_ANON_KEY'; exit 1 }
+          "VITE_SUPABASE_URL=$env:SUPABASE_URL`nVITE_SUPABASE_ANON_KEY=$env:SUPABASE_ANON_KEY`nVITE_APP_ENV=production`nVITE_GITHUB_REPO=${{ github.repository }}" | Out-File -Encoding utf8NoBOM .env.production
+
+      - run: npm run build
+
+      - name: Đóng gói và đăng release
+        # bash: PowerShell tách sai tham số dạng -c.publish.x=y
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: >-
+          npx electron-builder --win --publish always
+          -c.publish.provider=github
+          -c.publish.owner=${{ github.repository_owner }}
+          -c.publish.repo=${{ github.event.repository.name }}
+          -c.publish.releaseType=release

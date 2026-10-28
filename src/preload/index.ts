@@ -56,7 +56,14 @@ const api: TeamWorkingApi = {
   },
   app: {
     openExternal: (url) => ipcRenderer.invoke(IPC.appOpenExternal, url),
-    onNavigate: (listener) => subscribe<string>(IPC.appNavigate, listener)
+    onNavigate: (listener) => subscribe<string>(IPC.appNavigate, listener),
+    logError: (message) => ipcRenderer.invoke(IPC.appLogError, message),
+    bugInfo: () => ipcRenderer.invoke(IPC.appBugInfo),
+    onUpdateReady: (listener) => subscribe<{ version: string }>(IPC.updateReady, listener),
+    installUpdate: () => ipcRenderer.invoke(IPC.updateInstall)
+  },
+  ideas: {
+    format: (input) => ipcRenderer.invoke(IPC.ideasFormat, input)
   },
   auth: {
     oauth: (authorizeUrl) => ipcRenderer.invoke(IPC.authOAuth, authorizeUrl),

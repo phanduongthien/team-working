@@ -59,5 +59,10 @@ export const IPC = {
   plannerDay: 'planner:day',
   plannerReport: 'planner:report',
   memorySuggest: 'memory:suggest',
-  accountSet: 'account:set'
+  accountSet: 'account:set',
+  updateReady: 'update:ready',
+  updateInstall: 'update:install',
+  appLogError: 'app:logError',
+  appBugInfo: 'app:bugInfo',
+  ideasFormat: 'ideas:format'
 } as const

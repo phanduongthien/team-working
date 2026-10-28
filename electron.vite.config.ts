@@ -11,7 +11,7 @@ export default defineConfig({
     envPrefix: ['MAIN_VITE_', 'VITE_SUPABASE_URL'],
     resolve: { alias: shared },
     build: {
-      rollupOptions: { external: ['better-sqlite3'] }
+      rollupOptions: { external: ['better-sqlite3', 'electron-updater'] }
     }
   },
   preload: {

@@ -26,7 +26,9 @@ import {
 } from './db/repositories'
 import { CodeApprovals } from './code/approvals'
 import { TimeRepository } from './db/timeRepository'
+import { registerAppIpc } from './ipc/app'
 import { createHandle, registerIpc } from './ipc/register'
+import { startAutoUpdate } from './services/updater'
 import { registerTeamIpc } from './ipc/team'
 import { emitApproval, registerWorkIpc } from './ipc/work'
 import { OAuthLoopback } from './services/oauthLoopback'
@@ -194,6 +196,15 @@ async function bootstrap(): Promise<void> {
     loadSkill: (name) => loadSkill(skillsDir, name),
     workspaceDir,
     log
+  })
+  const updater = startAutoUpdate({ isPackaged: app.isPackaged, getWindow, log })
+  registerAppIpc({
+    handle,
+    log,
+    installUpdate: () => updater.install(),
+    getProvider,
+    loadSkill: (name) => loadSkill(skillsDir, name),
+    workspaceDir
   })
   handle(IPC.accountSet, idSchema.nullable(), (uid) => {
     const result = accountScope.set(uid)

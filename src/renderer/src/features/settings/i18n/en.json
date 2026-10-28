@@ -33,6 +33,11 @@
     "description": "Choose how the assistant runs. Everyone uses their own account or key.",
     "open": "Check Claude Code CLI"
   },
+  "support": {
+    "heading": "Support",
+    "description": "Hit a bug? Send a report with the app version and recent log (personal info masked) so the team can fix it.",
+    "reportBug": "Report a bug"
+  },
   "ai": {
     "provider": "Run the assistant with",
     "providers": {

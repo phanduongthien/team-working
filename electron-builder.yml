@@ -1,4 +1,6 @@
-# Cấu hình đóng gói tối thiểu — auto-update/publish GitHub hoàn thiện ở Giai đoạn 6.
+# Đóng gói Windows (NSIS) + tự cập nhật qua GitHub Releases.
+# Cấu hình publish (GitHub owner/repo) truyền qua -c.publish.* trong .github/workflows/release.yml,
+# để build cục bộ không cần biết repo; bản build cục bộ vì vậy không tự cập nhật.
 appId: com.youragent.teamworking
 productName: Team Working
 directories:

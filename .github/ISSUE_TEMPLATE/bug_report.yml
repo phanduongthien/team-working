@@ -1,0 +1,33 @@
+name: Báo lỗi
+description: Có gì đó chạy sai trong Team Working
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: Mẹo — trong app vào **Cài đặt → Gửi báo lỗi** để tự điền phiên bản, hệ điều hành và log (đã che thông tin cá nhân).
+  - type: textarea
+    id: what
+    attributes:
+      label: Chuyện gì xảy ra?
+      description: Bạn đã làm gì, mong đợi gì, thực tế ra sao.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Các bước tái hiện
+      placeholder: |
+        1. Mở …
+        2. Bấm …
+        3. Thấy lỗi …
+  - type: input
+    id: version
+    attributes:
+      label: Phiên bản app
+      placeholder: 0.1.0
+  - type: textarea
+    id: log
+    attributes:
+      label: Log liên quan
+      description: Trong %APPDATA%\Team Working\logs\main.log. Xóa thông tin nhạy cảm trước khi dán.
+      render: text

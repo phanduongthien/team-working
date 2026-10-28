@@ -1,0 +1,57 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: Lint, typecheck, test
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+
+  e2e:
+    name: E2E smoke (Electron)
+    runs-on: windows-latest
+    needs: check
+    # Cần project Supabase dev (anon key) để kiểm tra các trang team; PR từ fork không có secrets → bỏ qua.
+    if: ${{ github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Tạo .env (project dev)
+        shell: pwsh
+        env:
+          SUPABASE_URL: ${{ secrets.DEV_SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.DEV_SUPABASE_ANON_KEY }}
+        run: |
+          if (-not $env:SUPABASE_URL) { Write-Error 'Thiếu secret DEV_SUPABASE_URL / DEV_SUPABASE_ANON_KEY'; exit 1 }
+          "VITE_SUPABASE_URL=$env:SUPABASE_URL`nVITE_SUPABASE_ANON_KEY=$env:SUPABASE_ANON_KEY`nVITE_APP_ENV=development" | Out-File -Encoding utf8NoBOM .env
+      - run: npm run test:e2e
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: e2e-results
+          path: test-results/
+          retention-days: 7

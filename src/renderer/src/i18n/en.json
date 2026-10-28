@@ -10,6 +10,11 @@
     "copy": "Copy",
     "copied": "Copied"
   },
+  "update": {
+    "ready": "Version {{version}} is ready — restart to update.",
+    "restart": "Restart",
+    "later": "Later"
+  },
   "errors": {
     "generic": "Something went wrong: {{message}}",
     "notFound": "Page not found"

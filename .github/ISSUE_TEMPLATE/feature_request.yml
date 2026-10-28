@@ -1,0 +1,26 @@
+name: Đề xuất ý tưởng
+description: Gợi ý tính năng mới hoặc cải tiến
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Vấn đề / nhu cầu
+      description: Bạn đang gặp khó khăn gì, hoặc muốn làm được gì?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Đề xuất
+      description: Bạn hình dung tính năng hoạt động thế nào?
+  - type: textarea
+    id: users
+    attributes:
+      label: Ai sẽ dùng?
+      description: Thành viên, manager, owner…
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Thế nào là xong?
+      placeholder: '- [ ] …'

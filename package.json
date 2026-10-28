@@ -11,8 +11,8 @@
     "dev": "electron-vite dev",
     "start": "electron-vite preview",
     "build": "npm run typecheck && electron-vite build",
-    "build:win": "npm run build && electron-builder --win",
-    "build:win:dev": "npm run typecheck && electron-vite build --mode development && electron-builder --win",
+    "build:win": "npm run build && electron-builder --win --publish never",
+    "build:win:dev": "npm run typecheck && electron-vite build --mode development && electron-builder --win --publish never",
     "lint": "eslint --cache .",
     "format": "prettier --write .",
     "typecheck:node": "tsc --noEmit -p tsconfig.node.json --composite false",
@@ -29,6 +29,7 @@
     "better-sqlite3": "^13.0.3",
     "diff": "^9.0.0",
     "drizzle-orm": "^0.45.4",
+    "electron-updater": "^6.8.11",
     "zod": "^4.6.7"
   },
   "devDependencies": {

@@ -180,6 +180,18 @@ export interface TeamWorkingApi {
     openExternal(url: string): Promise<void>
     /** Main yêu cầu chuyển trang (vd khi bấm thông báo Windows). */
     onNavigate(listener: (route: string) => void): () => void
+    /** Ghi lỗi của giao diện vào file log. */
+    logError(message: string): Promise<void>
+    /** Phiên bản, hệ điều hành, đoạn cuối log (đã che đường dẫn/email) cho báo lỗi. */
+    bugInfo(): Promise<{ version: string; os: string; logTail: string }>
+    onUpdateReady(listener: (info: { version: string }) => void): () => void
+    installUpdate(): Promise<void>
+  }
+  ideas: {
+    /** Trợ lý chuẩn hóa ý tưởng/báo lỗi thành GitHub issue (bản nháp để người dùng sửa). */
+    format(input: { title: string; description: string; kind: 'idea' | 'bug'; language: 'vi' | 'en' }): Promise<
+      AiResult<{ title: string; body: string; labels: string[] }>
+    >
   }
   auth: {
     /** Mở trình duyệt tới link đăng nhập Supabase và chờ mã trả về qua cổng loopback. */

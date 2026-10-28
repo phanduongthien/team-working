@@ -6,7 +6,7 @@ App desktop Windows (Electron + React + TypeScript) — trợ lý AI cho học t
 - `npm run dev` — chạy app ở chế độ dev
 - `npm run lint` / `npm run typecheck` / `npm test` — phải pass trước mỗi commit
 - `npm run test:e2e` — build + Playwright for Electron (thêm `E2E_REAL_CLI=1` để chat thật qua Claude, tốn hạn mức)
-- `npm run build:win` — build installer Windows
+- `npm run build:win` — build installer Windows (cục bộ, không publish; phát hành thật qua tag `v*` → `.github/workflows/release.yml`, xem `docs/release.md`)
 - `npm run db:generate` — sinh migration Drizzle (local SQLite)
 - `npx supabase migration new <tên>` — tạo migration Supabase; test RLS chạy trong `npm test` (PGlite, không cần Docker)
 - Môi trường: `.env` = project dev, `.env.production` = project prod (xem `docs/supabase-setup.md`)
@@ -14,7 +14,8 @@ App desktop Windows (Electron + React + TypeScript) — trợ lý AI cho học t
 ## Kiến trúc
 - `src/main/` — Electron main process: `ipc/register.ts` (handler + zod), `ai/` (AIProvider, ClaudeCliProvider, parser stream-json, system prompt), `db/` (SQLite + Drizzle, migrations), `services/` (chat, logger…).
 - `src/preload/` — API có kiểu expose qua `contextBridge` (`window.api`, kiểu `TeamWorkingApi` trong `src/shared/types.ts`). Renderer không bao giờ truy cập Node trực tiếp.
-- `src/renderer/src/` — React UI. `features/<tên>/` cho từng module, đăng ký trong `features/registry.ts`.
+- `src/renderer/src/` — React UI. `features/<tên>/` cho từng module, đăng ký trong `features/registry.ts` (`roles` lọc menu theo vai trò qua `features/access.ts`).
+- `.github/` — CI (lint/typecheck/test + e2e trên windows-latest), release, mẫu issue/PR, CODEOWNERS. Hướng dẫn đóng góp: `CONTRIBUTING.md`.
 - `src/shared/` — types, zod schemas, tên kênh IPC dùng chung main/renderer.
 - `supabase/migrations/` — schema dữ liệu team, **mọi bảng phải bật RLS**.
 - `assistant-skills/` — skill dành cho con trợ lý lúc chạy; app đọc `SKILL.md` theo chế độ hội thoại và chèn vào system prompt (đóng gói qua `extraResources`).

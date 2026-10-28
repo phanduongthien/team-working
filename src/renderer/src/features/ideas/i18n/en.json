@@ -1,0 +1,44 @@
+{
+  "title": "Ideas & bugs",
+  "heading": "Suggest an idea & report a bug",
+  "intro": "Write it your way and the assistant turns it into a GitHub issue. You review and edit the draft before opening GitHub to submit — the app never sends anything by itself.",
+  "kind": {
+    "idea": "Idea",
+    "bug": "Bug report"
+  },
+  "form": {
+    "title": "Title",
+    "titlePlaceholder": {
+      "idea": "e.g. Deadline reminders via notifications",
+      "bug": "e.g. Flashcards are not saved"
+    },
+    "description": "Description",
+    "descriptionPlaceholder": {
+      "idea": "What you want, why, who would use it…",
+      "bug": "What you did, what you expected, what actually happened…"
+    },
+    "format": "Let the assistant format it",
+    "manual": "Write it myself"
+  },
+  "draft": {
+    "heading": "Issue draft",
+    "body": "Body (Markdown)",
+    "labels": "Labels: {{list}}",
+    "attach": "Attach app version, OS and recent log",
+    "noLog": "(log is empty)",
+    "privacy": "Personal folder paths and emails in the log are masked. Still, read it before sending.",
+    "open": "Open the new-issue page on GitHub",
+    "copy": "Copy",
+    "copied": "Copied",
+    "noRepo": "This build has no GitHub repo configured (VITE_GITHUB_REPO) — copy it and send it to the app maintainer."
+  },
+  "issue": {
+    "env": "Environment",
+    "log": "Recent log"
+  },
+  "failed": "The assistant could not format it: {{message}}",
+  "errors": {
+    "invalid_output": "The assistant returned an unexpected format, please retry.",
+    "rate_limit": "AI usage limit reached, try again in a few minutes."
+  }
+}

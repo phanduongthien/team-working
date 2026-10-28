@@ -10,6 +10,11 @@
     "copy": "Sao chép",
     "copied": "Đã chép"
   },
+  "update": {
+    "ready": "Có bản mới {{version}} — khởi động lại để cập nhật.",
+    "restart": "Khởi động lại",
+    "later": "Để sau"
+  },
   "errors": {
     "generic": "Có lỗi xảy ra: {{message}}",
     "notFound": "Không tìm thấy trang"
