@@ -1,7 +1,7 @@
 {
   "name": "team-working",
   "productName": "Team Working",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "description": "Trợ lý AI cho học tập, quản lý team, giao việc và feedback",
   "main": "./out/main/index.js",
