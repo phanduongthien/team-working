@@ -15,10 +15,15 @@ test.beforeAll(async () => {
     env: { ...process.env, TEAM_WORKING_USER_DATA: userData }
   })
   page = await app.firstWindow()
+  // Chờ lần kiểm tra CLI lúc mở app xong (máy CI không có Claude CLI → app chuyển tới /claude một lần).
+  await go('#/claude')
+  await expect(page.getByTestId('cli-status')).not.toContainText(/Đang kiểm tra/, { timeout: 30_000 })
 })
 
 /** Điều hướng trong app (đổi hash) — app chặn mọi điều hướng từ bên ngoài. */
-const go = (hash: string): Promise<string> => page.evaluate((h) => (window.location.hash = h), hash)
+function go(hash: string): Promise<string> {
+  return page.evaluate((h) => (window.location.hash = h), hash)
+}
 
 test.afterAll(async () => {
   await app?.close()

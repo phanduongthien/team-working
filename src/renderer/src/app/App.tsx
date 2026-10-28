@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { HashRouter, Route, Routes, useNavigate } from 'react-router'
 import { useMemory } from '@renderer/features/memory/store'
@@ -25,7 +25,12 @@ function NotFound() {
 function CliGate() {
   const navigate = useNavigate()
   const check = useCliStatus((s) => s.check)
+  // `navigate` đổi tham chiếu mỗi lần đổi trang (HashRouter) — chỉ chuyển hướng một lần lúc mở app,
+  // không thì người chưa cài CLI bị kéo về /claude mỗi khi bấm menu.
+  const done = useRef(false)
   useEffect(() => {
+    if (done.current) return
+    done.current = true
     void check().then((status) => {
       if (status.state !== 'ok') void navigate('/claude')
     })
