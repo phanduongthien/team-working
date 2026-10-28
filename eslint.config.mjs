@@ -13,6 +13,12 @@ export default tseslint.config(
     languageOptions: { globals: globals.node }
   },
   {
+    // Script CommonJS chạy bằng Electron-as-Node (MCP server duyệt quyền).
+    files: ['resources/**/*.cjs'],
+    languageOptions: { sourceType: 'commonjs', globals: globals.node },
+    rules: { '@typescript-eslint/no-require-imports': 'off' }
+  },
+  {
     files: ['src/renderer/**/*.{ts,tsx}'],
     languageOptions: { globals: globals.browser },
     plugins: { 'react-hooks': reactHooks, 'react-refresh': reactRefresh },
