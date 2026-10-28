@@ -1,0 +1,69 @@
+{
+  "title": "Team",
+  "notConfigured": {
+    "heading": "Team server not connected",
+    "body": "This build has no Supabase configuration, so only personal features (chat, memory) are available. An admin needs to set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY at build time."
+  },
+  "signIn": {
+    "heading": "Sign in to work with your team",
+    "body": "Sign in with your GitHub account. Your browser will open the sign-in page; come back to the app when done.",
+    "button": "Sign in with GitHub",
+    "waiting": "Waiting for you to sign in in the browser…",
+    "cancel": "Cancel",
+    "signOut": "Sign out"
+  },
+  "onboard": {
+    "heading": "You are not in a team yet",
+    "create": "Create a new team",
+    "teamName": "Team name",
+    "createButton": "Create team",
+    "join": "Join with an invite code",
+    "code": "Invite code",
+    "joinButton": "Join",
+    "pending": "Invites waiting for you",
+    "accept": "Join {{team}} ({{role}})"
+  },
+  "roles": { "owner": "Owner", "manager": "Manager", "member": "Member" },
+  "page": {
+    "switch": "Switch team",
+    "newTeam": "Create another team",
+    "rename": "Rename team",
+    "leave": "Leave team",
+    "leaveConfirm": "Are you sure you want to leave “{{team}}”?"
+  },
+  "members": {
+    "heading": "Members ({{count}})",
+    "you": "you",
+    "remove": "Remove from team",
+    "removeConfirm": "Remove {{name}} from the team?"
+  },
+  "invites": {
+    "heading": "Invites",
+    "byEmail": "Email (empty = share code anyone can use for 7 days)",
+    "role": "Role",
+    "create": "Create invite",
+    "empty": "No active invites.",
+    "code": "Code: {{code}}",
+    "shareCode": "Share code",
+    "expires": "expires {{date}}",
+    "copy": "Copy code",
+    "revoke": "Revoke",
+    "hint": "Send the code to the invitee: they sign in to Team Working with GitHub and enter it on the Team screen."
+  },
+  "profile": {
+    "heading": "My team profile",
+    "displayName": "Display name",
+    "skills": "Skills (comma separated) — used by the assistant to suggest assignments",
+    "save": "Save profile"
+  },
+  "errors": {
+    "invite_invalid": "The invite code is wrong or expired.",
+    "invite_email_mismatch": "This invite is for a different email.",
+    "last_owner": "A team needs at least one Owner. Transfer ownership first.",
+    "not_allowed": "You are not allowed to do this.",
+    "network_error": "Cannot reach the server. Check your connection.",
+    "port_in_use": "Port 47823 is used by another app. Close it and try again.",
+    "timeout": "Sign-in timed out. Please try again.",
+    "invalid_authorize_url": "Invalid sign-in link."
+  }
+}

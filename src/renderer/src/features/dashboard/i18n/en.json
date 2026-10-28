@@ -1,0 +1,22 @@
+{
+  "title": "Progress",
+  "heading": "Team progress",
+  "summary": {
+    "tasks": "Tasks",
+    "done": "Done",
+    "overdue": "Overdue",
+    "openHours": "Open hours"
+  },
+  "byProject": "By project",
+  "byMember": "By member",
+  "workload": "Open workload (estimated hours)",
+  "overdueList": "Overdue tasks",
+  "noOverdue": "No overdue tasks 🎉",
+  "burndown": "Burndown",
+  "burndownProject": "Project",
+  "remaining": "Remaining",
+  "ideal": "Ideal",
+  "noData": "No data yet.",
+  "percent": "{{percent}}% ({{done}}/{{total}})",
+  "hours": "{{hours}} h"
+}

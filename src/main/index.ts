@@ -22,7 +22,9 @@ import {
   SettingsRepository,
   SuggestionRepository
 } from './db/repositories'
-import { registerIpc } from './ipc/register'
+import { createHandle, registerIpc } from './ipc/register'
+import { registerTeamIpc } from './ipc/team'
+import { OAuthLoopback } from './services/oauthLoopback'
 import { MemoryService } from './memory/memoryService'
 import { AttachmentStore } from './services/attachments'
 import { ChatService } from './services/chatService'
@@ -133,6 +135,8 @@ function bootstrap(): void {
   })
   app.on('before-quit', () => chat.abortAll())
 
+  const handle = createHandle((event: IpcMainInvokeEvent) => event.sender === mainWindow?.webContents, log)
+  const getWindow = (): BrowserWindow | null => mainWindow
   registerIpc({
     conversations,
     messages,
@@ -144,8 +148,20 @@ function bootstrap(): void {
     attachments: new AttachmentStore(join(workspaceDir, 'attachments')),
     secrets,
     log,
-    getWindow: () => mainWindow,
-    isTrustedSender: (event: IpcMainInvokeEvent) => event.sender === mainWindow?.webContents
+    getWindow,
+    handle
+  })
+  const oauth = new OAuthLoopback()
+  app.on('before-quit', () => oauth.cancel())
+  registerTeamIpc({
+    handle,
+    oauth,
+    supabaseUrl: import.meta.env.VITE_SUPABASE_URL,
+    getWindow,
+    getProvider,
+    loadSkill: (name) => loadSkill(skillsDir, name),
+    workspaceDir,
+    log
   })
 
   mainWindow = createWindow()

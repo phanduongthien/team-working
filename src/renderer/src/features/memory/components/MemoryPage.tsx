@@ -5,6 +5,7 @@ import { Button } from '@renderer/components/ui/button'
 import { api } from '@renderer/lib/api'
 import { usePreferences } from '@renderer/stores/preferences'
 import { useMemory } from '../store'
+import { BackupSection } from './BackupSection'
 import { MemoryList } from './MemoryList'
 import { ProfileForm } from './ProfileForm'
 import { SuggestionList } from './SuggestionList'
@@ -72,6 +73,9 @@ export function MemoryPage() {
         </Section>
         <Section title={t('list.heading')}>
           <MemoryList />
+        </Section>
+        <Section title={t('backup.heading')}>
+          <BackupSection />
         </Section>
       </div>
     </div>

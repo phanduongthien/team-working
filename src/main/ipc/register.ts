@@ -48,26 +48,40 @@ export type IpcDeps = {
   secrets: SecretStore
   log: Logger
   getWindow(): BrowserWindow | null
-  /** Chỉ chấp nhận IPC từ cửa sổ của app. */
-  isTrustedSender(event: IpcMainInvokeEvent): boolean
+  handle: HandleFn
 }
 
-/** Đăng ký handler: kiểm tra sender, validate input bằng zod rồi mới gọi logic. */
+export type HandleFn = <S extends z.ZodType, R>(
+  channel: string,
+  schema: S,
+  fn: (input: z.infer<S>) => R | Promise<R>
+) => void
+
+/** Tạo hàm đăng ký handler: kiểm tra sender, validate input bằng zod rồi mới gọi logic. */
+export function createHandle(
+  isTrustedSender: (event: IpcMainInvokeEvent) => boolean,
+  log: { warn(msg: string): void }
+): HandleFn {
+  return (channel, schema, fn) => {
+    ipcMain.handle(channel, async (event, raw: unknown) => {
+      if (!isTrustedSender(event)) throw new Error('untrusted_sender')
+      const parsed = schema.safeParse(raw)
+      if (!parsed.success) {
+        log.warn(`IPC ${channel} input không hợp lệ: ${parsed.error.message}`)
+        throw new Error('invalid_input')
+      }
+      return fn(parsed.data)
+    })
+  }
+}
+
 function handle<S extends z.ZodType, R>(
   deps: IpcDeps,
   channel: string,
   schema: S,
   fn: (input: z.infer<S>) => R | Promise<R>
 ): void {
-  ipcMain.handle(channel, async (event, raw: unknown) => {
-    if (!deps.isTrustedSender(event)) throw new Error('untrusted_sender')
-    const parsed = schema.safeParse(raw)
-    if (!parsed.success) {
-      deps.log.warn(`IPC ${channel} input không hợp lệ: ${parsed.error.message}`)
-      throw new Error('invalid_input')
-    }
-    return fn(parsed.data)
-  })
+  deps.handle(channel, schema, fn)
 }
 
 export function registerIpc(deps: IpcDeps): void {

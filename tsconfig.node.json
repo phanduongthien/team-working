@@ -8,7 +8,8 @@
     "src/main/**/*",
     "src/preload/**/*",
     "src/shared/**/*",
-    "tests/**/*"
+    "tests/**/*",
+    "supabase/tests/**/*"
   ],
   "compilerOptions": {
     "composite": true,

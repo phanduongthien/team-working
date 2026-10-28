@@ -30,5 +30,10 @@ export const IPC = {
   settingsSetAi: 'settings:setAi',
   settingsSetApiKey: 'settings:setApiKey',
   settingsClearApiKey: 'settings:clearApiKey',
-  appOpenExternal: 'app:openExternal'
+  appOpenExternal: 'app:openExternal',
+  appNavigate: 'app:navigate',
+  authOAuth: 'auth:oauth',
+  authCancel: 'auth:cancel',
+  notifyShow: 'notify:show',
+  plannerPlanTasks: 'planner:planTasks'
 } as const

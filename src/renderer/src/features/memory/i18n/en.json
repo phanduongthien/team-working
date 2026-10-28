@@ -35,6 +35,17 @@
     "answerStyle": "How you like answers",
     "answerStylePlaceholder": "e.g. short, with code examples, explained from the basics"
   },
+  "backup": {
+    "heading": "Back up to the team server",
+    "toggle": "Automatically back up memory to Supabase",
+    "help": "Off by default. When on, your memory is also stored on the server so you can restore it on another computer; only you can read it (not even managers).",
+    "pushNow": "Back up now",
+    "restore": "Restore from backup",
+    "pushed": "Backed up {{count}} items.",
+    "restored": "Restored {{count}} items.",
+    "failed": "Could not complete: {{message}}",
+    "signInFirst": "Sign in on the Team screen to use backup."
+  },
   "list": {
     "heading": "Things remembered",
     "search": "Search memory…",

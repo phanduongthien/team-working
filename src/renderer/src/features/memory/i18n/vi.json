@@ -35,6 +35,17 @@
     "answerStyle": "Muốn được trả lời thế nào",
     "answerStylePlaceholder": "Ví dụ: ngắn gọn, có ví dụ code, giải thích từ cơ bản"
   },
+  "backup": {
+    "heading": "Sao lưu lên máy chủ team",
+    "toggle": "Tự động sao lưu trí nhớ lên Supabase",
+    "help": "Mặc định tắt. Khi bật, hồ sơ trí nhớ được lưu thêm trên máy chủ để khôi phục trên máy khác; chỉ chính bạn đọc được (kể cả Manager cũng không).",
+    "pushNow": "Sao lưu ngay",
+    "restore": "Khôi phục từ bản sao lưu",
+    "pushed": "Đã sao lưu {{count}} mục.",
+    "restored": "Đã khôi phục {{count}} mục.",
+    "failed": "Không thực hiện được: {{message}}",
+    "signInFirst": "Đăng nhập ở mục Team để dùng sao lưu."
+  },
   "list": {
     "heading": "Những điều đã ghi nhớ",
     "search": "Tìm trong trí nhớ…",

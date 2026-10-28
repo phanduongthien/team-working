@@ -53,6 +53,15 @@ test('đổi tên trợ lý trong Cài đặt và thấy ở màn hình chat', a
   await expect(page.getByRole('heading', { name: 'Xin chào, mình là Bông!' })).toBeVisible()
 })
 
+test('các trang team yêu cầu đăng nhập GitHub; hiện nhãn DEV khi trỏ project dev', async () => {
+  await expect(page.getByTestId('env-badge')).toHaveText('DEV')
+  for (const hash of ['#/team', '#/projects', '#/dashboard', '#/notifications']) {
+    await go(hash)
+    await expect(page.getByRole('button', { name: 'Đăng nhập bằng GitHub' }), hash).toBeVisible()
+  }
+  await page.screenshot({ path: 'test-results/team-signin.png' })
+})
+
 test('trang Trí nhớ: hồ sơ, thêm/sửa/xóa memory thủ công', async () => {
   await go('#/memory')
   await expect(page.getByRole('heading', { name: 'Bông nhớ gì về tôi' })).toBeVisible()

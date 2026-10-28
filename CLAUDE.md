@@ -8,7 +8,8 @@ App desktop Windows (Electron + React + TypeScript) — trợ lý AI cho học t
 - `npm run test:e2e` — build + Playwright for Electron (thêm `E2E_REAL_CLI=1` để chat thật qua Claude, tốn hạn mức)
 - `npm run build:win` — build installer Windows
 - `npm run db:generate` — sinh migration Drizzle (local SQLite)
-- `supabase migration new <tên>` — tạo migration Supabase
+- `npx supabase migration new <tên>` — tạo migration Supabase; test RLS chạy trong `npm test` (PGlite, không cần Docker)
+- Môi trường: `.env` = project dev, `.env.production` = project prod (xem `docs/supabase-setup.md`)
 
 ## Kiến trúc
 - `src/main/` — Electron main process: `ipc/register.ts` (handler + zod), `ai/` (AIProvider, ClaudeCliProvider, parser stream-json, system prompt), `db/` (SQLite + Drizzle, migrations), `services/` (chat, logger…).

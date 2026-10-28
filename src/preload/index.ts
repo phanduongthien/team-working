@@ -55,7 +55,18 @@ const api: TeamWorkingApi = {
     clearApiKey: () => ipcRenderer.invoke(IPC.settingsClearApiKey)
   },
   app: {
-    openExternal: (url) => ipcRenderer.invoke(IPC.appOpenExternal, url)
+    openExternal: (url) => ipcRenderer.invoke(IPC.appOpenExternal, url),
+    onNavigate: (listener) => subscribe<string>(IPC.appNavigate, listener)
+  },
+  auth: {
+    oauth: (authorizeUrl) => ipcRenderer.invoke(IPC.authOAuth, authorizeUrl),
+    cancel: () => ipcRenderer.invoke(IPC.authCancel)
+  },
+  notify: {
+    show: (notification) => ipcRenderer.invoke(IPC.notifyShow, notification)
+  },
+  planner: {
+    planTasks: (request) => ipcRenderer.invoke(IPC.plannerPlanTasks, request)
   }
 }
 

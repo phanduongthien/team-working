@@ -3,7 +3,10 @@ import type {
   AiSettings,
   Appearance,
   AssistantProfile,
+  DesktopNotification,
   MemoryAction,
+  PlanRequest,
+  PlanResult,
   MemoryCategory,
   SuggestionStatus,
   UserProfile
@@ -147,5 +150,18 @@ export interface TeamWorkingApi {
   }
   app: {
     openExternal(url: string): Promise<void>
+    /** Main yêu cầu chuyển trang (vd khi bấm thông báo Windows). */
+    onNavigate(listener: (route: string) => void): () => void
+  }
+  auth: {
+    /** Mở trình duyệt tới link đăng nhập Supabase và chờ mã trả về qua cổng loopback. */
+    oauth(authorizeUrl: string): Promise<{ code: string } | { error: string }>
+    cancel(): Promise<void>
+  }
+  notify: {
+    show(notification: DesktopNotification): Promise<void>
+  }
+  planner: {
+    planTasks(request: PlanRequest): Promise<PlanResult>
   }
 }

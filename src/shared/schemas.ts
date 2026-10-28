@@ -123,6 +123,81 @@ export const DEFAULT_PROFILE: UserProfile = {
   answerStyle: ''
 }
 
+// ---- Team: trợ lý chia việc ----
+
+export const TASK_PRIORITIES = ['low', 'medium', 'high', 'urgent'] as const
+export const TASK_STATUSES = ['todo', 'in_progress', 'review', 'done', 'blocked'] as const
+export const PROJECT_STATUSES = ['planning', 'active', 'on_hold', 'done', 'archived'] as const
+export const TEAM_ROLES = ['owner', 'manager', 'member'] as const
+
+const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/)
+
+export const planRequestSchema = z.object({
+  projectName: z.string().trim().min(1).max(120),
+  description: z.string().max(5000),
+  goal: z.string().max(2000),
+  dueDate: isoDate.nullable(),
+  today: isoDate,
+  instructions: z.string().max(2000).default(''),
+  members: z
+    .array(
+      z.object({
+        id: idSchema,
+        name: z.string().max(80),
+        skills: z.array(z.string().max(60)).max(30),
+        openHours: z.number().min(0).max(10_000)
+      })
+    )
+    .max(100)
+})
+
+/** Định dạng JSON mà skill project-planner trả về (lỏng — làm sạch ở main). */
+export const taskPlanOutputSchema = z.object({
+  type: z.literal('task_plan'),
+  tasks: z
+    .array(
+      z.object({
+        title: z.string().trim().min(1).max(200),
+        description: z.string().max(5000).default(''),
+        assigneeId: z.string().nullish(),
+        priority: z.string().nullish(),
+        estimateHours: z.number().nullish(),
+        dueDate: z.string().nullish(),
+        dependsOn: z.array(z.string()).default([]),
+        reason: z.string().max(1000).default('')
+      })
+    )
+    .max(60)
+})
+
+export type PlanRequest = z.infer<typeof planRequestSchema>
+export type TaskPriority = (typeof TASK_PRIORITIES)[number]
+export type TaskStatus = (typeof TASK_STATUSES)[number]
+export type ProjectStatus = (typeof PROJECT_STATUSES)[number]
+export type TeamRole = (typeof TEAM_ROLES)[number]
+
+export type PlannedTask = {
+  title: string
+  description: string
+  assigneeId: string | null
+  priority: TaskPriority
+  estimateHours: number | null
+  dueDate: string | null
+  dependsOn: string[]
+  reason: string
+}
+
+export type PlanResult = { tasks: PlannedTask[] } | { error: string }
+
+export const desktopNotificationSchema = z.object({
+  title: z.string().trim().min(1).max(120),
+  body: z.string().max(300).default(''),
+  /** Route trong app mở khi bấm vào thông báo, ví dụ "/projects/<id>?task=<id>". */
+  route: z.string().regex(/^\/[\w\-/?=&%.]*$/).max(300).optional()
+})
+
+export type DesktopNotification = z.infer<typeof desktopNotificationSchema>
+
 // ---- Cấu hình AI ----
 
 export const AI_PROVIDERS = ['claude-cli', 'anthropic-api'] as const

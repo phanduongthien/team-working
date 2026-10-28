@@ -1,0 +1,26 @@
+{
+  "title": "Notifications",
+  "heading": "Notifications",
+  "empty": "No notifications yet.",
+  "markAll": "Mark all as read",
+  "markRead": "Mark as read",
+  "someone": "Someone",
+  "types": {
+    "task_assigned": {
+      "title": "New task assigned to you",
+      "body": "{{by}} assigned you: {{task}}"
+    },
+    "task_status": {
+      "title": "Task moved to {{status}}",
+      "body": "{{by}}: {{task}}"
+    },
+    "task_comment": {
+      "title": "New comment",
+      "body": "{{by}} on “{{task}}”: {{excerpt}}"
+    },
+    "due_soon": {
+      "title": "Due soon",
+      "body": "“{{task}}” is due {{date}}"
+    }
+  }
+}

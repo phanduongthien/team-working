@@ -1,0 +1,22 @@
+{
+  "title": "Tiến độ",
+  "heading": "Tiến độ team",
+  "summary": {
+    "tasks": "Task",
+    "done": "Đã xong",
+    "overdue": "Trễ hạn",
+    "openHours": "Giờ việc còn mở"
+  },
+  "byProject": "Theo dự án",
+  "byMember": "Theo thành viên",
+  "workload": "Khối lượng việc đang mở (giờ ước lượng)",
+  "overdueList": "Task trễ hạn",
+  "noOverdue": "Không có task trễ hạn 🎉",
+  "burndown": "Burndown",
+  "burndownProject": "Dự án",
+  "remaining": "Còn lại",
+  "ideal": "Lý tưởng",
+  "noData": "Chưa có dữ liệu.",
+  "percent": "{{percent}}% ({{done}}/{{total}})",
+  "hours": "{{hours}} giờ"
+}

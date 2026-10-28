@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import type { MemoryCategory, UserProfile } from '@shared/schemas'
 import type { Memory, MemoryEventPayload, MemorySuggestion } from '@shared/types'
 import { api } from '@renderer/lib/api'
+import { scheduleBackup } from './backup'
 
 type MemoryState = {
   memories: Memory[]
@@ -51,21 +52,25 @@ export const useMemory = create<MemoryState>((set, get) => ({
   async create(content, category) {
     await api.memory.create(content, category)
     await get().loadMemories()
+    scheduleBackup()
   },
 
   async update(id, content, category) {
     await api.memory.update(id, content, category)
     await get().loadMemories()
+    scheduleBackup()
   },
 
   async remove(id) {
     await api.memory.remove(id)
     set((s) => ({ memories: s.memories.filter((m) => m.id !== id) }))
+    scheduleBackup()
   },
 
   async resolve(id, accept, edits = {}) {
     await api.memory.resolve({ id, accept, ...edits })
     await get().loadAll()
+    if (accept) scheduleBackup()
   },
 
   saveProfile(profile) {

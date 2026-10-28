@@ -1,0 +1,26 @@
+{
+  "title": "Thông báo",
+  "heading": "Thông báo",
+  "empty": "Chưa có thông báo nào.",
+  "markAll": "Đánh dấu đã đọc tất cả",
+  "markRead": "Đánh dấu đã đọc",
+  "someone": "Ai đó",
+  "types": {
+    "task_assigned": {
+      "title": "Bạn được giao việc mới",
+      "body": "{{by}} giao cho bạn: {{task}}"
+    },
+    "task_status": {
+      "title": "Task chuyển sang {{status}}",
+      "body": "{{by}}: {{task}}"
+    },
+    "task_comment": {
+      "title": "Bình luận mới",
+      "body": "{{by}} trong “{{task}}”: {{excerpt}}"
+    },
+    "due_soon": {
+      "title": "Sắp đến hạn",
+      "body": "“{{task}}” đến hạn {{date}}"
+    }
+  }
+}
