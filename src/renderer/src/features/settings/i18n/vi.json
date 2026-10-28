@@ -2,7 +2,7 @@
   "title": "Cài đặt",
   "assistant": {
     "heading": "Trợ lý của bạn",
-    "description": "Tên, avatar và tính cách được dùng ở mọi nơi trong app và trong cách trợ lý trả lời. Chỉ lưu trên máy này — thành viên khác trong team không thấy và có trợ lý của riêng họ.",
+    "description": "Tên, avatar và tính cách được dùng ở mọi nơi trong app và trong cách trợ lý trả lời. Chỉ riêng bạn thấy: lưu trên máy và đi theo tài khoản GitHub khi bạn đăng nhập (đổi máy vẫn giữ). Thành viên khác — kể cả quản lý — không thấy và có trợ lý của riêng họ.",
     "name": "Tên trợ lý",
     "avatar": "Avatar",
     "upload": "Tải ảnh lên",

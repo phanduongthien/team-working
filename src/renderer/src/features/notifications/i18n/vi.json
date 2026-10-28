@@ -18,6 +18,18 @@
       "title": "Bình luận mới",
       "body": "{{by}} trong “{{task}}”: {{excerpt}}"
     },
+    "feedback_received": {
+      "title": "Bạn nhận được feedback ({{category}})",
+      "body": "{{by}}: {{task}}"
+    },
+    "feedback_project": {
+      "title": "Góp ý mới ({{category}})",
+      "body": "{{by}}: {{task}}"
+    },
+    "feedback_reply": {
+      "title": "Trả lời feedback",
+      "body": "{{by}} trong “{{task}}”: {{excerpt}}"
+    },
     "due_soon": {
       "title": "Sắp đến hạn",
       "body": "“{{task}}” đến hạn {{date}}"

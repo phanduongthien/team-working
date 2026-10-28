@@ -67,6 +67,10 @@ const api: TeamWorkingApi = {
   },
   planner: {
     planTasks: (request) => ipcRenderer.invoke(IPC.plannerPlanTasks, request)
+  },
+  feedback: {
+    coach: (request) => ipcRenderer.invoke(IPC.feedbackCoach, request),
+    summarize: (request) => ipcRenderer.invoke(IPC.feedbackSummarize, request)
   }
 }
 

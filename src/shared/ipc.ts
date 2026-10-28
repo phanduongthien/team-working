@@ -35,5 +35,7 @@ export const IPC = {
   authOAuth: 'auth:oauth',
   authCancel: 'auth:cancel',
   notifyShow: 'notify:show',
-  plannerPlanTasks: 'planner:planTasks'
+  plannerPlanTasks: 'planner:planTasks',
+  feedbackCoach: 'feedback:coach',
+  feedbackSummarize: 'feedback:summarize'
 } as const

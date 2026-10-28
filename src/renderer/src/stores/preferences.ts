@@ -7,13 +7,17 @@ import {
 } from '@shared/schemas'
 import { api } from '@renderer/lib/api'
 import i18n from '@renderer/i18n'
+import { pushAssistantIfSignedIn, stampLocalAssistant } from './assistantSync'
 
 type PreferencesState = {
   assistant: AssistantProfile
   appearance: Appearance
   loaded: boolean
   load(): Promise<void>
+  /** Người dùng đổi cài đặt trợ lý (lưu máy + đồng bộ tài khoản). */
   saveAssistant(profile: AssistantProfile): Promise<void>
+  /** Áp cài đặt (vd lấy từ tài khoản) mà không đẩy ngược lên. */
+  applyAssistant(profile: AssistantProfile): Promise<void>
   saveAppearance(appearance: Appearance): Promise<void>
 }
 
@@ -46,6 +50,13 @@ export const usePreferences = create<PreferencesState>((set, get) => ({
   },
 
   async saveAssistant(profile) {
+    await get().applyAssistant(profile)
+    // Người dùng tự đổi → đánh dấu mới nhất và đẩy lên tài khoản (nếu đang đăng nhập).
+    stampLocalAssistant()
+    void pushAssistantIfSignedIn(get().assistant)
+  },
+
+  async applyAssistant(profile) {
     const assistant = await api.settings.setAssistant(profile)
     await i18n.changeLanguage(assistant.language)
     set({ assistant })

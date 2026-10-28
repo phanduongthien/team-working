@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { HashRouter, Route, Routes, useNavigate } from 'react-router'
 import type { FeatureDefinition } from '@renderer/features/types'
 import { api } from '@renderer/lib/api'
+import { syncAssistant } from '@renderer/stores/assistantSync'
 import { useAuth } from '@renderer/stores/auth'
 import { useCliStatus } from '@renderer/stores/cli'
 import { usePreferences } from '@renderer/stores/preferences'
@@ -48,8 +49,10 @@ function useAuthLifecycle(): void {
       if (uid === lastUid) return
       lastUid = uid
       queryClient.clear()
-      if (uid) void useTeam.getState().load()
-      else useTeam.getState().reset()
+      if (uid) {
+        void useTeam.getState().load()
+        void syncAssistant(uid)
+      } else useTeam.getState().reset()
     })
     return () => {
       unsubscribe()

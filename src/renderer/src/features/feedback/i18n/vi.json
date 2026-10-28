@@ -1,0 +1,108 @@
+{
+  "title": "Feedback",
+  "heading": "Feedback",
+  "new": "Gửi feedback",
+  "summarize": "Tóm tắt theo kỳ",
+  "tabs": {
+    "board": "Bảng góp ý chung",
+    "received": "Gửi cho tôi",
+    "sent": "Tôi đã gửi",
+    "all": "Tất cả (quản lý)"
+  },
+  "empty": {
+    "board": "Chưa có góp ý công khai nào. Hãy là người đầu tiên!",
+    "received": "Chưa có feedback nào gửi cho bạn.",
+    "sent": "Bạn chưa gửi feedback nào.",
+    "all": "Chưa có feedback nào trong team."
+  },
+  "kinds": {
+    "project": "Góp ý dự án / quy trình",
+    "person": "Feedback cho một người",
+    "review": "Đánh giá định kỳ"
+  },
+  "visibility": {
+    "public": "Công khai",
+    "anonymous": "Ẩn danh",
+    "private": "Riêng tư"
+  },
+  "visibilityHelp": {
+    "project": {
+      "public": "Mọi thành viên thấy nội dung và tên bạn.",
+      "anonymous": "Mọi thành viên thấy nội dung; chỉ Manager/Owner biết bạn là người gửi.",
+      "private": "Chỉ Manager/Owner đọc được."
+    },
+    "person": {
+      "public": "Cả team thấy lời khen này và tên bạn (công khai chỉ dành cho khen ngợi).",
+      "private": "Chỉ người nhận và Manager/Owner đọc được."
+    },
+    "review": {
+      "private": "Chỉ người được đánh giá và Manager/Owner đọc được."
+    }
+  },
+  "categories": {
+    "praise": "Khen ngợi",
+    "improve": "Cần cải thiện",
+    "suggestion": "Đề xuất"
+  },
+  "status": {
+    "open": "Mới",
+    "acknowledged": "Đã đọc",
+    "resolved": "Đã xử lý"
+  },
+  "form": {
+    "kind": "Loại",
+    "visibility": "Ai được xem",
+    "category": "Phân loại",
+    "project": "Dự án (tùy chọn)",
+    "noProject": "Cả team / quy trình chung",
+    "recipient": "Gửi cho",
+    "period": "Kỳ đánh giá",
+    "periodPlaceholder": "Ví dụ: Quý 4/2026",
+    "title": "Tiêu đề (tùy chọn)",
+    "body": "Nội dung",
+    "bodyHint": "Gợi ý: Tình huống – Hành vi – Tác động – Đề xuất. Cụ thể, dựa trên sự việc.",
+    "coach": "Nhờ trợ lý viết lại",
+    "coaching": "Trợ lý đang viết…",
+    "coachNote": "Trợ lý chỉ viết lại — bạn đọc, sửa rồi mới gửi.",
+    "send": "Gửi",
+    "praiseOnly": "Feedback công khai cho một người chỉ dành cho khen ngợi. Góp ý cải thiện hãy gửi riêng tư."
+  },
+  "detail": {
+    "from": "Từ {{name}}",
+    "to": "Gửi {{name}}",
+    "anonymous": "Ẩn danh",
+    "anonymousYou": "Bạn (ẩn danh với thành viên khác)",
+    "author": "người gửi",
+    "you": "bạn",
+    "replies": "Trả lời ({{count}})",
+    "reply": "Viết trả lời…",
+    "sendReply": "Trả lời",
+    "markRead": "Đánh dấu đã đọc",
+    "markResolved": "Đánh dấu đã xử lý",
+    "reopen": "Mở lại",
+    "delete": "Xóa feedback",
+    "deleteConfirm": "Xóa feedback này cùng các trả lời?",
+    "select": "Chọn một feedback để xem chi tiết."
+  },
+  "summary": {
+    "heading": "Tóm tắt feedback theo kỳ",
+    "intro": "Trợ lý tổng hợp chủ đề lặp lại, tiến bộ và việc cần làm. Tên người gửi không được gửi cho trợ lý.",
+    "scope": "Phạm vi",
+    "scopeTeam": "Cả team",
+    "scopeProject": "Dự án: {{name}}",
+    "scopePerson": "Thành viên: {{name}}",
+    "period": "Khoảng thời gian",
+    "days": "{{count}} ngày qua",
+    "run": "Tóm tắt",
+    "running": "Trợ lý đang tóm tắt…",
+    "none": "Không có feedback nào trong phạm vi này.",
+    "copy": "Sao chép"
+  },
+  "errors": {
+    "feedback_public_person_praise": "Feedback công khai cho một người chỉ dành cho khen ngợi.",
+    "cannot_feedback_self": "Bạn không thể gửi feedback cho chính mình.",
+    "recipient_not_in_team": "Người nhận không thuộc team.",
+    "review_managers_only": "Chỉ Manager/Owner tạo được đánh giá định kỳ.",
+    "feedback_not_found": "Feedback không còn tồn tại hoặc bạn không có quyền xem."
+  }
+}

@@ -1,8 +1,16 @@
 import { Notification, shell, type BrowserWindow } from 'electron'
 import { z } from 'zod'
 import { IPC } from '@shared/ipc'
-import { desktopNotificationSchema, planRequestSchema, type PlanResult } from '@shared/schemas'
+import {
+  desktopNotificationSchema,
+  feedbackCoachSchema,
+  feedbackSummarySchema,
+  planRequestSchema,
+  type PlanResult,
+  type TextResult
+} from '@shared/schemas'
 import { completeText, type AIProvider } from '../ai/AIProvider'
+import { buildCoachPrompt, buildSummaryPrompt, cleanText } from '../feedback/prompts'
 import { buildPlanPrompt, parsePlan } from '../planner/taskPlan'
 import { isAllowedAuthorizeUrl, type OAuthLoopback } from '../services/oauthLoopback'
 import type { HandleFn } from './register'
@@ -51,6 +59,20 @@ export function registerTeamIpc(deps: TeamIpcDeps): void {
     })
     toast.show()
   })
+
+  /** Gọi skill feedback-coach một lượt, trả văn bản đã làm sạch. */
+  const coachText = async (prompt: string): Promise<TextResult> => {
+    const skill = (await deps.loadSkill('feedback-coach')) ?? ''
+    const result = await completeText(
+      deps.getProvider(),
+      { prompt, systemPrompt: skill, mode: 'free', cwd: deps.workspaceDir, ephemeral: true },
+      AbortSignal.timeout(PLAN_TIMEOUT_MS)
+    )
+    return 'error' in result ? result : { text: cleanText(result.text) }
+  }
+
+  handle(IPC.feedbackCoach, feedbackCoachSchema, (req) => coachText(buildCoachPrompt(req)))
+  handle(IPC.feedbackSummarize, feedbackSummarySchema, (req) => coachText(buildSummaryPrompt(req)))
 
   handle(IPC.plannerPlanTasks, planRequestSchema, async (req): Promise<PlanResult> => {
     const skill = (await deps.loadSkill('project-planner')) ?? ''

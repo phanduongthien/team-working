@@ -1,6 +1,7 @@
 import { chatFeature } from './chat'
 import { claudeCheckFeature } from './claude-check'
 import { dashboardFeature } from './dashboard'
+import { feedbackFeature } from './feedback'
 import { memoryFeature } from './memory'
 import { notificationsFeature } from './notifications'
 import { settingsFeature } from './settings'
@@ -17,6 +18,7 @@ export const features: FeatureDefinition[] = [
   memoryFeature,
   workFeature,
   dashboardFeature,
+  feedbackFeature,
   teamFeature,
   notificationsFeature,
   claudeCheckFeature,

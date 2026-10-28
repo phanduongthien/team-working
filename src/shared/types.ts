@@ -4,7 +4,10 @@ import type {
   Appearance,
   AssistantProfile,
   DesktopNotification,
+  FeedbackCoachRequest,
+  FeedbackSummaryRequest,
   MemoryAction,
+  TextResult,
   PlanRequest,
   PlanResult,
   MemoryCategory,
@@ -163,5 +166,10 @@ export interface TeamWorkingApi {
   }
   planner: {
     planTasks(request: PlanRequest): Promise<PlanResult>
+  }
+  feedback: {
+    /** Trợ lý viết lại bản nháp feedback / câu trả lời (không tự gửi). */
+    coach(request: FeedbackCoachRequest): Promise<TextResult>
+    summarize(request: FeedbackSummaryRequest): Promise<TextResult>
   }
 }

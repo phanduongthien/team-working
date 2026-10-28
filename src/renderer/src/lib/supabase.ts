@@ -35,6 +35,9 @@ export function dbErrorCode(err: unknown): string {
   const message = e?.message ?? String(err)
   if (/row-level security|permission denied/i.test(message)) return 'not_allowed'
   if (/Failed to fetch|NetworkError|fetch failed/i.test(message)) return 'network_error'
+  // Vi phạm CHECK → tên ràng buộc (vd "feedback_public_person_praise") để tra i18n.
+  const constraint = message.match(/check constraint "([a-z_]+)"/)?.[1]
+  if (constraint) return constraint
   const known = message.match(/^([a-z_]+)$/)?.[1]
   return known ?? message
 }

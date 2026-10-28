@@ -26,3 +26,7 @@
 - Thông báo trong app và thông báo Windows khi được giao việc, có bình luận, task đổi trạng thái, sắp đến hạn.
 - Sao lưu trí nhớ lên máy chủ team (tùy chọn, mặc định tắt).
 - Nhãn DEV khi app đang trỏ tới máy chủ thử nghiệm.
+- Feedback hai chiều: góp ý dự án/quy trình (công khai, ẩn danh với thành viên, hoặc riêng tư gửi quản lý), feedback cho một người (riêng tư; công khai chỉ để khen), đánh giá định kỳ của quản lý.
+- Thread trả lời, đánh dấu đã đọc/đã xử lý, thông báo khi có feedback hoặc trả lời mới.
+- Trợ lý giúp viết feedback và câu trả lời mang tính xây dựng (bạn duyệt trước khi gửi), quản lý tóm tắt feedback theo kỳ.
+- Tên, avatar, tính cách trợ lý đi theo tài khoản GitHub (chỉ riêng bạn thấy).

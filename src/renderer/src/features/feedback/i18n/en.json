@@ -1,0 +1,108 @@
+{
+  "title": "Feedback",
+  "heading": "Feedback",
+  "new": "Give feedback",
+  "summarize": "Period summary",
+  "tabs": {
+    "board": "Team board",
+    "received": "To me",
+    "sent": "Sent by me",
+    "all": "All (managers)"
+  },
+  "empty": {
+    "board": "No public feedback yet. Be the first!",
+    "received": "No feedback for you yet.",
+    "sent": "You have not sent any feedback.",
+    "all": "No feedback in the team yet."
+  },
+  "kinds": {
+    "project": "Project / process feedback",
+    "person": "Feedback for a person",
+    "review": "Periodic review"
+  },
+  "visibility": {
+    "public": "Public",
+    "anonymous": "Anonymous",
+    "private": "Private"
+  },
+  "visibilityHelp": {
+    "project": {
+      "public": "Every member sees the content and your name.",
+      "anonymous": "Every member sees the content; only managers/owners know you sent it.",
+      "private": "Only managers/owners can read it."
+    },
+    "person": {
+      "public": "The whole team sees this praise and your name (public is for praise only).",
+      "private": "Only the recipient and managers/owners can read it."
+    },
+    "review": {
+      "private": "Only the reviewed member and managers/owners can read it."
+    }
+  },
+  "categories": {
+    "praise": "Praise",
+    "improve": "Needs improvement",
+    "suggestion": "Suggestion"
+  },
+  "status": {
+    "open": "New",
+    "acknowledged": "Read",
+    "resolved": "Resolved"
+  },
+  "form": {
+    "kind": "Type",
+    "visibility": "Who can see it",
+    "category": "Category",
+    "project": "Project (optional)",
+    "noProject": "Whole team / general process",
+    "recipient": "To",
+    "period": "Review period",
+    "periodPlaceholder": "e.g. Q4 2026",
+    "title": "Title (optional)",
+    "body": "Message",
+    "bodyHint": "Tip: Situation – Behavior – Impact – Suggestion. Be specific and factual.",
+    "coach": "Ask the assistant to rewrite",
+    "coaching": "The assistant is writing…",
+    "coachNote": "The assistant only rewrites — read and edit before sending.",
+    "send": "Send",
+    "praiseOnly": "Public feedback for a person is for praise only. Send improvement feedback privately."
+  },
+  "detail": {
+    "from": "From {{name}}",
+    "to": "To {{name}}",
+    "anonymous": "Anonymous",
+    "anonymousYou": "You (anonymous to other members)",
+    "author": "author",
+    "you": "you",
+    "replies": "Replies ({{count}})",
+    "reply": "Write a reply…",
+    "sendReply": "Reply",
+    "markRead": "Mark as read",
+    "markResolved": "Mark as resolved",
+    "reopen": "Reopen",
+    "delete": "Delete feedback",
+    "deleteConfirm": "Delete this feedback and its replies?",
+    "select": "Select a feedback to see details."
+  },
+  "summary": {
+    "heading": "Feedback period summary",
+    "intro": "The assistant summarises recurring themes, progress and next steps. Author names are never sent to the assistant.",
+    "scope": "Scope",
+    "scopeTeam": "Whole team",
+    "scopeProject": "Project: {{name}}",
+    "scopePerson": "Member: {{name}}",
+    "period": "Period",
+    "days": "Last {{count}} days",
+    "run": "Summarise",
+    "running": "The assistant is summarising…",
+    "none": "No feedback in this scope.",
+    "copy": "Copy"
+  },
+  "errors": {
+    "feedback_public_person_praise": "Public feedback for a person is for praise only.",
+    "cannot_feedback_self": "You cannot give feedback to yourself.",
+    "recipient_not_in_team": "The recipient is not in the team.",
+    "review_managers_only": "Only managers/owners can create periodic reviews.",
+    "feedback_not_found": "This feedback no longer exists or you cannot view it."
+  }
+}

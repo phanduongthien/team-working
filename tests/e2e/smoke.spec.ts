@@ -55,7 +55,7 @@ test('đổi tên trợ lý trong Cài đặt và thấy ở màn hình chat', a
 
 test('các trang team yêu cầu đăng nhập GitHub; hiện nhãn DEV khi trỏ project dev', async () => {
   await expect(page.getByTestId('env-badge')).toHaveText('DEV')
-  for (const hash of ['#/team', '#/projects', '#/dashboard', '#/notifications']) {
+  for (const hash of ['#/team', '#/projects', '#/dashboard', '#/feedback', '#/notifications']) {
     await go(hash)
     await expect(page.getByRole('button', { name: 'Đăng nhập bằng GitHub' }), hash).toBeVisible()
   }

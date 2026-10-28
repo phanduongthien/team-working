@@ -106,7 +106,13 @@ export type TaskAttachmentRow = {
   created_at: string
 }
 
-export type NotificationType = 'task_assigned' | 'task_status' | 'task_comment'
+export type NotificationType =
+  | 'task_assigned'
+  | 'task_status'
+  | 'task_comment'
+  | 'feedback_received'
+  | 'feedback_project'
+  | 'feedback_reply'
 
 export type NotificationRow = {
   id: string
@@ -120,13 +126,69 @@ export type NotificationRow = {
     status?: TaskStatus
     excerpt?: string
     due_date?: string | null
-    by?: string
+    by?: string | null
+    feedback_id?: string
+    category?: string
+    kind?: string
+    visibility?: string
   }
   read_at: string | null
   created_at: string
 }
 
 export type UserMemoryRow = { user_id: string; id: string; content: string; category: string; updated_at: string }
+
+export type UserSettingsRow = { user_id: string; assistant: unknown; updated_at: string }
+
+export type FeedbackKind = 'project' | 'person' | 'review'
+export type FeedbackVisibility = 'public' | 'anonymous' | 'private'
+export type FeedbackCategory = 'praise' | 'improve' | 'suggestion'
+export type FeedbackStatus = 'open' | 'acknowledged' | 'resolved'
+
+/** Hàng đọc qua view feedback_visible (author_id = null nếu ẩn danh với người xem). */
+export type FeedbackRow = {
+  id: string
+  team_id: string
+  kind: FeedbackKind
+  visibility: FeedbackVisibility
+  category: FeedbackCategory
+  project_id: string | null
+  task_id: string | null
+  recipient_id: string | null
+  author_id: string | null
+  is_mine: boolean
+  title: string
+  body: string
+  period: string | null
+  status: FeedbackStatus
+  created_at: string
+  updated_at: string
+  reply_count: number
+}
+
+export type FeedbackInsert = {
+  team_id: string
+  kind: FeedbackKind
+  visibility: FeedbackVisibility
+  category: FeedbackCategory
+  project_id?: string | null
+  task_id?: string | null
+  recipient_id?: string | null
+  title?: string
+  body: string
+  period?: string | null
+}
+
+export type FeedbackReplyRow = {
+  id: string
+  feedback_id: string
+  team_id: string
+  author_id: string | null
+  by_feedback_author: boolean
+  is_mine: boolean
+  body: string
+  created_at: string
+}
 
 type Optional<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>
 
@@ -170,8 +232,15 @@ export type Database = {
       task_attachments: Table<TaskAttachmentRow, Optional<TaskAttachmentRow, 'id' | 'team_id' | 'uploaded_by' | 'created_at'>>
       notifications: Table<NotificationRow, never, Pick<NotificationRow, 'read_at'>>
       user_memories: Table<UserMemoryRow, Optional<UserMemoryRow, 'user_id' | 'updated_at'>>
+      user_settings: Table<UserSettingsRow, Optional<UserSettingsRow, 'user_id' | 'updated_at'>>
+      // Bảng gốc chỉ INSERT; đọc qua view.
+      feedback: Table<never, FeedbackInsert, never>
+      feedback_replies: Table<never, { feedback_id: string; body: string }, never>
     }
-    Views: Record<string, never>
+    Views: {
+      feedback_visible: { Row: FeedbackRow; Relationships: [] }
+      feedback_replies_visible: { Row: FeedbackReplyRow; Relationships: [] }
+    }
     Functions: {
       create_team: { Args: { p_name: string }; Returns: TeamRow }
       accept_invite: { Args: { p_code: string }; Returns: string }
@@ -179,6 +248,9 @@ export type Database = {
         Args: Record<string, never>
         Returns: { code: string; team_id: string; team_name: string; role: TeamRole; expires_at: string }[]
       }
+      set_feedback_status: { Args: { p_id: string; p_status: FeedbackStatus }; Returns: undefined }
+      delete_feedback: { Args: { p_id: string }; Returns: undefined }
+      delete_feedback_reply: { Args: { p_id: string }; Returns: undefined }
     }
     Enums: {
       team_role: TeamRole

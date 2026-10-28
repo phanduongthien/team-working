@@ -18,6 +18,18 @@
       "title": "New comment",
       "body": "{{by}} on “{{task}}”: {{excerpt}}"
     },
+    "feedback_received": {
+      "title": "You received feedback ({{category}})",
+      "body": "{{by}}: {{task}}"
+    },
+    "feedback_project": {
+      "title": "New feedback ({{category}})",
+      "body": "{{by}}: {{task}}"
+    },
+    "feedback_reply": {
+      "title": "Feedback reply",
+      "body": "{{by}} on “{{task}}”: {{excerpt}}"
+    },
     "due_soon": {
       "title": "Due soon",
       "body": "“{{task}}” is due {{date}}"

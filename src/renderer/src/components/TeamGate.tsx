@@ -16,9 +16,9 @@ function Card({ children }: { children: ReactNode }) {
 
 /** Hiện lỗi theo mã (tra trong namespace team rồi work), mã lạ thì hiện nguyên văn. */
 export function TeamError({ code }: { code: string | null }) {
-  const { t } = useTranslation(['team', 'work'])
+  const { t } = useTranslation(['team', 'work', 'feedback'])
   if (!code) return null
-  return <p className="text-sm text-destructive">{t(`errors.${code}`, { ns: ['team', 'work'], defaultValue: code })}</p>
+  return <p className="text-sm text-destructive">{t(`errors.${code}`, { ns: ['team', 'work', 'feedback'], defaultValue: code })}</p>
 }
 
 function SignIn() {

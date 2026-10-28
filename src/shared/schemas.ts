@@ -189,6 +189,48 @@ export type PlannedTask = {
 
 export type PlanResult = { tasks: PlannedTask[] } | { error: string }
 
+// ---- Feedback: trợ lý viết & tóm tắt ----
+
+export const FEEDBACK_KINDS = ['project', 'person', 'review'] as const
+export const FEEDBACK_VISIBILITIES = ['public', 'anonymous', 'private'] as const
+export const FEEDBACK_CATEGORIES = ['praise', 'improve', 'suggestion'] as const
+
+export const feedbackCoachSchema = z.object({
+  draft: z.string().trim().min(1).max(5000),
+  /** compose = viết feedback mới; reply = người nhận/người trong thread trả lời. */
+  mode: z.enum(['compose', 'reply']),
+  kind: z.enum(FEEDBACK_KINDS),
+  visibility: z.enum(FEEDBACK_VISIBILITIES),
+  category: z.enum(FEEDBACK_CATEGORIES),
+  /** Nội dung feedback gốc khi trả lời (để giữ ngữ cảnh). */
+  original: z.string().max(5000).default(''),
+  language: z.enum(['vi', 'en']).default('vi')
+})
+
+export const feedbackSummarySchema = z.object({
+  scope: z.string().trim().min(1).max(200),
+  period: z.string().trim().min(1).max(80),
+  language: z.enum(['vi', 'en']).default('vi'),
+  /** Đã bỏ tên người — chỉ nội dung, loại, ngày. */
+  items: z
+    .array(
+      z.object({
+        date: z.string().max(20),
+        kind: z.enum(FEEDBACK_KINDS),
+        category: z.enum(FEEDBACK_CATEGORIES),
+        status: z.string().max(20),
+        body: z.string().max(5000),
+        replies: z.array(z.string().max(5000)).max(50).default([])
+      })
+    )
+    .min(1)
+    .max(200)
+})
+
+export type FeedbackCoachRequest = z.infer<typeof feedbackCoachSchema>
+export type FeedbackSummaryRequest = z.infer<typeof feedbackSummarySchema>
+export type TextResult = { text: string } | { error: string }
+
 export const desktopNotificationSchema = z.object({
   title: z.string().trim().min(1).max(120),
   body: z.string().max(300).default(''),
