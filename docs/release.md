@@ -40,7 +40,7 @@ App tự cập nhật từ **GitHub Releases** (electron-builder + electron-upda
 4. `npm version <x.y.z>` → tạo commit + tag `vX.Y.Z`.
 5. Có migration Supabase mới? `npx supabase db push` lên prod **trước**, migration phải tương thích với bản app cũ.
 6. `git push origin main --follow-tags` → theo dõi tab Actions → duyệt environment `production` nếu có.
-7. Release được đăng kèm `team-working-x.y.z-setup.exe`, `.blockmap`, `latest.yml` (electron-updater cần cả ba).
+7. Workflow tạo release (ghi chú lấy từ mục tương ứng trong CHANGELOG) rồi tải lên `team-working-x.y.z-setup.exe`, `.blockmap`, `latest.yml`. Kiểm tra: mỗi tag chỉ có **một** release và link `https://github.com/phanduongthien/team-working/releases/download/vX.Y.Z/latest.yml` tải được.
 
 **Chưa ký số (code signing):** Windows SmartScreen sẽ cảnh báo lần cài đầu — chọn *More info → Run anyway*. Ghi chú điều này trong mô tả release.
 

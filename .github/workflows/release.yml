@@ -40,7 +40,25 @@ jobs:
 
       - run: npm run build
 
-      - name: Đóng gói và đăng release
+      # Tạo release trước: nếu để electron-builder tự tạo, các file tải lên song song có thể sinh
+      # 2 release trùng tag (đã gặp ở v0.1.1) và link tải latest.yml trả 404.
+      - name: Tạo release với ghi chú từ CHANGELOG
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $version = '${{ github.ref_name }}'.TrimStart('v')
+          $lines = Get-Content CHANGELOG.md -Encoding utf8
+          $start = [array]::FindIndex($lines, [Predicate[string]] { param($l) $l -like "## ``[$version``]*" })
+          $notes = if ($start -ge 0) {
+            $rest = $lines[($start + 1)..($lines.Length - 1)]
+            $end = [array]::FindIndex($rest, [Predicate[string]] { param($l) $l -like '## *' })
+            ($(if ($end -ge 0) { $rest[0..($end - 1)] } else { $rest }) -join "`n").Trim()
+          } else { 'Xem CHANGELOG.md' }
+          $notes | Out-File -Encoding utf8NoBOM notes.md
+          gh release create '${{ github.ref_name }}' --title "Team Working $version" --notes-file notes.md --verify-tag
+
+      - name: Đóng gói và tải file lên release
         # bash: PowerShell tách sai tham số dạng -c.publish.x=y
         shell: bash
         env:
