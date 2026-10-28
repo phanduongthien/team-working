@@ -4,6 +4,14 @@
 
 ## [Unreleased]
 
+## [0.1.2] - 2026-10-28
+
+Bản nên cài. Nội dung giống 0.1.1; sửa cách đăng release để app tự cập nhật được (0.1.1 bị tạo trùng 2 release nên không tải được `latest.yml`). Chưa ký số: Windows SmartScreen có thể cảnh báo khi cài — chọn *More info → Run anyway*.
+
+### Sửa lỗi
+- Phát hành: mỗi phiên bản chỉ còn một release trên GitHub, đủ file cài đặt và thông tin cập nhật.
+- Máy chưa cài Claude Code CLI không còn bị kéo về màn hình "Kết nối Claude Code" mỗi lần bấm menu (từ 0.1.1).
+
 ## [0.1.1] - 2026-10-28
 
 Bản phát hành đầu tiên lên GitHub Releases (0.1.0 chỉ có tag, không phát hành). Chưa ký số: Windows SmartScreen có thể cảnh báo khi cài — chọn *More info → Run anyway*.
