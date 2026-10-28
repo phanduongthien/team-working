@@ -2,7 +2,7 @@
   "title": "Cài đặt",
   "assistant": {
     "heading": "Trợ lý của bạn",
-    "description": "Tên, avatar và tính cách được dùng ở mọi nơi trong app và trong cách trợ lý trả lời.",
+    "description": "Tên, avatar và tính cách được dùng ở mọi nơi trong app và trong cách trợ lý trả lời. Chỉ lưu trên máy này — thành viên khác trong team không thấy và có trợ lý của riêng họ.",
     "name": "Tên trợ lý",
     "avatar": "Avatar",
     "upload": "Tải ảnh lên",
