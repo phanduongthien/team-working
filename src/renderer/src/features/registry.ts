@@ -2,10 +2,13 @@ import { chatFeature } from './chat'
 import { claudeCheckFeature } from './claude-check'
 import { dashboardFeature } from './dashboard'
 import { feedbackFeature } from './feedback'
+import { learningFeature } from './learning'
 import { memoryFeature } from './memory'
 import { notificationsFeature } from './notifications'
 import { settingsFeature } from './settings'
 import { teamFeature } from './team'
+import { timeFeature } from './time'
+import { todayFeature } from './today'
 import type { FeatureDefinition } from './types'
 import { workFeature } from './work'
 
@@ -15,10 +18,13 @@ import { workFeature } from './work'
  */
 export const features: FeatureDefinition[] = [
   chatFeature,
+  todayFeature,
   memoryFeature,
   workFeature,
   dashboardFeature,
   feedbackFeature,
+  learningFeature,
+  timeFeature,
   teamFeature,
   notificationsFeature,
   claudeCheckFeature,

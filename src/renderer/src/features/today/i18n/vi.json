@@ -1,0 +1,41 @@
+{
+  "title": "Hôm nay",
+  "heading": "Hôm nay",
+  "myTasks": "Việc của tôi",
+  "noTasks": "Không có task nào được giao cho bạn. 🎉",
+  "overdue": "trễ hạn",
+  "dueToday": "hạn hôm nay",
+  "logged": "Đã ghi hôm nay: {{duration}}",
+  "plan": {
+    "heading": "Kế hoạch hôm nay",
+    "generate": "Trợ lý lập kế hoạch",
+    "regenerate": "Lập lại",
+    "generating": "Trợ lý đang sắp xếp lịch…",
+    "empty": "Chưa có kế hoạch. Trợ lý sẽ xếp việc quan trọng vào khung giờ tập trung và chừa thời gian dự phòng.",
+    "remind": "Nhắc khi tới giờ (thông báo Windows)",
+    "reminderTitle": "Tới giờ: {{note}}",
+    "reminderBody": "{{start}}–{{end}}",
+    "track": "Bấm giờ",
+    "failed": "Không lập được kế hoạch: {{message}}"
+  },
+  "report": {
+    "heading": "Báo cáo tiến độ",
+    "period": { "day": "Cuối ngày", "week": "Cuối tuần" },
+    "dayLabel": "Ngày {{date}}",
+    "weekLabel": "Tuần {{from}}–{{to}}",
+    "notes": "Ghi chú thêm (tùy chọn)",
+    "notesPlaceholder": "Ví dụ: đang chờ bên thiết kế gửi file",
+    "write": "Trợ lý viết báo cáo",
+    "writing": "Trợ lý đang viết…",
+    "send": "Gửi cho quản lý",
+    "sent": "Đã gửi cho quản lý.",
+    "copy": "Sao chép",
+    "hint": "Đọc và sửa trước khi gửi. Chỉ Manager/Owner của team đọc được báo cáo.",
+    "failed": "Không viết được báo cáo: {{message}}"
+  },
+  "inbox": {
+    "heading": "Báo cáo nhận được",
+    "empty": "Chưa có báo cáo nào.",
+    "from": "{{name}} · {{label}}"
+  }
+}

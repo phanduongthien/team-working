@@ -52,6 +52,24 @@ export function useTeamTasks(teamId: string | null) {
   })
 }
 
+/** Task chưa xong được giao cho tôi trong team đang chọn (cho bấm giờ, kế hoạch ngày). */
+export function useMyOpenTasks(teamId: string | null, uid: string | undefined) {
+  return useQuery({
+    queryKey: ['my-tasks', teamId ?? '', uid ?? ''],
+    enabled: !!teamId && !!uid && !!supabase,
+    queryFn: async () =>
+      check(
+        await requireSupabase()
+          .from('tasks')
+          .select('*')
+          .eq('team_id', teamId!)
+          .eq('assignee_id', uid!)
+          .neq('status', 'done')
+          .order('due_date', { ascending: true, nullsFirst: false })
+      )
+  })
+}
+
 export function useStatusEvents(projectId: string | undefined) {
   return useQuery({
     queryKey: keys.events(projectId ?? ''),

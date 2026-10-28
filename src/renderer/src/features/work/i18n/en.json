@@ -55,7 +55,9 @@
     "assigneeOnlyHint": "You are the assignee: you can only change status and estimate.",
     "overdue": "Overdue",
     "none": "No tasks.",
-    "close": "Close"
+    "close": "Close",
+    "track": "Track time",
+    "stopTracking": "Stop tracking"
   },
   "filters": {
     "assignee": "Assignee",

@@ -113,6 +113,7 @@ export type NotificationType =
   | 'feedback_received'
   | 'feedback_project'
   | 'feedback_reply'
+  | 'progress_report'
 
 export type NotificationRow = {
   id: string
@@ -128,6 +129,7 @@ export type NotificationRow = {
     due_date?: string | null
     by?: string | null
     feedback_id?: string
+    report_id?: string
     category?: string
     kind?: string
     visibility?: string
@@ -139,6 +141,59 @@ export type NotificationRow = {
 export type UserMemoryRow = { user_id: string; id: string; content: string; category: string; updated_at: string }
 
 export type UserSettingsRow = { user_id: string; assistant: unknown; updated_at: string }
+
+export type LearningPathRow = {
+  id: string
+  owner_id: string
+  team_id: string | null
+  title: string
+  goal: string
+  level: string
+  shared: boolean
+  created_at: string
+  updated_at: string
+}
+
+export type LearningStepRow = {
+  id: string
+  path_id: string
+  owner_id: string
+  title: string
+  description: string
+  resources: string[]
+  estimated_hours: number | null
+  due_date: string | null
+  status: 'todo' | 'doing' | 'done'
+  notes: string
+  position: number
+  completed_at: string | null
+  created_at: string
+  updated_at: string
+}
+
+export type QuizAttemptRow = {
+  id: string
+  owner_id: string
+  path_id: string | null
+  step_id: string | null
+  topic: string
+  questions: unknown
+  answers: unknown
+  score: number
+  total: number
+  weak_points: string[]
+  created_at: string
+}
+
+export type ProgressReportRow = {
+  id: string
+  team_id: string
+  author_id: string
+  period_type: 'day' | 'week'
+  period_label: string
+  body: string
+  created_at: string
+}
 
 export type FeedbackKind = 'project' | 'person' | 'review'
 export type FeedbackVisibility = 'public' | 'anonymous' | 'private'
@@ -233,6 +288,13 @@ export type Database = {
       notifications: Table<NotificationRow, never, Pick<NotificationRow, 'read_at'>>
       user_memories: Table<UserMemoryRow, Optional<UserMemoryRow, 'user_id' | 'updated_at'>>
       user_settings: Table<UserSettingsRow, Optional<UserSettingsRow, 'user_id' | 'updated_at'>>
+      learning_paths: Table<LearningPathRow, Optional<LearningPathRow, 'id' | 'owner_id' | 'team_id' | 'goal' | 'level' | 'shared' | 'created_at' | 'updated_at'>>
+      learning_steps: Table<
+        LearningStepRow,
+        Optional<LearningStepRow, 'id' | 'owner_id' | 'description' | 'resources' | 'estimated_hours' | 'due_date' | 'status' | 'notes' | 'position' | 'completed_at' | 'created_at' | 'updated_at'>
+      >
+      quiz_attempts: Table<QuizAttemptRow, Optional<QuizAttemptRow, 'id' | 'owner_id' | 'path_id' | 'step_id' | 'answers' | 'score' | 'weak_points' | 'created_at'>, never>
+      progress_reports: Table<ProgressReportRow, Optional<ProgressReportRow, 'id' | 'author_id' | 'created_at'>, never>
       // Bảng gốc chỉ INSERT; đọc qua view.
       feedback: Table<never, FeedbackInsert, never>
       feedback_replies: Table<never, { feedback_id: string; body: string }, never>

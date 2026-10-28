@@ -30,6 +30,10 @@
       "title": "Trả lời feedback",
       "body": "{{by}} trong “{{task}}”: {{excerpt}}"
     },
+    "progress_report": {
+      "title": "Báo cáo tiến độ mới",
+      "body": "{{by}}: {{task}}"
+    },
     "due_soon": {
       "title": "Sắp đến hạn",
       "body": "“{{task}}” đến hạn {{date}}"

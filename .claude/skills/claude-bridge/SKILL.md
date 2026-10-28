@@ -51,6 +51,13 @@ Khi vượt giới hạn: cắt ngữ cảnh thêm → cắt skill → bỏ bớ
 - CLI: liệt kê đường dẫn trong prompt (stdin) và bật tool `Read` cho lượt đó (file nằm trong cwd nên `--restricted` vẫn cho đọc).
 - API: ảnh → `image` base64, PDF → `document` base64, file chữ → `text`.
 
+## Chế độ Code (`runOptions()` trong chatService.ts)
+- Chưa chọn thư mục → như chat thường. Chọn thư mục → `cwd` = thư mục dự án, tool `Read,Grep,Glob` (tự duyệt). **Không bao giờ cho Bash/PowerShell.**
+- Bật "được sửa file" (người dùng xác nhận) → thêm `Edit,Write` nhưng KHÔNG đưa vào `--allowedTools`; CLI hỏi quyền qua `--permission-prompt-tool mcp__twperm__approve` + `--mcp-config <file tạm>`.
+- MCP server: `resources/permission-mcp.cjs` (chạy bằng `process.execPath` + `ELECTRON_RUN_AS_NODE=1`). Nhận `{tool_name, input, tool_use_id}`, trả `{"behavior":"allow","updatedInput":input}` hoặc `{"behavior":"deny","message":"..."}` (đã kiểm chứng với CLI 2.1.312).
+- Script gọi về `CodeApprovals` (HTTP 127.0.0.1, port ngẫu nhiên, token 24 byte) → app hiện diff (`describeChange`) → người dùng Đồng ý/Từ chối. Tự từ chối: file ngoài thư mục dự án, tool khác Edit/Write, quyền sửa đang tắt, sai token, hết 10 phút.
+- Dừng phản hồi / kết thúc lượt / tắt quyền → hủy mọi yêu cầu duyệt đang chờ.
+
 ## Tác vụ nền (trích memory)
 `completeText()` + `ephemeral: true` (CLI: `--no-session-persistence`) — không tạo session rác. Kết quả chỉ là **đề xuất** vào `memory_suggestions`; người dùng duyệt ở trang Trí nhớ.
 

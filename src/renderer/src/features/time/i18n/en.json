@@ -1,0 +1,72 @@
+{
+  "title": "Time",
+  "heading": "Time & timesheet",
+  "task": {
+    "label": "What are you working on?",
+    "placeholder": "Type a task, or pick an assigned task",
+    "mine": "Tasks assigned to me",
+    "free": "Other (type it)"
+  },
+  "timer": {
+    "heading": "Timer",
+    "start": "Start",
+    "stop": "Stop",
+    "running": "Tracking: {{title}}",
+    "idle": "No timer running."
+  },
+  "pomodoro": {
+    "heading": "Pomodoro",
+    "start": "Start focus session",
+    "next": "Next session",
+    "stop": "Stop Pomodoro",
+    "focus": "Focus",
+    "break": "Break",
+    "idle": "Ready",
+    "completed": "{{count}} sessions done",
+    "focusDoneTitle": "Focus session done 🍅",
+    "focusDoneBody": "Take a {{minutes}}-minute break!",
+    "breakDoneTitle": "Break is over",
+    "breakDoneBody": "Ready for the next session?"
+  },
+  "sheet": {
+    "heading": "Timesheet",
+    "prev": "Previous week",
+    "next": "Next week",
+    "thisWeek": "This week",
+    "total": "Week total: {{duration}}",
+    "byTask": "By task",
+    "empty": "No time logged this week.",
+    "add": "Add time manually",
+    "export": "Export CSV",
+    "exported": "Exported: {{path}}",
+    "running": "running",
+    "edit": "Edit",
+    "delete": "Delete"
+  },
+  "form": {
+    "title": "Task",
+    "date": "Date",
+    "start": "Start",
+    "end": "End",
+    "note": "Note",
+    "invalidRange": "End must be after start (max 24 hours)."
+  },
+  "kinds": { "timer": "Timer", "pomodoro": "Pomodoro", "manual": "Manual" },
+  "csv": {
+    "date": "Date",
+    "start": "Start",
+    "end": "End",
+    "hours": "Hours",
+    "task": "Task",
+    "project": "Project",
+    "kind": "Type",
+    "note": "Note"
+  },
+  "workday": {
+    "heading": "Working hours",
+    "start": "Day starts",
+    "end": "Day ends",
+    "focus": "Focus session (min)",
+    "break": "Break (min)"
+  }
+}

@@ -1,4 +1,4 @@
-import { Download, Paperclip, Send, Sparkles, Trash2, X } from 'lucide-react'
+import { Download, Paperclip, Send, Sparkles, Square, Timer, Trash2, X } from 'lucide-react'
 import { useState, type FormEvent, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { TASK_PRIORITIES, TASK_STATUSES, type TaskPriority, type TaskStatus } from '@shared/schemas'
@@ -25,6 +25,8 @@ import {
   useUploadAttachment,
   type TaskUpdate
 } from '../api'
+import { useTime } from '../../time/store'
+import { useProjects } from '../api'
 import { useMemberMap } from './helpers'
 
 function Field({ label, htmlFor, children }: { label: string; htmlFor?: string; children: ReactNode }) {
@@ -201,6 +203,28 @@ function Subtasks({ task, subtasks, canAdd }: { task: TaskRow; subtasks: TaskRow
   )
 }
 
+/** Bấm giờ cho task này (thay bộ bấm giờ đang chạy nếu có). */
+function TrackButton({ task }: { task: TaskRow }) {
+  const { t } = useTranslation('work')
+  const { current, startTimer, stopTimer } = useTime()
+  const project = useProjects(task.team_id).data?.find((p) => p.id === task.project_id)
+  const tracking = current?.taskId === task.id
+  return (
+    <Button
+      variant={tracking ? 'default' : 'outline'}
+      size="sm"
+      onClick={() =>
+        void (tracking
+          ? stopTimer()
+          : startTimer({ taskId: task.id, projectId: task.project_id, title: task.title, projectName: project?.name ?? null }))
+      }
+    >
+      {tracking ? <Square /> : <Timer />}
+      {tracking ? t('task.stopTracking') : t('task.track')}
+    </Button>
+  )
+}
+
 export function TaskDrawer({ task, allTasks, onClose }: { task: TaskRow; allTasks: TaskRow[]; onClose(): void }) {
   const { t } = useTranslation('work')
   const uid = useAuth((s) => s.session?.user.id)
@@ -226,6 +250,7 @@ export function TaskDrawer({ task, allTasks, onClose }: { task: TaskRow; allTask
       <header className="flex items-center gap-2 border-b px-4 py-2">
         {task.ai_generated && <Sparkles className="size-4 text-primary" aria-label={t('task.ai')} />}
         <span className="flex-1 truncate text-sm text-muted-foreground">{assigner && t('task.assigner', { name: assigner.display_name })}</span>
+        <TrackButton task={task} />
         {(manager || task.assigner_id === uid) && (
           <Button variant="ghost" size="icon-sm" title={t('task.delete')} onClick={() => setConfirmDelete(true)}>
             <Trash2 />

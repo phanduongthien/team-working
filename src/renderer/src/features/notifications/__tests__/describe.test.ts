@@ -30,6 +30,13 @@ describe('describeNotification', () => {
   })
 })
 
+describe('báo cáo tiến độ', () => {
+  it('mở trang Hôm nay', () => {
+    const d = describeNotification({ type: 'progress_report', payload: { report_id: 'r1', title: 'Ngày 30/10', by: 'u1' } }, i18n.t, nameOf)
+    expect(d).toEqual({ title: 'Báo cáo tiến độ mới', body: 'An: Ngày 30/10', route: '/today' })
+  })
+})
+
 describe('remindKeys', () => {
   it('mỗi task nhắc một lần mỗi ngày', () => {
     expect(remindKeys('2026-10-28', ['a', 'b'], ['2026-10-28:a', '2026-10-27:b'])).toEqual(['2026-10-28:b'])

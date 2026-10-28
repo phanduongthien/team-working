@@ -30,6 +30,10 @@
       "title": "Feedback reply",
       "body": "{{by}} on “{{task}}”: {{excerpt}}"
     },
+    "progress_report": {
+      "title": "New progress report",
+      "body": "{{by}}: {{task}}"
+    },
     "due_soon": {
       "title": "Due soon",
       "body": "“{{task}}” is due {{date}}"

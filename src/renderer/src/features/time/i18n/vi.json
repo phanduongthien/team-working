@@ -1,0 +1,72 @@
+{
+  "title": "Thời gian",
+  "heading": "Thời gian & chấm công",
+  "task": {
+    "label": "Đang làm việc gì?",
+    "placeholder": "Nhập việc, hoặc chọn task được giao",
+    "mine": "Task được giao cho tôi",
+    "free": "Việc khác (nhập tay)"
+  },
+  "timer": {
+    "heading": "Bấm giờ",
+    "start": "Bắt đầu",
+    "stop": "Dừng",
+    "running": "Đang bấm giờ: {{title}}",
+    "idle": "Chưa bấm giờ."
+  },
+  "pomodoro": {
+    "heading": "Pomodoro",
+    "start": "Bắt đầu phiên tập trung",
+    "next": "Phiên tiếp theo",
+    "stop": "Dừng Pomodoro",
+    "focus": "Tập trung",
+    "break": "Nghỉ",
+    "idle": "Sẵn sàng",
+    "completed": "Đã xong {{count}} phiên",
+    "focusDoneTitle": "Hết phiên tập trung 🍅",
+    "focusDoneBody": "Nghỉ {{minutes}} phút nhé!",
+    "breakDoneTitle": "Hết giờ nghỉ",
+    "breakDoneBody": "Sẵn sàng cho phiên tiếp theo?"
+  },
+  "sheet": {
+    "heading": "Bảng chấm công",
+    "prev": "Tuần trước",
+    "next": "Tuần sau",
+    "thisWeek": "Tuần này",
+    "total": "Tổng tuần: {{duration}}",
+    "byTask": "Theo việc",
+    "empty": "Chưa có giờ nào trong tuần này.",
+    "add": "Thêm giờ thủ công",
+    "export": "Xuất CSV",
+    "exported": "Đã xuất: {{path}}",
+    "running": "đang chạy",
+    "edit": "Sửa",
+    "delete": "Xóa"
+  },
+  "form": {
+    "title": "Việc",
+    "date": "Ngày",
+    "start": "Bắt đầu",
+    "end": "Kết thúc",
+    "note": "Ghi chú",
+    "invalidRange": "Giờ kết thúc phải sau giờ bắt đầu (tối đa 24 giờ)."
+  },
+  "kinds": { "timer": "Bấm giờ", "pomodoro": "Pomodoro", "manual": "Nhập tay" },
+  "csv": {
+    "date": "Ngày",
+    "start": "Bắt đầu",
+    "end": "Kết thúc",
+    "hours": "Số giờ",
+    "task": "Việc",
+    "project": "Dự án",
+    "kind": "Loại",
+    "note": "Ghi chú"
+  },
+  "workday": {
+    "heading": "Giờ làm việc",
+    "start": "Bắt đầu ngày",
+    "end": "Kết thúc ngày",
+    "focus": "Phiên tập trung (phút)",
+    "break": "Nghỉ (phút)"
+  }
+}

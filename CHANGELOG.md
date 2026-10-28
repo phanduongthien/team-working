@@ -30,3 +30,7 @@
 - Thread trả lời, đánh dấu đã đọc/đã xử lý, thông báo khi có feedback hoặc trả lời mới.
 - Trợ lý giúp viết feedback và câu trả lời mang tính xây dựng (bạn duyệt trước khi gửi), quản lý tóm tắt feedback theo kỳ.
 - Tên, avatar, tính cách trợ lý đi theo tài khoản GitHub (chỉ riêng bạn thấy).
+- Học tập: trợ lý lập lộ trình theo mục tiêu (bạn sửa trước khi lưu), theo dõi từng bước, ghi chú; quiz trắc nghiệm + tự luận, flashcard; chỉ ra chỗ cần ôn và đề xuất ghi nhớ. Chia sẻ tiến độ với quản lý (tùy chọn).
+- Chế độ Code: chọn thư mục dự án; mặc định chỉ đọc; bật quyền sửa thì mỗi thay đổi hiện diff để bạn đồng ý/từ chối. Trợ lý không chạy lệnh terminal.
+- Thời gian: bấm giờ theo task, Pomodoro, bảng chấm công theo tuần, nhập/sửa giờ, xuất CSV — dùng được khi offline.
+- Hôm nay: việc được giao, trợ lý gợi ý kế hoạch ngày và nhắc khi tới giờ; trợ lý viết báo cáo cuối ngày/tuần để gửi quản lý.

@@ -1,0 +1,41 @@
+{
+  "title": "Today",
+  "heading": "Today",
+  "myTasks": "My tasks",
+  "noTasks": "No tasks assigned to you. 🎉",
+  "overdue": "overdue",
+  "dueToday": "due today",
+  "logged": "Logged today: {{duration}}",
+  "plan": {
+    "heading": "Today's plan",
+    "generate": "Ask the assistant to plan",
+    "regenerate": "Re-plan",
+    "generating": "The assistant is arranging your day…",
+    "empty": "No plan yet. The assistant will put important work in focus blocks and leave buffer time.",
+    "remind": "Remind me when blocks start (Windows notification)",
+    "reminderTitle": "Time for: {{note}}",
+    "reminderBody": "{{start}}–{{end}}",
+    "track": "Track",
+    "failed": "Could not plan: {{message}}"
+  },
+  "report": {
+    "heading": "Progress report",
+    "period": { "day": "End of day", "week": "End of week" },
+    "dayLabel": "Day {{date}}",
+    "weekLabel": "Week {{from}}–{{to}}",
+    "notes": "Extra notes (optional)",
+    "notesPlaceholder": "e.g. waiting for the design files",
+    "write": "Ask the assistant to write",
+    "writing": "The assistant is writing…",
+    "send": "Send to managers",
+    "sent": "Sent to managers.",
+    "copy": "Copy",
+    "hint": "Read and edit before sending. Only team managers/owners can read reports.",
+    "failed": "Could not write the report: {{message}}"
+  },
+  "inbox": {
+    "heading": "Reports received",
+    "empty": "No reports yet.",
+    "from": "{{name}} · {{label}}"
+  }
+}

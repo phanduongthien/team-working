@@ -1,4 +1,4 @@
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { _electron as electron, expect, test, type ElectronApplication, type Page } from '@playwright/test'
@@ -55,11 +55,42 @@ test('đổi tên trợ lý trong Cài đặt và thấy ở màn hình chat', a
 
 test('các trang team yêu cầu đăng nhập GitHub; hiện nhãn DEV khi trỏ project dev', async () => {
   await expect(page.getByTestId('env-badge')).toHaveText('DEV')
-  for (const hash of ['#/team', '#/projects', '#/dashboard', '#/feedback', '#/notifications']) {
+  for (const hash of ['#/team', '#/projects', '#/dashboard', '#/feedback', '#/notifications', '#/learning', '#/today']) {
     await go(hash)
     await expect(page.getByRole('button', { name: 'Đăng nhập bằng GitHub' }), hash).toBeVisible()
   }
   await page.screenshot({ path: 'test-results/team-signin.png' })
+})
+
+test('Thời gian (offline): bấm giờ, chấm đỏ trên menu, dừng, thêm giờ tay, xuất CSV', async () => {
+  await go('#/time')
+  await page.getByLabel('Đang làm việc gì?').first().fill('Đọc tài liệu React')
+  await page.getByRole('button', { name: 'Bắt đầu', exact: true }).click()
+  await expect(page.getByTestId('timer-running')).toContainText('Đọc tài liệu React')
+  await expect(page.getByTestId('dot-time')).toBeVisible()
+  await page.waitForTimeout(1500)
+  await page.getByRole('button', { name: 'Dừng', exact: true }).click()
+  await expect(page.getByTestId('time-entry')).toHaveCount(1)
+  await expect(page.getByTestId('dot-time')).toHaveCount(0)
+
+  await page.getByRole('button', { name: 'Thêm giờ thủ công' }).click()
+  await page.getByLabel('Việc', { exact: true }).fill('Họp nhóm, sprint "A"')
+  await page.getByLabel('Bắt đầu', { exact: true }).fill('09:00')
+  await page.getByLabel('Kết thúc', { exact: true }).fill('10:30')
+  await page.getByRole('button', { name: 'Lưu' }).click()
+  await expect(page.getByTestId('time-entry')).toHaveCount(2)
+  await expect(page.getByTestId('week-total')).toContainText('1h 30m')
+
+  const csvPath = join(userData, 'tuan.csv')
+  await app.evaluate(({ dialog }, file) => {
+    dialog.showSaveDialog = (async () => ({ canceled: false, filePath: file })) as typeof dialog.showSaveDialog
+  }, csvPath)
+  await page.getByRole('button', { name: 'Xuất CSV' }).click()
+  await expect(page.getByText(/Đã xuất/)).toBeVisible()
+  const csv = readFileSync(csvPath, 'utf8')
+  expect(csv).toContain('Ngày,Bắt đầu,Kết thúc,Số giờ,Việc,Dự án,Loại,Ghi chú')
+  expect(csv).toContain('09:00,10:30,1.50,"Họp nhóm, sprint ""A""",,Nhập tay,')
+  await page.screenshot({ path: 'test-results/time.png' })
 })
 
 test('trang Trí nhớ: hồ sơ, thêm/sửa/xóa memory thủ công', async () => {

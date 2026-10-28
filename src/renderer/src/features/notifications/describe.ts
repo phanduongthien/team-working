@@ -20,7 +20,9 @@ export function describeNotification(
   }
   const route = p.feedback_id
     ? `/feedback?id=${p.feedback_id}`
-    : p.project_id && p.task_id
+    : p.report_id
+      ? '/today'
+      : p.project_id && p.task_id
       ? `/projects/${p.project_id}?task=${p.task_id}`
       : undefined
   return {

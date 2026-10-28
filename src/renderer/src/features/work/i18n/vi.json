@@ -55,7 +55,9 @@
     "assigneeOnlyHint": "Bạn là người được giao: chỉ đổi được trạng thái và giờ ước lượng.",
     "overdue": "Trễ hạn",
     "none": "Không có task nào.",
-    "close": "Đóng"
+    "close": "Đóng",
+    "track": "Bấm giờ",
+    "stopTracking": "Dừng bấm giờ"
   },
   "filters": {
     "assignee": "Người làm",
