@@ -312,6 +312,10 @@ export type Database = {
     Functions: {
       create_team: { Args: { p_name: string }; Returns: TeamRow }
       accept_invite: { Args: { p_code: string }; Returns: string }
+      leave_team: {
+        Args: { p_team: string; p_delete_team?: boolean; p_successor?: string | null }
+        Returns: string | null
+      }
       my_invites: {
         Args: Record<string, never>
         Returns: { code: string; team_id: string; team_name: string; role: TeamRole; expires_at: string }[]

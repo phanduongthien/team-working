@@ -8,8 +8,10 @@ import { UserAvatar } from '@renderer/components/UserAvatar'
 import { Button } from '@renderer/components/ui/button'
 import { Dialog, DialogClose, DialogContent } from '@renderer/components/ui/dialog'
 import { Input, Label, Select } from '@renderer/components/ui/input'
+import { cn } from '@renderer/lib/utils'
 import { useAuth } from '@renderer/stores/auth'
 import { isManagerRole, useMyRole, useTeam } from '@renderer/stores/team'
+import { defaultSuccessor, leaveKind } from '../logic'
 
 function Section({ title, action, children }: { title: string; action?: ReactNode; children: ReactNode }) {
   return (
@@ -234,7 +236,7 @@ function MyProfile() {
 
 function TeamHeader() {
   const { t } = useTranslation('team')
-  const { teams, currentTeamId, select, renameTeam, leaveTeam } = useTeam()
+  const { teams, currentTeamId, select, renameTeam } = useTeam()
   const signOut = useAuth((s) => s.signOut)
   const myRole = useMyRole()
   const team = teams.find((x) => x.id === currentTeamId)
@@ -276,7 +278,7 @@ function TeamHeader() {
 
       <Dialog open={dialog === 'new'} onOpenChange={(o) => !o && setDialog(null)}>
         <DialogContent title={t('page.newTeam')} className="max-w-lg">
-          <CreateOrJoin compact />
+          <CreateOrJoin compact onDone={() => setDialog(null)} />
         </DialogContent>
       </Dialog>
       <Dialog open={dialog === 'rename'} onOpenChange={(o) => !o && setDialog(null)}>
@@ -296,19 +298,97 @@ function TeamHeader() {
           </form>
         </DialogContent>
       </Dialog>
-      <Dialog open={dialog === 'leave'} onOpenChange={(o) => !o && setDialog(null)}>
-        <DialogContent title={t('page.leaveConfirm', { team: team?.name })}>
+      {/* Chỉ gắn khi mở để mỗi lần mở là trạng thái mới. */}
+      {dialog === 'leave' && <LeaveDialog onClose={() => setDialog(null)} />}
+    </div>
+  )
+}
+
+/** Rời team theo 3 trường hợp: bình thường / Owner duy nhất cần người kế nhiệm / người cuối cùng (giữ hoặc xóa team). */
+function LeaveDialog({ onClose }: { onClose(): void }) {
+  const { t } = useTranslation('team')
+  const { teams, currentTeamId, members, leaveTeam } = useTeam()
+  const uid = useAuth((s) => s.session?.user.id) ?? ''
+  const team = teams.find((x) => x.id === currentTeamId)
+  const ready = members.some((m) => m.id === uid)
+  const kind = leaveKind(members, uid)
+  const others = members.filter((m) => m.id !== uid)
+  const [choice, setChoice] = useState<'keep' | 'delete'>('keep')
+  const [confirmName, setConfirmName] = useState('')
+  const [successor, setSuccessor] = useState(() => defaultSuccessor(members, uid) ?? '')
+  const [busy, setBusy] = useState(false)
+  const [error, run] = useAction()
+
+  const deleting = kind === 'solo' && choice === 'delete'
+  const canSubmit =
+    ready && !busy && (!deleting || confirmName.trim() === team?.name.trim()) && (kind !== 'successor' || !!successor)
+
+  const submit = (): void => {
+    setBusy(true)
+    void run(async () => {
+      await leaveTeam(kind === 'successor' ? { successorId: successor } : { deleteTeam: deleting })
+      onClose()
+    }).finally(() => setBusy(false))
+  }
+
+  return (
+    <Dialog open onOpenChange={(o) => !o && onClose()}>
+      <DialogContent title={t('leave.title', { team: team?.name })} className="max-w-lg">
+        <div className="space-y-4">
+          {kind === 'simple' && <p className="text-sm text-muted-foreground">{t('leave.simple')}</p>}
+
+          {kind === 'successor' && (
+            <div className="space-y-1.5">
+              <p className="text-sm text-muted-foreground">{t('leave.successorBody')}</p>
+              <Label htmlFor="leave-successor">{t('leave.successorLabel')}</Label>
+              <Select id="leave-successor" value={successor} onChange={(e) => setSuccessor(e.target.value)}>
+                {others.map((m) => (
+                  <option key={m.id} value={m.id}>
+                    {`${m.display_name || m.github_username || ''} (${t(`roles.${m.role}`)})`}
+                  </option>
+                ))}
+              </Select>
+            </div>
+          )}
+
+          {kind === 'solo' && (
+            <div className="space-y-2">
+              <p className="text-sm text-muted-foreground">{t('leave.soloBody')}</p>
+              <div className="space-y-1.5" role="radiogroup" aria-label={t('leave.soloBody')}>
+                {(['keep', 'delete'] as const).map((c) => (
+                  <label
+                    key={c}
+                    className={cn('flex cursor-pointer items-start gap-2 rounded-md border p-2', choice === c && 'border-primary bg-primary/5')}
+                  >
+                    <input type="radio" name="leave-choice" className="mt-1" checked={choice === c} onChange={() => setChoice(c)} />
+                    <span>
+                      <span className="block text-sm font-medium">{t(`leave.${c}`)}</span>
+                      <span className="block text-xs text-muted-foreground">{t(`leave.${c}Hint`)}</span>
+                    </span>
+                  </label>
+                ))}
+              </div>
+              {deleting && (
+                <div className="space-y-1.5">
+                  <Label htmlFor="leave-confirm-name">{t('leave.confirmName', { team: team?.name })}</Label>
+                  <Input id="leave-confirm-name" value={confirmName} autoComplete="off" onChange={(e) => setConfirmName(e.target.value)} />
+                </div>
+              )}
+            </div>
+          )}
+
+          <TeamError code={error} />
           <div className="flex justify-end gap-2">
             <DialogClose asChild>
               <Button variant="outline">{t('common:actions.cancel')}</Button>
             </DialogClose>
-            <Button variant="destructive" onClick={() => (void run(leaveTeam), setDialog(null))}>
-              {t('page.leave')}
+            <Button variant="destructive" disabled={!canSubmit} onClick={submit} data-testid="leave-submit">
+              {deleting ? t('leave.confirmDelete') : t('page.leave')}
             </Button>
           </div>
-        </DialogContent>
-      </Dialog>
-    </div>
+        </div>
+      </DialogContent>
+    </Dialog>
   )
 }
 
