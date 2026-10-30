@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { NavLink, Outlet } from 'react-router'
 import type { FeatureDefinition } from '@renderer/features/types'
 import { AssistantAvatar } from '@renderer/components/AssistantAvatar'
+import { RecoveryCodeDialog, TeamSwitcher } from '@renderer/components/TeamSwitcher'
 import { ThemeToggle } from '@renderer/components/ThemeToggle'
 import { UpdateBanner } from '@renderer/components/UpdateBanner'
 import { canSeeFeature } from '@renderer/features/access'
@@ -57,6 +58,7 @@ export function AppShell({ features }: { features: FeatureDefinition[] }) {
         <div title={assistant.name} className="mb-3">
           <AssistantAvatar avatar={assistant.avatar} className="size-9" />
         </div>
+        <TeamSwitcher />
         {top.map((f) => (
           <NavItem key={f.id} feature={f} />
         ))}
@@ -79,6 +81,7 @@ export function AppShell({ features }: { features: FeatureDefinition[] }) {
         <Outlet />
       </main>
       {features.map((f) => (f.overlay ? <f.overlay key={f.id} /> : null))}
+      <RecoveryCodeDialog />
       <UpdateBanner />
     </div>
   )

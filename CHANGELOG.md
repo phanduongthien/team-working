@@ -4,6 +4,14 @@
 
 ## [Unreleased]
 
+### Thêm mới
+- Nút team trên thanh bên: đổi nhanh giữa các team và tạo/tham gia thêm team từ bất kỳ màn hình nào.
+- Rời team khi chỉ còn một mình: chọn xóa team vĩnh viễn (gõ tên để xác nhận) hoặc giữ team và nhận mã khôi phục 30 ngày; người đầu tiên vào team trống bằng mã sẽ thành Owner.
+- Owner duy nhất rời team: chọn người nhận quyền Owner ngay trong hộp thoại rời team.
+
+### Cần làm khi cập nhật
+- Áp migration Supabase `20261101090000_leave_team.sql` (hàm `leave_team`, sửa `guard_last_owner` và `accept_invite`) lên project dev rồi prod trước khi phát hành bản app mới.
+
 ## [0.1.2] - 2026-10-28
 
 Bản nên cài. Nội dung giống 0.1.1; sửa cách đăng release để app tự cập nhật được (0.1.1 bị tạo trùng 2 release nên không tải được `latest.yml`). Chưa ký số: Windows SmartScreen có thể cảnh báo khi cài — chọn *More info → Run anyway*.

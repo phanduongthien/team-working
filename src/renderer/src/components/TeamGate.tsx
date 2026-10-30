@@ -47,7 +47,7 @@ function SignIn() {
   )
 }
 
-export function CreateOrJoin({ compact = false }: { compact?: boolean }) {
+export function CreateOrJoin({ compact = false, onDone }: { compact?: boolean; onDone?(): void }) {
   const { t } = useTranslation('team')
   const { createTeam, acceptInvite, pendingInvites } = useTeam()
   const [name, setName] = useState('')
@@ -60,6 +60,7 @@ export function CreateOrJoin({ compact = false }: { compact?: boolean }) {
     setError(null)
     try {
       await fn()
+      onDone?.()
     } catch (err) {
       setError((err as Error).message)
     } finally {
