@@ -16,6 +16,8 @@ export const conversations = sqliteTable(
   'conversations',
   {
     id: text('id').primaryKey(),
+    /** Tài khoản sở hữu (như memories.owner): mỗi tài khoản chỉ thấy lịch sử chat của mình. */
+    owner: text('owner').notNull().default('local'),
     title: text('title').notNull().default(''),
     mode: text('mode').$type<ChatMode>().notNull().default('free'),
     pinned: integer('pinned', { mode: 'boolean' }).notNull().default(false),
@@ -29,7 +31,7 @@ export const conversations = sqliteTable(
     createdAt: integer('created_at').notNull().default(now),
     updatedAt: integer('updated_at').notNull().default(now)
   },
-  (t) => [index('conversations_updated_idx').on(t.pinned, t.updatedAt)]
+  (t) => [index('conversations_updated_idx').on(t.pinned, t.updatedAt), index('conversations_owner_idx').on(t.owner)]
 )
 
 export const messages = sqliteTable(

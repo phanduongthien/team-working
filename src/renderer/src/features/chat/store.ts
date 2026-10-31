@@ -38,6 +38,8 @@ type ChatState = {
   stop(): Promise<void>
   handleEvent(payload: ChatStreamPayload): void
   clearError(): void
+  /** Đổi tài khoản: bỏ lịch sử đang hiện, tải danh sách hội thoại của tài khoản mới. */
+  switchAccount(): Promise<void>
 }
 
 export const useChat = create<ChatState>((set, get) => {
@@ -183,6 +185,12 @@ export const useChat = create<ChatState>((set, get) => {
 
     clearError() {
       set({ error: null })
+    },
+
+    async switchAccount() {
+      early.clear()
+      set({ conversations: [], query: '', activeId: null, messages: {}, streaming: {}, error: null })
+      await get().loadConversations()
     }
   }
 })

@@ -1,6 +1,7 @@
 import { LoaderCircle, LogIn, Plus } from 'lucide-react'
 import { useState, type FormEvent, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
+import { AccountList } from '@renderer/components/AccountSwitcher'
 import { Button } from '@renderer/components/ui/button'
 import { Input, Label } from '@renderer/components/ui/input'
 import { useAuth } from '@renderer/stores/auth'
@@ -23,7 +24,8 @@ export function TeamError({ code }: { code: string | null }) {
 
 function SignIn() {
   const { t } = useTranslation('team')
-  const { status, error, signInWithGitHub, cancelSignIn } = useAuth()
+  const { status, error, accounts, signInWithGitHub, cancelSignIn } = useAuth()
+  const [remember, setRemember] = useState(true)
   return (
     <Card>
       <h1 className="text-2xl font-semibold">{t('signIn.heading')}</h1>
@@ -37,17 +39,32 @@ function SignIn() {
           </Button>
         </div>
       ) : (
-        <Button size="lg" onClick={() => void signInWithGitHub()}>
-          <LogIn />
-          {t('signIn.button')}
-        </Button>
+        <>
+          {accounts.length > 0 && (
+            <div className="space-y-1 rounded-lg border p-2">
+              <div className="px-1 text-xs font-medium text-muted-foreground">{t('accounts.quickSignIn')}</div>
+              <AccountList />
+            </div>
+          )}
+          <Button
+            size="lg"
+            onClick={() => void signInWithGitHub({ remember, selectAccount: accounts.length > 0 })}
+          >
+            <LogIn />
+            {accounts.length > 0 ? t('accounts.add') : t('signIn.button')}
+          </Button>
+          <label className="flex cursor-pointer items-center gap-2 text-sm">
+            <input type="checkbox" checked={remember} onChange={(e) => setRemember(e.target.checked)} data-testid="signin-remember" />
+            {t('accounts.rememberLabel')}
+          </label>
+        </>
       )}
       <TeamError code={error} />
     </Card>
   )
 }
 
-export function CreateOrJoin({ compact = false }: { compact?: boolean }) {
+export function CreateOrJoin({ compact = false, onDone }: { compact?: boolean; onDone?(): void }) {
   const { t } = useTranslation('team')
   const { createTeam, acceptInvite, pendingInvites } = useTeam()
   const [name, setName] = useState('')
@@ -60,6 +77,7 @@ export function CreateOrJoin({ compact = false }: { compact?: boolean }) {
     setError(null)
     try {
       await fn()
+      onDone?.()
     } catch (err) {
       setError((err as Error).message)
     } finally {

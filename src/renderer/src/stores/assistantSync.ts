@@ -4,8 +4,8 @@ import { supabase } from '@renderer/lib/supabase'
 import { useAuth } from './auth'
 import { usePreferences } from './preferences'
 
-const LOCAL_TS_KEY = 'tw.assistantUpdatedAt'
-const SYNC_USER_KEY = 'tw.assistantSyncUser'
+/** Mốc sửa cài đặt trợ lý trên máy, theo tài khoản (main lưu trợ lý riêng cho từng tài khoản). */
+const assistantTsKey = (uid: string): string => `tw.assistantUpdatedAt.${uid}`
 
 export type SyncDecision = 'push' | 'pull' | 'none'
 
@@ -44,23 +44,17 @@ function write(key: string, value: string): void {
   }
 }
 
-/** Đánh dấu cài đặt trên máy vừa đổi (gọi khi người dùng lưu). */
-export function stampLocalAssistant(at = Date.now()): void {
-  write(LOCAL_TS_KEY, String(at))
-}
-
 async function push(uid: string, profile: AssistantProfile, at: number): Promise<void> {
-  if (!supabase) return
-  const { error } = await supabase
-    .from('user_settings')
-    .upsert({ user_id: uid, assistant: profile, updated_at: new Date(at).toISOString() })
-  if (!error) write(SYNC_USER_KEY, uid)
+  await supabase?.from('user_settings').upsert({ user_id: uid, assistant: profile, updated_at: new Date(at).toISOString() })
 }
 
-/** Sau khi lưu trên máy: nếu đang đăng nhập thì đẩy lên tài khoản. */
+/** Sau khi lưu trên máy: nếu đang đăng nhập thì đánh dấu mới nhất và đẩy lên tài khoản. */
 export async function pushAssistantIfSignedIn(profile: AssistantProfile): Promise<void> {
   const uid = useAuth.getState().session?.user.id
-  if (uid) await push(uid, profile, Number(read(LOCAL_TS_KEY)) || Date.now())
+  if (!uid) return
+  const at = Date.now()
+  write(assistantTsKey(uid), String(at))
+  await push(uid, profile, at)
 }
 
 // ---------------- Hồ sơ cá nhân theo tài khoản ----------------
@@ -108,20 +102,22 @@ export async function syncProfile(uid: string): Promise<SyncDecision> {
   return decision
 }
 
-/** Khi đăng nhập: đồng bộ hai chiều theo decideAssistantSync. */
+/**
+ * Khi đăng nhập/đổi tài khoản (sau khi main đã đổi phạm vi): trợ lý trên máy đã tách theo
+ * tài khoản nên chỉ cần "bản mới hơn thắng"; tài khoản chưa có bản lưu thì đẩy bản trên máy lên.
+ */
 export async function syncAssistant(uid: string): Promise<SyncDecision> {
   if (!supabase) return 'none'
   const { data, error } = await supabase.from('user_settings').select('assistant, updated_at').eq('user_id', uid).maybeSingle()
   if (error) return 'none'
   const remote = data ? assistantProfileSchema.safeParse(data.assistant) : null
   const remoteUpdatedAt = data && remote?.success ? Date.parse(data.updated_at) : null
-  const localUpdatedAt = Number(read(LOCAL_TS_KEY)) || 0
+  const localUpdatedAt = Number(read(assistantTsKey(uid))) || 0
 
-  const decision = decideAssistantSync({ remoteUpdatedAt, localUpdatedAt, lastSyncedUser: read(SYNC_USER_KEY), uid })
+  const decision = decideAssistantSync({ remoteUpdatedAt, localUpdatedAt, lastSyncedUser: uid, uid })
   if (decision === 'pull' && remote?.success && remoteUpdatedAt !== null) {
     await usePreferences.getState().applyAssistant(remote.data)
-    stampLocalAssistant(remoteUpdatedAt)
-    write(SYNC_USER_KEY, uid)
+    write(assistantTsKey(uid), String(remoteUpdatedAt))
   } else if (decision === 'push') {
     await push(uid, usePreferences.getState().assistant, localUpdatedAt || Date.now())
   }

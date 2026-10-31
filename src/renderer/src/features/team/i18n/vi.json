@@ -12,6 +12,19 @@
     "cancel": "Hủy",
     "signOut": "Đăng xuất"
   },
+  "accounts": {
+    "label": "Tài khoản: {{name}}",
+    "current": "Đang dùng",
+    "others": "Tài khoản khác trên máy này",
+    "quickSignIn": "Đăng nhập nhanh",
+    "remembered": "Đã ghi nhớ, bấm để đổi ngay",
+    "needsSignIn": "Cần đăng nhập lại qua trình duyệt",
+    "rememberLabel": "Ghi nhớ đăng nhập trên máy này",
+    "rememberHint": "Lưu phiên đăng nhập (đã mã hóa) để đổi qua lại không cần mở trình duyệt. App không bao giờ thấy hay lưu mật khẩu GitHub.",
+    "forget": "Xóa khỏi danh sách",
+    "add": "Đăng nhập tài khoản GitHub khác",
+    "addHint": "Trình duyệt sẽ mở trang GitHub. Nếu GitHub tự vào tài khoản cũ, hãy đăng xuất GitHub trên trình duyệt rồi thử lại."
+  },
   "onboard": {
     "heading": "Bạn chưa ở trong team nào",
     "create": "Tạo team mới",
@@ -26,10 +39,39 @@
   "roles": { "owner": "Owner", "manager": "Manager", "member": "Member" },
   "page": {
     "switch": "Đổi team",
-    "newTeam": "Tạo team khác",
+    "newTeam": "Tạo / tham gia team",
     "rename": "Đổi tên team",
-    "leave": "Rời team",
-    "leaveConfirm": "Bạn chắc chắn muốn rời team “{{team}}”?"
+    "leave": "Rời team"
+  },
+  "switcher": {
+    "title": "Team của bạn",
+    "label": "Đổi team (đang ở: {{team}})",
+    "add": "Tạo hoặc tham gia team khác"
+  },
+  "leave": {
+    "title": "Rời team “{{team}}”",
+    "simple": "Bạn sẽ không còn thấy dự án, task của team này. Muốn vào lại cần có mã mời mới.",
+    "successorBody": "Bạn là Owner duy nhất của team. Chọn người nhận quyền Owner trước khi rời.",
+    "successorLabel": "Người nhận quyền Owner",
+    "soloBody": "Bạn là thành viên cuối cùng của team này. Bạn muốn làm gì với team?",
+    "keep": "Giữ team và dữ liệu",
+    "keepHint": "Bạn sẽ nhận một mã có hiệu lực 30 ngày. Người đầu tiên vào team bằng mã này (bạn hoặc người bạn gửi) sẽ trở thành Owner.",
+    "delete": "Xóa team vĩnh viễn",
+    "deleteHint": "Xóa toàn bộ dự án, task, bình luận, feedback và lời mời của team. Không thể hoàn tác.",
+    "confirmName": "Gõ tên team “{{team}}” để xác nhận",
+    "confirmDelete": "Xóa team và rời"
+  },
+  "recovery": {
+    "title": "Đã rời team “{{team}}”",
+    "body": "Team vẫn được giữ lại. Lưu mã này để vào lại hoặc gửi cho người tiếp quản (hiệu lực 30 ngày). Người đầu tiên dùng mã sẽ thành Owner.",
+    "copy": "Chép mã",
+    "done": "Đã lưu mã"
+  },
+  "transfer": {
+    "action": "Nhường quyền Owner",
+    "title": "Nhường quyền Owner cho {{name}}?",
+    "body": "{{name}} sẽ trở thành Owner của team. Bạn sẽ chuyển xuống Manager: vẫn quản lý dự án, task và lời mời, nhưng không còn đổi vai trò, xóa thành viên hay đổi tên team được. Chỉ Owner mới có thể trả lại quyền cho bạn.",
+    "confirm": "Nhường quyền"
   },
   "members": {
     "heading": "Thành viên ({{count}})",
@@ -61,6 +103,12 @@
     "invite_email_mismatch": "Lời mời này dành cho email khác.",
     "last_owner": "Team cần ít nhất một Owner. Hãy chuyển quyền Owner cho người khác trước.",
     "not_allowed": "Bạn không có quyền làm việc này.",
+    "successor_invalid": "Người nhận quyền Owner phải là thành viên khác trong team.",
+    "new_owner_invalid": "Người nhận quyền Owner phải là thành viên khác trong team.",
+    "team_not_empty": "Team vẫn còn thành viên khác nên không thể xóa.",
+    "not_member": "Bạn không còn là thành viên của team này.",
+    "session_expired": "Phiên đăng nhập đã lưu của tài khoản này đã hết hạn. Bấm lại để đăng nhập qua trình duyệt.",
+    "secure_storage_unavailable": "Máy này không hỗ trợ lưu mã hóa nên không ghi nhớ được đăng nhập.",
     "network_error": "Không kết nối được máy chủ. Kiểm tra mạng.",
     "port_in_use": "Cổng 47823 đang bị ứng dụng khác dùng. Hãy đóng ứng dụng đó rồi thử lại.",
     "timeout": "Hết thời gian chờ đăng nhập. Hãy thử lại.",

@@ -12,6 +12,19 @@
     "cancel": "Cancel",
     "signOut": "Sign out"
   },
+  "accounts": {
+    "label": "Account: {{name}}",
+    "current": "Current",
+    "others": "Other accounts on this computer",
+    "quickSignIn": "Quick sign-in",
+    "remembered": "Remembered, click to switch now",
+    "needsSignIn": "Needs to sign in again in the browser",
+    "rememberLabel": "Remember sign-in on this computer",
+    "rememberHint": "Stores the sign-in session (encrypted) so you can switch without opening the browser. The app never sees or stores your GitHub password.",
+    "forget": "Remove from list",
+    "add": "Sign in with another GitHub account",
+    "addHint": "Your browser will open GitHub. If GitHub signs you into the old account automatically, sign out of GitHub in the browser and try again."
+  },
   "onboard": {
     "heading": "You are not in a team yet",
     "create": "Create a new team",
@@ -26,10 +39,39 @@
   "roles": { "owner": "Owner", "manager": "Manager", "member": "Member" },
   "page": {
     "switch": "Switch team",
-    "newTeam": "Create another team",
+    "newTeam": "Create / join team",
     "rename": "Rename team",
-    "leave": "Leave team",
-    "leaveConfirm": "Are you sure you want to leave “{{team}}”?"
+    "leave": "Leave team"
+  },
+  "switcher": {
+    "title": "Your teams",
+    "label": "Switch team (current: {{team}})",
+    "add": "Create or join another team"
+  },
+  "leave": {
+    "title": "Leave “{{team}}”",
+    "simple": "You will no longer see this team's projects and tasks. You need a new invite to rejoin.",
+    "successorBody": "You are the only Owner. Choose who becomes Owner before you leave.",
+    "successorLabel": "New Owner",
+    "soloBody": "You are the last member of this team. What should happen to it?",
+    "keep": "Keep the team and its data",
+    "keepHint": "You get a code valid for 30 days. The first person to join with it (you or whoever you send it to) becomes Owner.",
+    "delete": "Delete the team permanently",
+    "deleteHint": "Deletes all of the team's projects, tasks, comments, feedback and invites. This cannot be undone.",
+    "confirmName": "Type the team name “{{team}}” to confirm",
+    "confirmDelete": "Delete team and leave"
+  },
+  "recovery": {
+    "title": "You left “{{team}}”",
+    "body": "The team was kept. Save this code to rejoin or hand it to someone who will take over (valid for 30 days). The first person to use it becomes Owner.",
+    "copy": "Copy code",
+    "done": "I saved the code"
+  },
+  "transfer": {
+    "action": "Transfer ownership",
+    "title": "Transfer ownership to {{name}}?",
+    "body": "{{name}} will become the team Owner. You will become a Manager: you can still manage projects, tasks and invites, but can no longer change roles, remove members or rename the team. Only an Owner can give ownership back to you.",
+    "confirm": "Transfer"
   },
   "members": {
     "heading": "Members ({{count}})",
@@ -60,7 +102,13 @@
     "invite_invalid": "The invite code is wrong or expired.",
     "invite_email_mismatch": "This invite is for a different email.",
     "last_owner": "A team needs at least one Owner. Transfer ownership first.",
-    "not_allowed": "You are not allowed to do this.",
+    "successor_invalid": "The new Owner must be another member of the team.",
+    "new_owner_invalid": "The new Owner must be another member of the team.",
+    "team_not_empty": "The team still has other members, so it cannot be deleted.",
+    "not_member": "You are no longer a member of this team.",
+    "not_allowed":"You are not allowed to do this.",
+    "session_expired": "The saved sign-in for this account has expired. Click it again to sign in through the browser.",
+    "secure_storage_unavailable": "This computer does not support encrypted storage, so sign-in cannot be remembered.",
     "network_error": "Cannot reach the server. Check your connection.",
     "port_in_use": "Port 47823 is used by another app. Close it and try again.",
     "timeout": "Sign-in timed out. Please try again.",

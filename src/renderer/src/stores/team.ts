@@ -7,6 +7,9 @@ import { useAuth } from './auth'
 export type MyTeam = TeamRow & { role: TeamRole }
 export type Member = ProfileRow & { role: TeamRole; joined_at: string }
 export type PendingInvite = { code: string; team_id: string; team_name: string; role: TeamRole; expires_at: string }
+/** Mã để vào lại team mà mình là người cuối cùng rời đi (team được giữ lại). */
+export type RecoveryCode = { teamName: string; code: string }
+export type LeaveOptions = { deleteTeam?: boolean; successorId?: string }
 
 const CURRENT_KEY = 'tw.currentTeam'
 
@@ -23,6 +26,7 @@ type TeamState = {
   currentTeamId: string | null
   members: Member[]
   pendingInvites: PendingInvite[]
+  recoveryCode: RecoveryCode | null
   loaded: boolean
 
   load(): Promise<void>
@@ -32,8 +36,10 @@ type TeamState = {
   acceptInvite(code: string): Promise<void>
   renameTeam(name: string): Promise<void>
   changeRole(userId: string, role: TeamRole): Promise<void>
+  transferOwnership(userId: string): Promise<void>
   removeMember(userId: string): Promise<void>
-  leaveTeam(): Promise<void>
+  leaveTeam(opts?: LeaveOptions): Promise<void>
+  dismissRecoveryCode(): void
   listInvites(): Promise<TeamInviteRow[]>
   createInvite(input: { email: string | null; role: TeamRole }): Promise<TeamInviteRow>
   deleteInvite(id: string): Promise<void>
@@ -51,6 +57,7 @@ export const useTeam = create<TeamState>((set, get) => ({
   currentTeamId: readCurrent(),
   members: [],
   pendingInvites: [],
+  recoveryCode: null,
   loaded: false,
 
   async load() {
@@ -123,6 +130,16 @@ export const useTeam = create<TeamState>((set, get) => ({
     await get().loadMembers()
   },
 
+  /** Nhường Owner (nguyên tử): người nhận lên Owner, mình xuống Manager. */
+  async transferOwnership(userId) {
+    const id = get().currentTeamId
+    if (!id) return
+    const res = await requireSupabase().rpc('transfer_ownership', { p_team: id, p_new_owner: userId })
+    if (res.error) throw new Error(dbErrorCode(res.error))
+    await get().load()
+    await get().loadMembers()
+  },
+
   async removeMember(userId) {
     const id = get().currentTeamId
     if (!id) return
@@ -130,13 +147,24 @@ export const useTeam = create<TeamState>((set, get) => ({
     await get().loadMembers()
   },
 
-  async leaveTeam() {
-    const uid = useAuth.getState().session?.user.id
+  async leaveTeam(opts = {}) {
     const id = get().currentTeamId
-    if (!id || !uid) return
-    check(await requireSupabase().from('team_members').delete().eq('team_id', id).eq('user_id', uid))
+    if (!id) return
+    const teamName = get().teams.find((t) => t.id === id)?.name ?? ''
+    const res = await requireSupabase().rpc('leave_team', {
+      p_team: id,
+      p_delete_team: opts.deleteTeam ?? false,
+      p_successor: opts.successorId ?? null
+    })
+    if (res.error) throw new Error(dbErrorCode(res.error))
+    if (res.data) set({ recoveryCode: { teamName, code: res.data } })
+    // Chuyển sang team khác của mình (hoặc màn hình tạo/tham gia nếu không còn team nào).
     await get().select('')
     await get().load()
+  },
+
+  dismissRecoveryCode() {
+    set({ recoveryCode: null })
   },
 
   async listInvites() {
@@ -164,7 +192,7 @@ export const useTeam = create<TeamState>((set, get) => ({
   },
 
   reset() {
-    set({ teams: [], members: [], pendingInvites: [], loaded: false })
+    set({ teams: [], members: [], pendingInvites: [], recoveryCode: null, loaded: false })
   }
 }))
 
