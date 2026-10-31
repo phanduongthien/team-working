@@ -12,6 +12,19 @@
     "cancel": "Cancel",
     "signOut": "Sign out"
   },
+  "accounts": {
+    "label": "Account: {{name}}",
+    "current": "Current",
+    "others": "Other accounts on this computer",
+    "quickSignIn": "Quick sign-in",
+    "remembered": "Remembered, click to switch now",
+    "needsSignIn": "Needs to sign in again in the browser",
+    "rememberLabel": "Remember sign-in on this computer",
+    "rememberHint": "Stores the sign-in session (encrypted) so you can switch without opening the browser. The app never sees or stores your GitHub password.",
+    "forget": "Remove from list",
+    "add": "Sign in with another GitHub account",
+    "addHint": "Your browser will open GitHub. If GitHub signs you into the old account automatically, sign out of GitHub in the browser and try again."
+  },
   "onboard": {
     "heading": "You are not in a team yet",
     "create": "Create a new team",
@@ -54,6 +67,12 @@
     "copy": "Copy code",
     "done": "I saved the code"
   },
+  "transfer": {
+    "action": "Transfer ownership",
+    "title": "Transfer ownership to {{name}}?",
+    "body": "{{name}} will become the team Owner. You will become a Manager: you can still manage projects, tasks and invites, but can no longer change roles, remove members or rename the team. Only an Owner can give ownership back to you.",
+    "confirm": "Transfer"
+  },
   "members": {
     "heading": "Members ({{count}})",
     "you": "you",
@@ -84,9 +103,12 @@
     "invite_email_mismatch": "This invite is for a different email.",
     "last_owner": "A team needs at least one Owner. Transfer ownership first.",
     "successor_invalid": "The new Owner must be another member of the team.",
+    "new_owner_invalid": "The new Owner must be another member of the team.",
     "team_not_empty": "The team still has other members, so it cannot be deleted.",
     "not_member": "You are no longer a member of this team.",
     "not_allowed":"You are not allowed to do this.",
+    "session_expired": "The saved sign-in for this account has expired. Click it again to sign in through the browser.",
+    "secure_storage_unavailable": "This computer does not support encrypted storage, so sign-in cannot be remembered.",
     "network_error": "Cannot reach the server. Check your connection.",
     "port_in_use": "Port 47823 is used by another app. Close it and try again.",
     "timeout": "Sign-in timed out. Please try again.",

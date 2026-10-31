@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import { NavLink, Outlet } from 'react-router'
 import type { FeatureDefinition } from '@renderer/features/types'
+import { AccountSwitcher } from '@renderer/components/AccountSwitcher'
 import { AssistantAvatar } from '@renderer/components/AssistantAvatar'
 import { RecoveryCodeDialog, TeamSwitcher } from '@renderer/components/TeamSwitcher'
 import { ThemeToggle } from '@renderer/components/ThemeToggle'
@@ -67,6 +68,7 @@ export function AppShell({ features }: { features: FeatureDefinition[] }) {
         {bottom.map((f) => (
           <NavItem key={f.id} feature={f} />
         ))}
+        <AccountSwitcher />
         {appEnv !== 'production' && (
           <span
             className="mt-1 rounded bg-orange-500/20 px-1 text-[10px] font-bold text-orange-700 dark:text-orange-300"

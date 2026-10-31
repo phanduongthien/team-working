@@ -110,6 +110,14 @@ const api: TeamWorkingApi = {
   },
   account: {
     set: (uid) => ipcRenderer.invoke(IPC.accountSet, uid)
+  },
+  accounts: {
+    list: () => ipcRenderer.invoke(IPC.accountsList),
+    record: (account, session) => ipcRenderer.invoke(IPC.accountsRecord, { account, session }),
+    remember: (id, remember, session) => ipcRenderer.invoke(IPC.accountsRemember, { id, remember, session }),
+    session: (id) => ipcRenderer.invoke(IPC.accountsSession, id),
+    dropSession: (id) => ipcRenderer.invoke(IPC.accountsDropSession, id),
+    forget: (id) => ipcRenderer.invoke(IPC.accountsForget, id)
   }
 }
 

@@ -8,9 +8,16 @@
 - Nút team trên thanh bên: đổi nhanh giữa các team và tạo/tham gia thêm team từ bất kỳ màn hình nào.
 - Rời team khi chỉ còn một mình: chọn xóa team vĩnh viễn (gõ tên để xác nhận) hoặc giữ team và nhận mã khôi phục 30 ngày; người đầu tiên vào team trống bằng mã sẽ thành Owner.
 - Owner duy nhất rời team: chọn người nhận quyền Owner ngay trong hộp thoại rời team.
+- Nhường quyền Owner (nút vương miện trong danh sách thành viên): người nhận thành Owner, Owner cũ thành Manager, trong một bước có xác nhận.
+- Đổi tài khoản GitHub nhanh: nút tài khoản ở thanh bên hiện các tài khoản từng đăng nhập trên máy; tài khoản bật "Ghi nhớ đăng nhập" thì bấm là đổi ngay, không cần mở trình duyệt. Phiên được mã hóa bằng Windows DPAPI; app không bao giờ thấy mật khẩu GitHub.
+
+### Thay đổi
+- Lịch sử chat và cài đặt trợ lý (tên, avatar, tính cách) giờ riêng theo từng tài khoản trên máy, như trí nhớ và hồ sơ cá nhân. Dữ liệu cũ thuộc về tài khoản đầu tiên đã đăng nhập trên máy.
+- Đăng xuất chỉ thu hồi phiên trên máy này, không còn đăng xuất các máy khác của cùng tài khoản.
 
 ### Cần làm khi cập nhật
 - Áp migration Supabase `20261101090000_leave_team.sql` (hàm `leave_team`, sửa `guard_last_owner` và `accept_invite`) lên project dev rồi prod trước khi phát hành bản app mới.
+- Áp migration Supabase `20261102090000_transfer_ownership.sql` (hàm `transfer_ownership`).
 
 ## [0.1.2] - 2026-10-28
 

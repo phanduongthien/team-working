@@ -1,6 +1,8 @@
 import type { ChatEvent, ChatMode, ChatUsage, CliStatus } from './ai'
 import type { CsvHeaders, TimeEntry } from './timesheet'
 import type {
+  AccountSession,
+  SavedAccountInfo,
   AiResult,
   AiSettings,
   DayBlock,
@@ -244,7 +246,22 @@ export interface TeamWorkingApi {
     /** Báo main tài khoản đang đăng nhập (null = đăng xuất) — trí nhớ/hồ sơ đổi theo. */
     set(uid: string | null): Promise<{ owner: string; claimed: boolean }>
   }
+  accounts: {
+    /** Tài khoản từng đăng nhập trên máy, mới dùng gần nhất trước. */
+    list(): Promise<SavedAccount[]>
+    /** Sau mỗi lần đăng nhập/làm mới phiên: cập nhật thông tin (và phiên nếu đang ghi nhớ). */
+    record(account: SavedAccountInfo, session: AccountSession): Promise<void>
+    /** Bật/tắt "ghi nhớ đăng nhập" cho tài khoản (bật thì cần phiên hiện tại). */
+    remember(id: string, remember: boolean, session?: AccountSession): Promise<void>
+    /** Phiên đã lưu để đổi nhanh (null nếu không ghi nhớ). */
+    session(id: string): Promise<AccountSession | null>
+    /** Phiên đã lưu không còn dùng được (đăng xuất / hết hạn) → xóa, giữ tài khoản trong danh sách. */
+    dropSession(id: string): Promise<void>
+    forget(id: string): Promise<void>
+  }
 }
+
+export type SavedAccount = SavedAccountInfo & { remembered: boolean; lastUsedAt: number }
 
 export type TimeStartInput = { taskId?: string | null; projectId?: string | null; title: string; projectName?: string | null; kind?: 'timer' | 'pomodoro' }
 export type TimeManualInput = { taskId?: string | null; projectId?: string | null; title: string; projectName?: string | null; startedAt: number; endedAt: number; note?: string }

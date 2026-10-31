@@ -5,7 +5,6 @@ import { IPC } from '@shared/ipc'
 import {
   DEFAULT_AI_SETTINGS,
   DEFAULT_APPEARANCE,
-  DEFAULT_ASSISTANT,
   aiSettingsSchema,
   apiKeySchema,
   appearanceSchema,
@@ -30,6 +29,7 @@ import type {
   SettingsRepository,
   SuggestionRepository
 } from '../db/repositories'
+import type { AccountScope } from '../memory/accountScope'
 import type { MemoryService } from '../memory/memoryService'
 import { ATTACHMENT_EXTENSIONS, type AttachmentStore } from '../services/attachments'
 import type { ChatService } from '../services/chatService'
@@ -42,6 +42,7 @@ export type IpcDeps = {
   memories: MemoryRepository
   suggestions: SuggestionRepository
   settings: SettingsRepository
+  account: Pick<AccountScope, 'getAssistant' | 'setAssistant'>
   chat: ChatService
   memory: MemoryService
   attachments: AttachmentStore
@@ -99,7 +100,10 @@ export function registerIpc(deps: IpcDeps): void {
     return updated
   })
   handle(deps, IPC.conversationsRemove, idSchema, (id) => deps.conversations.remove(id))
-  handle(deps, IPC.messagesList, idSchema, (conversationId) => deps.messages.list(conversationId))
+  // Chỉ đọc tin nhắn trong hội thoại của tài khoản hiện tại.
+  handle(deps, IPC.messagesList, idSchema, (conversationId) =>
+    deps.conversations.get(conversationId) ? deps.messages.list(conversationId) : []
+  )
 
   handle(deps, IPC.chatSend, chatSendSchema, ({ conversationId, text, attachmentIds }) =>
     deps.chat.send(conversationId, text, deps.attachments.take(attachmentIds))
@@ -149,10 +153,9 @@ export function registerIpc(deps: IpcDeps): void {
   })
 
   // ---- Cài đặt ----
-  handle(deps, IPC.settingsGetAssistant, none, () =>
-    deps.settings.get('assistant', assistantProfileSchema, DEFAULT_ASSISTANT)
-  )
-  handle(deps, IPC.settingsSetAssistant, assistantProfileSchema, (p) => deps.settings.set('assistant', p))
+  // Tên/tính cách trợ lý theo tài khoản đang đăng nhập.
+  handle(deps, IPC.settingsGetAssistant, none, () => deps.account.getAssistant())
+  handle(deps, IPC.settingsSetAssistant, assistantProfileSchema, (p) => deps.account.setAssistant(p))
   handle(deps, IPC.settingsGetAppearance, none, () =>
     deps.settings.get('appearance', appearanceSchema, DEFAULT_APPEARANCE)
   )

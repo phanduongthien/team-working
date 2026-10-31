@@ -2,7 +2,10 @@ import { Notification, shell, type BrowserWindow } from 'electron'
 import { z } from 'zod'
 import { IPC } from '@shared/ipc'
 import {
+  accountRecordSchema,
+  accountRememberSchema,
   desktopNotificationSchema,
+  idSchema,
   feedbackCoachSchema,
   feedbackSummarySchema,
   planRequestSchema,
@@ -13,11 +16,13 @@ import { completeText, type AIProvider } from '../ai/AIProvider'
 import { buildCoachPrompt, buildSummaryPrompt, cleanText } from '../feedback/prompts'
 import { buildPlanPrompt, parsePlan } from '../planner/taskPlan'
 import { isAllowedAuthorizeUrl, type OAuthLoopback } from '../services/oauthLoopback'
+import type { SavedAccountStore } from '../services/savedAccounts'
 import type { HandleFn } from './register'
 
 export type TeamIpcDeps = {
   handle: HandleFn
   oauth: OAuthLoopback
+  accounts: SavedAccountStore
   supabaseUrl: string | undefined
   getWindow(): BrowserWindow | null
   getProvider(): AIProvider
@@ -47,6 +52,15 @@ export function registerTeamIpc(deps: TeamIpcDeps): void {
     return result
   })
   handle(IPC.authCancel, none, () => deps.oauth.cancel())
+
+  // Tài khoản đã đăng nhập trên máy (đổi nhanh).
+  const { accounts } = deps
+  handle(IPC.accountsList, none, () => accounts.list())
+  handle(IPC.accountsRecord, accountRecordSchema, ({ account, session }) => accounts.record(account, session))
+  handle(IPC.accountsRemember, accountRememberSchema, ({ id, remember, session }) => accounts.remember(id, remember, session))
+  handle(IPC.accountsSession, idSchema, (id) => accounts.session(id))
+  handle(IPC.accountsDropSession, idSchema, (id) => accounts.dropSession(id))
+  handle(IPC.accountsForget, idSchema, (id) => accounts.forget(id))
 
   handle(IPC.notifyShow, desktopNotificationSchema, ({ title, body, route }) => {
     const win = deps.getWindow()

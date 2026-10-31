@@ -36,6 +36,13 @@
       "when": 1793177471081,
       "tag": "0004_memory_owner",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1793416841357,
+      "tag": "0005_conversation_owner",
+      "breakpoints": true
     }
   ]
 }

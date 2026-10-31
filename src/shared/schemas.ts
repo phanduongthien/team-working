@@ -62,6 +62,32 @@ export const appearanceSchema = z.object({
 
 export const externalUrlSchema = z.url({ protocol: /^https?$/ })
 
+// ---- Tài khoản GitHub đã đăng nhập trên máy (đổi nhanh) ----
+export const savedAccountInfoSchema = z.object({
+  id: idSchema,
+  login: z.string().trim().max(100),
+  name: z.string().trim().max(200),
+  email: z.string().trim().max(320),
+  avatarUrl: z.url({ protocol: /^https$/ }).nullable()
+})
+
+/** Phiên Supabase để đổi tài khoản không cần mở trình duyệt (lưu mã hóa DPAPI ở main). */
+export const accountSessionSchema = z.object({
+  accessToken: z.string().min(1).max(8192),
+  refreshToken: z.string().min(1).max(1024)
+})
+
+export const accountRecordSchema = z.object({
+  account: savedAccountInfoSchema,
+  session: accountSessionSchema
+})
+
+export const accountRememberSchema = z.object({
+  id: idSchema,
+  remember: z.boolean(),
+  session: accountSessionSchema.optional()
+})
+
 // ---- Trí nhớ ----
 
 export const MEMORY_CATEGORIES = ['goal', 'skill', 'preference', 'project', 'deadline', 'other'] as const
@@ -383,6 +409,8 @@ export type MemoryCategory = (typeof MEMORY_CATEGORIES)[number]
 export type MemoryAction = (typeof MEMORY_ACTIONS)[number]
 export type SuggestionStatus = (typeof SUGGESTION_STATUSES)[number]
 export type UserProfile = z.infer<typeof userProfileSchema>
+export type SavedAccountInfo = z.infer<typeof savedAccountInfoSchema>
+export type AccountSession = z.infer<typeof accountSessionSchema>
 export type AiSettings = z.infer<typeof aiSettingsSchema>
 export type AiProviderId = (typeof AI_PROVIDERS)[number]
 

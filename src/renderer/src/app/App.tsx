@@ -2,6 +2,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { HashRouter, Route, Routes, useNavigate } from 'react-router'
+import { useChat } from '@renderer/features/chat/store'
 import { useMemory } from '@renderer/features/memory/store'
 import type { FeatureDefinition } from '@renderer/features/types'
 import { api } from '@renderer/lib/api'
@@ -55,12 +56,14 @@ function useAuthLifecycle(): void {
       if (uid === lastUid) return
       lastUid = uid
       queryClient.clear()
-      // Trí nhớ + hồ sơ cá nhân đổi theo tài khoản đang đăng nhập.
-      void useMemory.getState().switchAccount(uid)
-      if (uid) {
-        void useTeam.getState().load()
-        void syncAssistant(uid)
-      } else useTeam.getState().reset()
+      if (uid) void useTeam.getState().load()
+      else useTeam.getState().reset()
+      // Dữ liệu cá nhân (trí nhớ, hồ sơ, chat, trợ lý) đổi theo tài khoản: main đổi phạm vi TRƯỚC rồi mới tải lại.
+      void (async () => {
+        await useMemory.getState().switchAccount(uid)
+        await Promise.all([usePreferences.getState().reloadAssistant(), useChat.getState().switchAccount()])
+        if (uid) await syncAssistant(uid)
+      })()
     })
     return () => {
       unsubscribe()

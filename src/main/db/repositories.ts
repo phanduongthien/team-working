@@ -63,8 +63,19 @@ export function ftsQuery(input: string): string {
     .join(' ')
 }
 
+/**
+ * Lịch sử chat theo TÀI KHOẢN (như MemoryRepository): đọc/sửa/xóa chỉ trong hội thoại của
+ * người đang đăng nhập. touch/setSession/setMemoryExtractedAt theo id, chỉ gọi nội bộ.
+ */
 export class ConversationRepository {
-  constructor(private readonly db: AppDatabase) {}
+  constructor(
+    private readonly db: AppDatabase,
+    private readonly getOwner: () => string = () => LOCAL_OWNER
+  ) {}
+
+  private mine(id?: string) {
+    return and(eq(conversations.owner, this.getOwner()), id === undefined ? undefined : eq(conversations.id, id))
+  }
 
   list(query?: string): Conversation[] {
     const q = query?.trim()
@@ -81,25 +92,25 @@ export class ConversationRepository {
     return this.db
       .select()
       .from(conversations)
-      .where(where)
+      .where(and(this.mine(), where))
       .orderBy(desc(conversations.pinned), desc(conversations.updatedAt))
       .all()
       .map(toConversation)
   }
 
   get(id: string): (Conversation & { cliSessionId: string | null; memoryExtractedAt: number | null }) | null {
-    const row = this.db.select().from(conversations).where(eq(conversations.id, id)).get()
+    const row = this.db.select().from(conversations).where(this.mine(id)).get()
     return row ? { ...toConversation(row), cliSessionId: row.cliSessionId, memoryExtractedAt: row.memoryExtractedAt } : null
   }
 
   /** Chọn thư mục dự án mới → tắt quyền sửa (phải bật lại cho thư mục mới). */
   setCwd(id: string, cwd: string): Conversation | null {
-    const row = this.db.update(conversations).set({ cwd, codeWrite: false }).where(eq(conversations.id, id)).returning().get()
+    const row = this.db.update(conversations).set({ cwd, codeWrite: false }).where(this.mine(id)).returning().get()
     return row ? toConversation(row) : null
   }
 
   setCodeWrite(id: string, enabled: boolean): Conversation | null {
-    const row = this.db.update(conversations).set({ codeWrite: enabled }).where(eq(conversations.id, id)).returning().get()
+    const row = this.db.update(conversations).set({ codeWrite: enabled }).where(this.mine(id)).returning().get()
     return row ? toConversation(row) : null
   }
 
@@ -111,7 +122,7 @@ export class ConversationRepository {
     const ts = Date.now()
     const row = this.db
       .insert(conversations)
-      .values({ id: randomUUID(), mode, createdAt: ts, updatedAt: ts })
+      .values({ id: randomUUID(), owner: this.getOwner(), mode, createdAt: ts, updatedAt: ts })
       .returning()
       .get()
     return toConversation(row)
@@ -123,12 +134,12 @@ export class ConversationRepository {
     if (input.pinned !== undefined) patch.pinned = input.pinned
     if (input.mode !== undefined) patch.mode = input.mode
     if (Object.keys(patch).length === 0) {
-      const row = this.db.select().from(conversations).where(eq(conversations.id, input.id)).get()
+      const row = this.db.select().from(conversations).where(this.mine(input.id)).get()
       return row ? toConversation(row) : null
     }
     // Đổi tên/ghim không đẩy hội thoại lên đầu; đổi chế độ thì có.
     if (input.mode !== undefined) patch.updatedAt = Date.now()
-    const row = this.db.update(conversations).set(patch).where(eq(conversations.id, input.id)).returning().get()
+    const row = this.db.update(conversations).set(patch).where(this.mine(input.id)).returning().get()
     return row ? toConversation(row) : null
   }
 
@@ -141,7 +152,15 @@ export class ConversationRepository {
   }
 
   remove(id: string): void {
-    this.db.delete(conversations).where(eq(conversations.id, id)).run()
+    this.db.delete(conversations).where(this.mine(id)).run()
+  }
+
+  countFor(owner: string): number {
+    return this.db.select({ n: sql<number>`count(*)` }).from(conversations).where(eq(conversations.owner, owner)).get()!.n
+  }
+
+  reassign(from: string, to: string): void {
+    this.db.update(conversations).set({ owner: to }).where(eq(conversations.owner, from)).run()
   }
 }
 

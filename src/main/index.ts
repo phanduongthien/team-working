@@ -5,9 +5,7 @@ import { is } from '@electron-toolkit/utils'
 import { IPC } from '@shared/ipc'
 import {
   DEFAULT_AI_SETTINGS,
-  DEFAULT_ASSISTANT,
   aiSettingsSchema,
-  assistantProfileSchema,
   idSchema,
   type AiProviderId
 } from '@shared/schemas'
@@ -37,6 +35,7 @@ import { MemoryService } from './memory/memoryService'
 import { AttachmentStore } from './services/attachments'
 import { ChatService } from './services/chatService'
 import { createLogger } from './services/logger'
+import { SavedAccountStore } from './services/savedAccounts'
 import { SecretStore } from './services/secrets'
 
 /** Tài nguyên đóng gói (extraResources) khi đã build, thư mục nguồn khi dev. */
@@ -101,15 +100,15 @@ async function bootstrap(): Promise<void> {
   )
   app.on('will-quit', close)
 
-  const conversations = new ConversationRepository(db)
-  const messages = new MessageRepository(db)
-  // Trí nhớ cá nhân theo tài khoản đang đăng nhập (renderer báo qua account:set).
+  // Dữ liệu cá nhân (chat, trí nhớ, hồ sơ, trợ lý) theo tài khoản đang đăng nhập (renderer báo qua account:set).
   let scope: AccountScope | null = null
   const getOwner = (): string => scope?.current ?? LOCAL_OWNER
+  const conversations = new ConversationRepository(db, getOwner)
+  const messages = new MessageRepository(db)
   const memories = new MemoryRepository(db, getOwner)
   const suggestions = new SuggestionRepository(db, getOwner)
   const settings = new SettingsRepository(db)
-  scope = new AccountScope({ memories, settings })
+  scope = new AccountScope({ memories, conversations, settings })
   const accountScope = scope
   const interrupted = messages.markInterrupted()
   if (interrupted) log.info(`Đánh dấu ${interrupted} tin nhắn bị gián đoạn`)
@@ -159,7 +158,7 @@ async function bootstrap(): Promise<void> {
     conversations,
     messages,
     getProvider,
-    getAssistant: () => settings.get('assistant', assistantProfileSchema, DEFAULT_ASSISTANT),
+    getAssistant: () => accountScope.getAssistant(),
     getMemoryContext: (query) => memory.contextFor(query),
     loadModeSkill: (mode) => loadModeSkill(skillsDir, mode),
     workspaceDir,
@@ -177,6 +176,7 @@ async function bootstrap(): Promise<void> {
     memories,
     suggestions,
     settings,
+    account: accountScope,
     chat,
     memory,
     attachments: new AttachmentStore(join(workspaceDir, 'attachments')),
@@ -190,6 +190,7 @@ async function bootstrap(): Promise<void> {
   registerTeamIpc({
     handle,
     oauth,
+    accounts: new SavedAccountStore(join(userData, 'secrets'), safeStorage),
     supabaseUrl: import.meta.env.VITE_SUPABASE_URL,
     getWindow,
     getProvider,
@@ -207,6 +208,8 @@ async function bootstrap(): Promise<void> {
     workspaceDir
   })
   handle(IPC.accountSet, idSchema.nullable(), (uid) => {
+    // Phiên chat đang chạy thuộc tài khoản cũ → dừng trước khi đổi phạm vi dữ liệu.
+    if ((uid ?? LOCAL_OWNER) !== accountScope.current) chat.abortAll()
     const result = accountScope.set(uid)
     if (result.claimed) log.info('Đã giao trí nhớ tạo trước khi đăng nhập cho tài khoản đầu tiên')
     memory.emitCount()
