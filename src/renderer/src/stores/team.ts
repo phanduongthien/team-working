@@ -36,6 +36,7 @@ type TeamState = {
   acceptInvite(code: string): Promise<void>
   renameTeam(name: string): Promise<void>
   changeRole(userId: string, role: TeamRole): Promise<void>
+  transferOwnership(userId: string): Promise<void>
   removeMember(userId: string): Promise<void>
   leaveTeam(opts?: LeaveOptions): Promise<void>
   dismissRecoveryCode(): void
@@ -126,6 +127,16 @@ export const useTeam = create<TeamState>((set, get) => ({
     const id = get().currentTeamId
     if (!id) return
     check(await requireSupabase().from('team_members').update({ role }).eq('team_id', id).eq('user_id', userId))
+    await get().loadMembers()
+  },
+
+  /** Nhường Owner (nguyên tử): người nhận lên Owner, mình xuống Manager. */
+  async transferOwnership(userId) {
+    const id = get().currentTeamId
+    if (!id) return
+    const res = await requireSupabase().rpc('transfer_ownership', { p_team: id, p_new_owner: userId })
+    if (res.error) throw new Error(dbErrorCode(res.error))
+    await get().load()
     await get().loadMembers()
   },
 

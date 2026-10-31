@@ -1,4 +1,4 @@
-import { Check, Copy, LogOut, Plus, Trash2, UserMinus } from 'lucide-react'
+import { Check, Copy, Crown, LogOut, Plus, Trash2, UserMinus } from 'lucide-react'
 import { useCallback, useEffect, useState, type FormEvent, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { TEAM_ROLES, type TeamRole } from '@shared/schemas'
@@ -41,11 +41,12 @@ function useAction(): [string | null, (fn: () => Promise<unknown>) => Promise<vo
 
 function Members() {
   const { t } = useTranslation('team')
-  const { members, changeRole, removeMember } = useTeam()
+  const { members, changeRole, removeMember, transferOwnership } = useTeam()
   const myRole = useMyRole()
   const uid = useAuth((s) => s.session?.user.id)
   const [error, run] = useAction()
   const [removing, setRemoving] = useState<{ id: string; name: string } | null>(null)
+  const [transferring, setTransferring] = useState<{ id: string; name: string } | null>(null)
 
   return (
     <Section title={t('members.heading', { count: members.length })}>
@@ -78,6 +79,17 @@ function Members() {
             ) : (
               <span className="rounded bg-muted px-2 py-0.5 text-xs">{t(`roles.${m.role}`)}</span>
             )}
+            {myRole === 'owner' && m.id !== uid && m.role !== 'owner' && (
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                title={t('transfer.action')}
+                data-testid="transfer-owner"
+                onClick={() => setTransferring({ id: m.id, name: m.display_name || m.github_username || '' })}
+              >
+                <Crown />
+              </Button>
+            )}
             {myRole === 'owner' && m.id !== uid && (
               <Button
                 variant="ghost"
@@ -106,6 +118,26 @@ function Members() {
               }}
             >
               {t('members.remove')}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+      <Dialog open={!!transferring} onOpenChange={(o) => !o && setTransferring(null)}>
+        <DialogContent title={t('transfer.title', { name: transferring?.name })}>
+          <p className="text-sm text-muted-foreground">{t('transfer.body', { name: transferring?.name })}</p>
+          <div className="mt-4 flex justify-end gap-2">
+            <DialogClose asChild>
+              <Button variant="outline">{t('common:actions.cancel')}</Button>
+            </DialogClose>
+            <Button
+              variant="destructive"
+              data-testid="transfer-owner-confirm"
+              onClick={() => {
+                if (transferring) void run(() => transferOwnership(transferring.id))
+                setTransferring(null)
+              }}
+            >
+              {t('transfer.confirm')}
             </Button>
           </div>
         </DialogContent>
