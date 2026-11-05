@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import {
+  appToolName,
   buildCliArgs,
   buildCmdLine,
+  mcpConfig,
   parseAuthStatus,
   parseVersion,
   pickClaudeExecutable,
@@ -82,6 +84,40 @@ describe('buildCliArgs', () => {
     expect(at('--mcp-config')).toBe('C:\\tmp\\mcp-1.json')
     expect(at('--permission-prompt-tool')).toBe('mcp__twperm__approve')
     expect(args).toContain('--strict-mcp-config')
+  })
+
+  it('chỉ có tool của app (không duyệt quyền): có --mcp-config, KHÔNG có --permission-prompt-tool; tool có sẵn vẫn tắt', () => {
+    const args = buildCliArgs({
+      ...base,
+      mode: 'free',
+      tools: [],
+      allowedTools: [appToolName('screenshot')],
+      mcpConfigFile: 'C:\\tmp\\mcp-2.json'
+    })
+    const at = (flag: string): string => args[args.indexOf(flag) + 1]
+    expect(at('--tools')).toBe('')
+    expect(at('--allowedTools')).toBe('mcp__mmc__screenshot')
+    expect(at('--mcp-config')).toBe('C:\\tmp\\mcp-2.json')
+    expect(args).not.toContain('--permission-prompt-tool')
+    expect(args).toContain('--strict-mcp-config')
+  })
+
+  it('mcpConfig: gộp server duyệt quyền và server tool của app, chạy bằng Electron', () => {
+    const config = JSON.parse(
+      mcpConfig({
+        electronPath: 'C:\\app\\MMC studio.exe',
+        permission: { script: 'C:\\r\\permission-mcp.cjs', url: 'http://127.0.0.1:1', token: 'a', conversationId: 'c1' },
+        appTools: { script: 'C:\\r\\app-tools-mcp.cjs', url: 'http://127.0.0.1:2', token: 'b', conversationId: 'c1' }
+      })
+    )
+    expect(Object.keys(config.mcpServers)).toEqual(['twperm', 'mmc'])
+    expect(config.mcpServers.mmc).toEqual({
+      command: 'C:\\app\\MMC studio.exe',
+      args: ['C:\\r\\app-tools-mcp.cjs'],
+      env: { ELECTRON_RUN_AS_NODE: '1', MMC_TOOLS_URL: 'http://127.0.0.1:2', MMC_TOOLS_TOKEN: 'b', MMC_CONVERSATION: 'c1' }
+    })
+    expect(config.mcpServers.twperm.env.TW_PERM_TOKEN).toBe('a')
+    expect(JSON.parse(mcpConfig({ electronPath: 'x' })).mcpServers).toEqual({})
   })
 
   it('lượt gọi một lần không lưu session', () => {

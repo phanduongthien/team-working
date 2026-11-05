@@ -20,6 +20,8 @@ export type ChatServiceDeps = {
   log: { info(msg: string): void; error(msg: string): void }
   /** Lượt chạy kết thúc (xong/lỗi/dừng) — vd hủy các yêu cầu duyệt sửa file còn treo. */
   onRunEnd?(conversationId: string): void
+  /** Tool của app được bật cho lượt này (vd xem màn hình) + hướng dẫn chèn vào system prompt. */
+  appToolsFor?(conversationId: string): { names: string[]; context: string } | null
 }
 
 const TITLE_MAX = 60
@@ -63,7 +65,24 @@ export type RunOptions = {
   tools?: string[]
   allowedTools?: string[]
   approval?: { conversationId: string }
+  appTools?: { conversationId: string; names: string[] }
   context?: string
+}
+
+/** Thêm tool của app (nếu có) vào lượt chạy và nối hướng dẫn của chúng vào ngữ cảnh. */
+export function withAppTools(
+  options: RunOptions,
+  conversationId: string,
+  tools: { names: string[]; context: string } | null
+): RunOptions {
+  if (!tools || tools.names.length === 0) return options
+  return {
+    ...options,
+    appTools: { conversationId, names: tools.names },
+    context: options.context ? `${options.context}
+
+${tools.context}` : tools.context
+  }
 }
 
 /**
@@ -139,6 +158,17 @@ export class ChatService {
     const requestId = randomUUID()
     const controller = new AbortController()
     this.active.set(requestId, { controller, conversationId })
+    const options = withAppTools(
+      runOptions({
+        mode: conversation.mode,
+        cwd: conversation.cwd,
+        codeWrite: conversation.codeWrite,
+        conversationId,
+        workspaceDir: this.deps.workspaceDir
+      }),
+      conversationId,
+      this.deps.appToolsFor?.(conversationId) ?? null
+    )
 
     void this.run({
       requestId,
@@ -149,13 +179,7 @@ export class ChatService {
       text,
       history,
       attachments,
-      options: runOptions({
-        mode: conversation.mode,
-        cwd: conversation.cwd,
-        codeWrite: conversation.codeWrite,
-        conversationId,
-        workspaceDir: this.deps.workspaceDir
-      }),
+      options,
       signal: controller.signal
     }).finally(() => {
       this.active.delete(requestId)
@@ -225,7 +249,8 @@ export class ChatService {
           cwd: args.options.cwd,
           tools: args.options.tools,
           allowedTools: args.options.allowedTools,
-          approval: args.options.approval
+          approval: args.options.approval,
+          appTools: args.options.appTools
         },
         signal
       )

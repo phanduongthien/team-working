@@ -6,7 +6,15 @@ import type { ChatStreamPayload } from '@shared/types'
 import type { AIProvider, ChatRequest } from '../../ai/AIProvider'
 import { openDatabase } from '../../db/client'
 import { ConversationRepository, MessageRepository } from '../../db/repositories'
-import { ChatBusyError, ChatService, promptWithHistory, runOptions, titleFromText, toHistory } from '../chatService'
+import {
+  ChatBusyError,
+  ChatService,
+  promptWithHistory,
+  runOptions,
+  titleFromText,
+  toHistory,
+  withAppTools
+} from '../chatService'
 
 type Script = (req: ChatRequest, signal: AbortSignal) => AsyncIterable<ChatEvent>
 
@@ -38,8 +46,12 @@ describe('ChatService', () => {
   let msgs: MessageRepository
   let emitted: ChatStreamPayload[]
 
-  const makeService = (provider: AIProvider): ChatService =>
+  const makeService = (
+    provider: AIProvider,
+    appToolsFor?: (id: string) => { names: string[]; context: string } | null
+  ): ChatService =>
     new ChatService({
+      appToolsFor,
       conversations: convs,
       messages: msgs,
       getProvider: () => provider,
@@ -202,6 +214,25 @@ describe('ChatService', () => {
     expect(msgs.list(conv.id).at(-1)?.error).toBe('rate_limit')
   })
 
+  it('chuyển tool của app và hướng dẫn cho provider; tắt quyền xem thì lượt sau không còn tool', async () => {
+    const provider = new FakeProvider(() => events({ type: 'done' }))
+    let screen = true
+    const service = makeService(provider, () => (screen ? { names: ['screenshot'], context: 'QUYỀN XEM MÀN HÌNH' } : null))
+    const conv = convs.create('free')
+    service.send(conv.id, 'nhìn màn hình giúp mình')
+    await waitForStatus(conv.id, 'done')
+    expect(provider.calls[0].appTools).toEqual({ conversationId: conv.id, names: ['screenshot'] })
+    expect(provider.calls[0].systemPrompt).toContain('QUYỀN XEM MÀN HÌNH')
+    expect(provider.calls[0].tools).toBeUndefined()
+
+    screen = false
+    await vi.waitFor(() => expect(service.isBusy(conv.id)).toBe(false))
+    service.send(conv.id, 'lần nữa')
+    await vi.waitFor(() => expect(provider.calls).toHaveLength(2))
+    expect(provider.calls[1].appTools).toBeUndefined()
+    expect(provider.calls[1].systemPrompt).not.toContain('QUYỀN XEM MÀN HÌNH')
+  })
+
   it('abort giữ phần đã nhận và đánh dấu aborted; chặn gửi trùng khi đang chạy', async () => {
     const provider = new FakeProvider(async function* (_req, signal) {
       yield { type: 'text', delta: 'đang viết' }
@@ -216,6 +247,24 @@ describe('ChatService', () => {
     service.abort(requestId)
     await waitForStatus(conv.id, 'aborted')
     expect(msgs.list(conv.id).at(-1)?.content).toBe('đang viết')
+  })
+})
+
+describe('tool của app (xem màn hình)', () => {
+  it('withAppTools: không có tool → giữ nguyên; có tool → thêm tool và nối hướng dẫn vào ngữ cảnh', () => {
+    const base = runOptions({ mode: 'code', cwd: 'C:\\p', codeWrite: false, conversationId: 'c1', workspaceDir: 'C:\\ws' })
+    expect(withAppTools(base, 'c1', null)).toBe(base)
+    expect(withAppTools(base, 'c1', { names: [], context: 'x' })).toBe(base)
+    const next = withAppTools(base, 'c1', { names: ['screenshot'], context: 'XEM MÀN HÌNH' })
+    expect(next.appTools).toEqual({ conversationId: 'c1', names: ['screenshot'] })
+    expect(next.context).toBe(`${base.context}\n\nXEM MÀN HÌNH`)
+    expect(next.tools).toEqual(base.tools)
+    const free = withAppTools(runOptions({ mode: 'free', cwd: null, codeWrite: false, conversationId: 'c1', workspaceDir: 'C:\\ws' }), 'c1', {
+      names: ['screenshot'],
+      context: 'XEM MÀN HÌNH'
+    })
+    expect(free).toMatchObject({ context: 'XEM MÀN HÌNH', appTools: { names: ['screenshot'] } })
+    expect(free.tools).toBeUndefined()
   })
 })
 
