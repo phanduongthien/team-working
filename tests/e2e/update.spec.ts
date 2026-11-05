@@ -58,6 +58,18 @@ async function launch(): Promise<void> {
   page = await app.firstWindow()
 }
 
+/**
+ * Lần đầu mở app, CliGate kiểm tra Claude CLI; máy KHÔNG có CLI (như CI) sẽ bị chuyển tới /claude
+ * ngay sau khi kiểm tra xong. Phải chờ bước đó xong rồi mới điều hướng, không thì trang đích bị kéo đi
+ * (máy dev có CLI không bao giờ bị chuyển trang nên không thấy lỗi này).
+ */
+async function openSettings(): Promise<void> {
+  await page.evaluate(() => (window.location.hash = '#/claude'))
+  await expect(page.getByTestId('cli-status')).not.toContainText(/Đang kiểm tra/, { timeout: 30_000 })
+  await page.evaluate(() => (window.location.hash = '#/settings'))
+  await expect(page.getByRole('heading', { name: 'Cập nhật', exact: true })).toBeVisible()
+}
+
 async function stopAll(): Promise<void> {
   await app?.close()
   server?.kill()
@@ -96,7 +108,7 @@ test('bản thường: hiện phiên bản + changelog; Bỏ qua thì không nh�
   // Mở lại app: phiên bản đã bỏ qua không hiện nữa, nhưng Cài đặt vẫn thấy có bản mới.
   await app.close()
   await launch()
-  await page.evaluate(() => (window.location.hash = '#/settings'))
+  await openSettings()
   await expect(page.getByTestId('update-status')).toContainText('Có bản mới 9.9.9', {
     timeout: 30_000
   })
@@ -143,7 +155,7 @@ test('bản thường: Để sau → không hiện lại trong phiên, mở lạ
   await dialog.getByRole('button', { name: 'Để sau' }).click()
   await expect(dialog).toBeHidden()
   // Trong phiên: vào Cài đặt vẫn thấy có bản mới nhưng không bật hộp thoại.
-  await page.evaluate(() => (window.location.hash = '#/settings'))
+  await openSettings()
   await expect(page.getByTestId('update-status')).toContainText('Có bản mới 9.9.9')
   await expect(page.getByTestId('update-dialog')).toHaveCount(0)
 
@@ -158,7 +170,7 @@ test('Cài đặt → Cập nhật: tắt tự kiểm tra → mở app không h�
   await launch()
   await expect(page.getByTestId('update-dialog')).toBeVisible({ timeout: 30_000 })
   await page.getByTestId('update-dialog').getByRole('button', { name: 'Để sau' }).click()
-  await page.evaluate(() => (window.location.hash = '#/settings'))
+  await openSettings()
   await expect(page.getByText('Đang dùng phiên bản 0.3.0')).toBeVisible()
   const auto = page.getByLabel('Tự động kiểm tra bản mới')
   await expect(auto).toBeChecked()
@@ -167,7 +179,7 @@ test('Cài đặt → Cập nhật: tắt tự kiểm tra → mở app không h�
   await app.close()
   const before = requests.length
   await launch()
-  await page.evaluate(() => (window.location.hash = '#/settings'))
+  await openSettings()
   await expect(page.getByLabel('Tự động kiểm tra bản mới')).not.toBeChecked()
   // Chờ đủ lâu để lần kiểm tra lúc mở app (nếu có) chạy xong — không được có request nào.
   await page.waitForTimeout(3_000)
@@ -181,7 +193,7 @@ test('Cài đặt → Cập nhật: tắt tự kiểm tra → mở app không h�
 test('Kiểm tra ngay khi không có bản mới → "đang dùng phiên bản mới nhất"', async () => {
   await startServer(['--version', '0.0.1'])
   await launch()
-  await page.evaluate(() => (window.location.hash = '#/settings'))
+  await openSettings()
   await page.getByRole('button', { name: 'Kiểm tra ngay' }).click()
   await expect(page.getByTestId('update-status')).toContainText('Bạn đang dùng phiên bản mới nhất', { timeout: 30_000 })
   await expect(page.getByTestId('update-dialog')).toHaveCount(0)
@@ -190,7 +202,7 @@ test('Kiểm tra ngay khi không có bản mới → "đang dùng phiên bản m
 test('đổi kênh sang beta → lưu lại sau khi mở lại app, app kiểm tra lại ngay', async () => {
   await startServer(['--version', '0.0.1'])
   await launch()
-  await page.evaluate(() => (window.location.hash = '#/settings'))
+  await openSettings()
   const beta = page.getByRole('radio', { name: /beta/ })
   await expect(page.getByRole('radio', { name: /stable/ })).toBeChecked()
   await expect.poll(() => requests.length, { timeout: 30_000 }).toBeGreaterThan(0)
@@ -200,6 +212,6 @@ test('đổi kênh sang beta → lưu lại sau khi mở lại app, app kiểm t
 
   await app.close()
   await launch()
-  await page.evaluate(() => (window.location.hash = '#/settings'))
+  await openSettings()
   await expect(page.getByRole('radio', { name: /beta/ })).toBeChecked()
 })
