@@ -30,7 +30,7 @@ afterAll(() => rmSync(dir, { recursive: true, force: true }))
 let client: SidecarClient | null = null
 afterEach(() => client?.stop())
 
-const make = (timeoutMs = 2_000): SidecarClient =>
+const make = (timeoutMs = 10_000): SidecarClient =>
   (client = new SidecarClient({ command: () => ({ cmd: process.execPath, args: [script] }), log: { warn: () => {} }, timeoutMs }))
 
 describe('SidecarClient', () => {
@@ -47,9 +47,10 @@ describe('SidecarClient', () => {
   })
 
   it('quá giờ → kill và tự khởi động lại ở lần gọi sau', async () => {
-    const c = make(300)
+    // Giới hạn ngắn CHỈ cho lệnh treo — khởi động tiến trình trên máy CI chậm có thể mất > 300 ms.
+    const c = make(10_000)
     const firstPid = await c.call<number>('pid')
-    await expect(c.call('hang')).rejects.toThrow('không phản hồi')
+    await expect(c.call('hang', {}, 300)).rejects.toThrow('không phản hồi')
     expect(c.running).toBe(false)
     expect(await c.call<number>('pid')).not.toBe(firstPid)
   })
