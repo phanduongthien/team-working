@@ -62,7 +62,7 @@ import { OAuthLoopback } from './services/oauthLoopback'
 import { AccountScope } from './memory/accountScope'
 import { MemoryService } from './memory/memoryService'
 import { AttachmentStore } from './services/attachments'
-import { electronClipboard } from './services/electronClipboard'
+import { electronClipboard, fakeClipboard } from './services/electronClipboard'
 import { electronImages } from './services/electronImages'
 import { ChatService } from './services/chatService'
 import { createLogger } from './services/logger'
@@ -289,7 +289,11 @@ async function bootstrap(): Promise<void> {
     chat,
     memory,
     attachments: new AttachmentStore(join(workspaceDir, 'attachments'), electronImages),
-    clipboard: electronClipboard,
+    // Clipboard giả chỉ cho test e2e ở bản chưa đóng gói — không bao giờ có trong bản phát hành.
+    clipboard:
+      !app.isPackaged && process.env.MMC_FAKE_CLIPBOARD_DIR
+        ? fakeClipboard(process.env.MMC_FAKE_CLIPBOARD_DIR)
+        : electronClipboard,
     secrets,
     log,
     getWindow,

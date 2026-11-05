@@ -1,3 +1,5 @@
+import { readFile } from 'node:fs/promises'
+import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { clipboard } from 'electron'
 import type { ClipboardPort } from './attachments'
@@ -37,5 +39,20 @@ export const electronClipboard: ClipboardPort = {
   async readFilePaths() {
     const blob = await itemOfType('text/uri-list')
     return blob ? filePathsFromUriList(await blob.text()) : []
+  }
+}
+
+/**
+ * Clipboard giả CHỈ cho test e2e (bản chưa đóng gói + biến MMC_FAKE_CLIPBOARD_DIR): đọc `image.png`
+ * và `uri-list.txt` trong thư mục đó lúc được gọi — test không đụng tới clipboard thật của người dùng.
+ */
+export function fakeClipboard(dir: string): ClipboardPort {
+  const read = async (name: string): Promise<Buffer | null> => readFile(join(dir, name)).catch(() => null)
+  return {
+    readImagePng: async () => read('image.png'),
+    readFilePaths: async () => {
+      const list = await read('uri-list.txt')
+      return list ? filePathsFromUriList(list.toString('utf8')) : []
+    }
   }
 }
