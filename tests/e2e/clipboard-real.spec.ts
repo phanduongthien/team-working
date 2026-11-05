@@ -3,6 +3,7 @@ import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { _electron as electron, expect, test, type ElectronApplication, type Page } from '@playwright/test'
+import { goTo, waitForStartup } from './helpers'
 
 // Dán bằng Ctrl+V với CLIPBOARD THẬT của Windows — chỉ chạy khi đặt E2E_REAL_CLIPBOARD=1.
 // Nội dung clipboard trước khi chạy (ảnh, chữ, HTML, RTF) được lưu lại và trả lại khi xong.
@@ -34,9 +35,8 @@ test.beforeAll(async () => {
     }
     return out
   }, RESTORABLE)
-  await page.evaluate(() => (window.location.hash = '#/claude'))
-  await expect(page.getByTestId('cli-status')).not.toContainText(/Đang kiểm tra/, { timeout: 30_000 })
-  await page.evaluate(() => (window.location.hash = '#/'))
+  await waitForStartup(page)
+  await goTo(page, '#/', page.getByRole('textbox', { name: /Nhắn cho/ }))
 })
 
 test.afterAll(async () => {

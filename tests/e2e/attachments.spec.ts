@@ -3,6 +3,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { _electron as electron, expect, test, type ElectronApplication, type Page } from '@playwright/test'
+import { goTo, waitForStartup } from './helpers'
 
 // Dán ảnh, dán file copy từ Explorer, kéo thả, gỡ, xem to — KHÔNG đụng clipboard thật của người dùng:
 // sự kiện dán được tạo trong trang, phần main đọc clipboard dùng clipboard giả (MMC_FAKE_CLIPBOARD_DIR,
@@ -25,9 +26,8 @@ test.beforeAll(async () => {
   })
   page = await app.firstWindow()
   // Máy không có Claude CLI bị chuyển tới /claude sau lần kiểm tra lúc mở app — chờ xong rồi mới điều hướng.
-  await page.evaluate(() => (window.location.hash = '#/claude'))
-  await expect(page.getByTestId('cli-status')).not.toContainText(/Đang kiểm tra/, { timeout: 30_000 })
-  await page.evaluate(() => (window.location.hash = '#/'))
+  await waitForStartup(page)
+  await goTo(page, '#/', page.getByRole('textbox', { name: /Nhắn cho/ }))
 })
 
 test.afterAll(async () => {
