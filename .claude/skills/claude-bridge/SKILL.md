@@ -89,7 +89,7 @@ Nguồn sự thật là code; bảng này để health-check so khớp và biế
 |---|---|---|---|
 | Claude Code CLI | 2.1.318 | máy dev | 2026-11-05 |
 | `--system-prompt-file`, `--append-system-prompt-file` | cờ **ẩn** khỏi `claude --help` nhưng vẫn chạy | `claudeCli.ts` | 2026-11-05, chạy thật với `-p --restricted --tools ""` |
-| Format stream-json | fixture trong `src/main/ai/__fixtures__/` | parser | lần cập nhật fixture gần nhất |
+| Format stream-json | fixture trong `src/main/ai/__fixtures__/` | `streamJsonParser.ts` | 2026-10-28 (theo git log fixture) |
 | Phản hồi permission-prompt-tool `{behavior, updatedInput}` | như trên | `permission-mcp.cjs` | CLI 2.1.312 |
 | Model API | `claude-opus-5-5` | `ANTHROPIC_MODEL` | chưa gọi thật (giá trị đọc từ code 2026-11-05) |
 | Beta fallback | `server-side-fallback-2026-07-01`, `effort: 'medium'` | `AnthropicApiProvider.ts` | chưa gọi thật (giá trị đọc từ code 2026-11-05) |
