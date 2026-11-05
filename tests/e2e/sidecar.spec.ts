@@ -17,6 +17,9 @@ test.beforeAll(async () => {
   userData = mkdtempSync(join(tmpdir(), 'mmc-sidecar-e2e-'))
   app = await electron.launch({ args: [ROOT], env: { ...process.env, TEAM_WORKING_USER_DATA: userData } })
   page = await app.firstWindow()
+  // Máy không có Claude CLI bị chuyển tới /claude sau lần kiểm tra lúc mở app — chờ xong rồi mới điều hướng.
+  await page.evaluate(() => (window.location.hash = '#/claude'))
+  await expect(page.getByTestId('cli-status')).not.toContainText(/Đang kiểm tra/, { timeout: 30_000 })
   await page.evaluate(() => (window.location.hash = '#/computer'))
   await page.getByTestId('computer-enable').click()
   await page.getByLabel('Tôi đã đọc và hiểu các điểm trên.').check()
@@ -34,8 +37,8 @@ test('huỷ giữa chừng → về trạng thái chưa cài, xoá sạch', asyn
   await page.getByTestId('sidecar-install').click()
   const progress = page.getByTestId('sidecar-progress')
   await expect(progress).toBeVisible()
-  await expect(progress).toContainText('Bước 1/3')
-  await expect(progress).toContainText(' MB')
+  // Mạng nhanh tải xong uv (15 MB) dưới 1 giây → có thể đã sang bước 2 (bước này không hiện MB).
+  await expect(progress).toContainText(/Bước [12]\/3/)
   await page.getByTestId('sidecar-cancel').click()
   await expect(page.getByTestId('sidecar-install')).toBeVisible({ timeout: 30_000 })
   await expect.poll(() => existsSync(sidecarDir())).toBe(false)
