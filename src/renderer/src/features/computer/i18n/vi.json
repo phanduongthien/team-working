@@ -13,7 +13,7 @@
   },
   "screen": {
     "heading": "Cho trợ lý xem màn hình",
-    "help": "Chỉ trong phiên này: tự tắt khi khởi động lại app hoặc khi dừng khẩn cấp. Ảnh chụp được gửi cho Claude để phân tích.",
+    "help": "Chỉ trong phiên này: tự tắt khi khởi động lại app hoặc khi dừng khẩn cấp. Trợ lý được chụp màn hình, đọc log Unity/Blender và (nếu đã cài sidecar) danh sách cửa sổ, cây giao diện; ảnh và nội dung được gửi cho Claude để phân tích.",
     "on": "Đang cho xem",
     "off": "Đang tắt",
     "toggleOn": "Cho trợ lý xem màn hình",
@@ -48,6 +48,36 @@
     "warning_required": "Cần đọc và chấp nhận cảnh báo trước khi bật.",
     "hotkey_unavailable": "Không đăng ký được phím dừng khẩn cấp {{hotkey}} (có thể app khác đang dùng). Tính năng chỉ bật được khi phím dừng hoạt động.",
     "not_enabled": "Hãy bật điều khiển máy tính (và kiểm tra phím dừng khẩn cấp) trước.",
-    "display_not_found": "Không tìm thấy màn hình."
+    "display_not_found": "Không tìm thấy màn hình.",
+    "sidecar_not_installed": "Chưa cài Python sidecar."
+  },
+  "sidecar": {
+    "heading": "Đọc cửa sổ & cây giao diện (Python sidecar)",
+    "help": "Giúp trợ lý liệt kê cửa sổ đang mở và đọc cây giao diện (tên nút, ô nhập, thông báo lỗi) — chính xác hơn đọc chữ trên ảnh. Chỉ đọc, không thao tác. Đọc log Unity/Blender không cần phần này.",
+    "size": "Cần tải khoảng {{downloadMb}} MB (uv, Python 3.12, pywinauto), chiếm khoảng {{diskMb}} MB trong thư mục dữ liệu của app. Không đụng tới Python có sẵn trên máy.",
+    "install": "Tải và cài",
+    "retry": "Thử lại",
+    "cancel": "Huỷ",
+    "stepOf": "Bước {{index}}/{{count}}:",
+    "steps": {
+      "uv": "Tải uv (trình cài Python)",
+      "python": "Tải Python 3.12",
+      "packages": "Cài thư viện đọc giao diện (pywinauto)"
+    },
+    "installingHint": "Có thể mất vài phút tuỳ tốc độ mạng. Bạn vẫn dùng app bình thường trong lúc chờ.",
+    "installed": "Đã cài: Python {{python}}, uv {{uv}} — chiếm {{sizeMb}} MB.",
+    "check": "Kiểm tra",
+    "checkOk": "Hoạt động tốt: đọc được {{windows}} cửa sổ (Python {{python}}). Kết quả chỉ hiện ở đây, không gửi cho Claude.",
+    "checkFailed": "Không đọc được cửa sổ: {{message}}",
+    "remove": "Gỡ Python sidecar",
+    "removeTitle": "Gỡ Python sidecar?",
+    "removeHint": "Xoá sạch uv, Python và thư viện đã tải trong thư mục dữ liệu của app. Trợ lý vẫn chụp màn hình và đọc log được; muốn đọc cây giao diện thì cài lại.",
+    "removing": "Đang gỡ…",
+    "errors": {
+      "network": "Không tải được — kiểm tra kết nối mạng rồi bấm Thử lại. ({{message}})",
+      "checksum": "File tải về không khớp mã kiểm tra nên đã bị huỷ để an toàn. Thử lại sau; nếu vẫn lỗi hãy báo cho team.",
+      "failed": "Cài đặt không thành công: {{message}}",
+      "busy": "Đang cài hoặc gỡ — vui lòng đợi."
+    }
   }
 }

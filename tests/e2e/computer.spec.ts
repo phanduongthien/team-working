@@ -1,4 +1,4 @@
-import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync } from 'node:fs'
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { _electron as electron, expect, test, type ElectronApplication, type Page } from '@playwright/test'
@@ -16,9 +16,29 @@ let userData: string
 
 test.beforeAll(async () => {
   userData = mkdtempSync(join(tmpdir(), 'mmc-computer-e2e-'))
+  // Log Unity giả (MMC_APP_LOG_ROOT chỉ có tác dụng ở bản chưa đóng gói) — không đọc log thật của máy.
+  const unity = join(userData, 'fake-local', 'Unity', 'Editor')
+  mkdirSync(unity, { recursive: true })
+  writeFileSync(
+    join(unity, 'Editor.log'),
+    [
+      'Loaded scene Assets/Scenes/Main.unity',
+      'NullReferenceException: Object reference not set to an instance of an object',
+      '  at EnemySpawner.SpawnWave () [0x0001c] in Assets/Scripts/EnemySpawner.cs:87',
+      '  at EnemySpawner.Update () [0x00008] in Assets/Scripts/EnemySpawner.cs:31',
+      'Reloading assemblies'
+    ].join('\r\n')
+  )
   app = await electron.launch({
     args: [ROOT],
-    env: { ...process.env, TEAM_WORKING_USER_DATA: userData, MMC_FAKE_SCREEN: FAKE_COLOR }
+    env: {
+      ...process.env,
+      TEAM_WORKING_USER_DATA: userData,
+      MMC_FAKE_SCREEN: FAKE_COLOR,
+      MMC_APP_LOG_ROOT: join(userData, 'fake-local'),
+      // Cổng không có gì nghe → giả lập mất mạng khi tải sidecar.
+      MMC_SIDECAR_UV_URL: 'http://127.0.0.1:9/uv.zip'
+    }
   })
   page = await app.firstWindow()
 })
@@ -106,6 +126,35 @@ test('chat thật: trợ lý chụp màn hình (giả) và nói đúng màu', as
   const shot = lines.find((l) => l.tool === 'screenshot')
   expect(shot).toMatchObject({ ok: true })
   expect(existsSync(join(logRoot, day, shot.image))).toBe(true)
+})
+
+test('Python sidecar: báo dung lượng trước khi tải; mất mạng → lỗi rõ ràng, app không treo', async () => {
+  await go('#/computer')
+  const section = page.getByTestId('sidecar-section')
+  await expect(page.getByTestId('sidecar-size')).toContainText('khoảng 50 MB')
+  await expect(page.getByTestId('sidecar-size')).toContainText('khoảng 120 MB')
+  await section.getByTestId('sidecar-install').click()
+  await expect(page.getByTestId('sidecar-error')).toContainText('kiểm tra kết nối mạng', { timeout: 30_000 })
+  await expect(section.getByRole('button', { name: 'Thử lại' })).toBeEnabled()
+  // App vẫn phản hồi bình thường.
+  await go('#/')
+  await expect(page.getByRole('textbox', { name: /Nhắn cho/ })).toBeVisible()
+  expect(existsSync(join(userData, 'sidecar'))).toBe(false)
+})
+
+test('chat thật: trợ lý đọc log Unity (giả) và chỉ ra đúng file, dòng lỗi', async () => {
+  test.skip(process.env.E2E_REAL_CLI !== '1', 'Đặt E2E_REAL_CLI=1 để gọi Claude thật')
+  await go('#/')
+  const toggle = page.getByTestId('screen-access-toggle')
+  if ((await toggle.getAttribute('aria-pressed')) !== 'true') await toggle.click()
+  const box = page.getByRole('textbox', { name: /Nhắn cho/ })
+  await box.fill('Unity của mình vừa báo lỗi. Đọc log Unity Editor rồi cho biết lỗi gì, ở file nào, dòng nào. Trả lời ngắn gọn.')
+  await box.press('Enter')
+  await expect(page.getByRole('button', { name: 'Gửi' })).toBeVisible({ timeout: 120_000 })
+  const reply = await page.locator('.markdown').last().innerText()
+  expect(reply).toContain('EnemySpawner.cs')
+  expect(reply).toContain('87')
+  expect(reply).toMatch(/NullReference/i)
 })
 
 test('tắt tính năng → gỡ phím tắt toàn cục, nút trong chat biến mất', async () => {

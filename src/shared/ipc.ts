@@ -77,5 +77,11 @@ export const IPC = {
   computerSetScreenAccess: 'computer:setScreenAccess',
   computerEmergencyStop: 'computer:emergencyStop',
   computerPreview: 'computer:preview',
-  computerOpenLogs: 'computer:openLogs'
+  computerOpenLogs: 'computer:openLogs',
+  sidecarState: 'sidecar:state',
+  sidecarStateEvent: 'sidecar:stateEvent',
+  sidecarInstall: 'sidecar:install',
+  sidecarCancel: 'sidecar:cancel',
+  sidecarUninstall: 'sidecar:uninstall',
+  sidecarCheck: 'sidecar:check'
 } as const

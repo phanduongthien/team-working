@@ -1,6 +1,17 @@
 import { mkdirSync } from 'node:fs'
 import { join } from 'node:path'
-import { app, BrowserWindow, dialog, globalShortcut, Notification, safeStorage, shell, type IpcMainInvokeEvent } from 'electron'
+import {
+  app,
+  BrowserWindow,
+  dialog,
+  globalShortcut,
+  net,
+  Notification,
+  safeStorage,
+  screen,
+  shell,
+  type IpcMainInvokeEvent
+} from 'electron'
 import { is } from '@electron-toolkit/utils'
 import { APP_NAME, LEGACY_USER_DATA_DIR } from '@shared/appConfig'
 import { IPC } from '@shared/ipc'
@@ -29,6 +40,9 @@ import { CodeApprovals } from './code/approvals'
 import { ActionLog } from './computer/actionLog'
 import { electronCapture, fakeCapture } from './computer/electronCapture'
 import { ComputerUseService } from './computer/service'
+import { pythonCommand, SidecarClient } from './sidecar/client'
+import { SidecarInstaller } from './sidecar/installer'
+import { extractZip, runProcess } from './sidecar/process'
 import { registerComputerIpc } from './ipc/computer'
 import { ToolBridge } from './tools/bridge'
 import { AppToolRegistry } from './tools/registry'
@@ -155,6 +169,31 @@ async function bootstrap(): Promise<void> {
   void actions.prune().catch((err: Error) => log.warn(`Không dọn được log điều khiển máy tính: ${err.message}`))
   // Màn hình giả chỉ cho bản chưa đóng gói (test e2e) — không bao giờ có trong bản phát hành.
   const fakeScreen = app.isPackaged ? undefined : process.env.MMC_FAKE_SCREEN
+
+  // Python sidecar (đọc cửa sổ / cây UI): chỉ tải khi người dùng bấm cài, nằm trong thư mục dữ liệu app.
+  const devOverride = (name: string): string | undefined => (app.isPackaged ? undefined : process.env[name] || undefined)
+  const sidecarInstaller = new SidecarInstaller({
+    root: join(userData, 'sidecar'),
+    requirementsFile: resourcePath('sidecar/requirements.txt', 'resources/sidecar/requirements.txt'),
+    uvUrl: devOverride('MMC_SIDECAR_UV_URL'),
+    fetch: (url, init) => net.fetch(url, init),
+    run: runProcess,
+    extractZip,
+    emit: (state) => mainWindow?.webContents.send(IPC.sidecarStateEvent, state),
+    log
+  })
+  void sidecarInstaller.refresh()
+  const sidecarScript = resourcePath('sidecar/desktop_server.py', 'resources/sidecar/desktop_server.py')
+  const sidecarClient = new SidecarClient({
+    command: () =>
+      sidecarInstaller.state.state === 'installed' ? pythonCommand(sidecarInstaller.paths.venvPython, sidecarScript) : null,
+    log
+  })
+  app.on('before-quit', () => {
+    sidecarClient.stop()
+    sidecarInstaller.cancel()
+  })
+  const appLogRoot = devOverride('MMC_APP_LOG_ROOT')
   let lastStopAt = 0
   const computer = new ComputerUseService({
     getSettings: () => settings.get('computerUse', computerUseSettingsSchema, DEFAULT_COMPUTER_USE_SETTINGS),
@@ -174,7 +213,15 @@ async function bootstrap(): Promise<void> {
         }
       }
     },
-    log
+    log,
+    sidecar: {
+      installed: () => sidecarInstaller.state.state === 'installed',
+      call: (method, params) => sidecarClient.call(method, params),
+      stop: () => sidecarClient.stop()
+    },
+    toDip: (rect) => screen.screenToDipRect(null, rect),
+    // Thư mục log giả chỉ cho bản chưa đóng gói (test e2e).
+    logRoots: appLogRoot ? { localAppData: appLogRoot, temp: join(appLogRoot, 'Temp') } : undefined
   })
   computer.registerTools(tools)
   app.on('will-quit', () => globalShortcut.unregisterAll())
@@ -266,7 +313,13 @@ async function bootstrap(): Promise<void> {
     memory.emitCount()
     return result
   })
-  registerComputerIpc({ handle, computer, logsDir: actionsDir })
+  registerComputerIpc({
+    handle,
+    computer,
+    logsDir: actionsDir,
+    sidecar: sidecarInstaller,
+    stopSidecar: () => sidecarClient.stop()
+  })
   registerWorkIpc({
     handle,
     conversations,
