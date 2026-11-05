@@ -5,7 +5,7 @@ import { cn } from '@renderer/lib/utils'
 import { useComputer } from '../store'
 
 /** Nút trong khung soạn tin: cho trợ lý xem màn hình (chỉ hiện khi tính năng đã bật và có phím dừng). */
-export function ScreenAccessToggle({ disabled }: { disabled?: boolean }) {
+export function ScreenAccessToggle() {
   const { t } = useTranslation('computer')
   const status = useComputer((s) => s.status)
   const setScreenAccess = useComputer((s) => s.setScreenAccess)
@@ -19,7 +19,6 @@ export function ScreenAccessToggle({ disabled }: { disabled?: boolean }) {
       title={label}
       aria-label={label}
       aria-pressed={on}
-      disabled={disabled}
       className={cn(on && 'bg-orange-500/15 text-orange-700 hover:bg-orange-500/25 dark:text-orange-300')}
       onClick={() => void setScreenAccess(!on)}
       data-testid="screen-access-toggle"

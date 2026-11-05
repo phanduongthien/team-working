@@ -41,6 +41,10 @@ test.beforeAll(async () => {
     }
   })
   page = await app.firstWindow()
+  // Máy không có Claude CLI (CI) bị chuyển tới /claude ngay sau lần kiểm tra lúc mở app — chờ xong
+  // rồi mới điều hướng, không thì trang đang test bị kéo đi giữa chừng (máy dev có CLI không thấy lỗi này).
+  await page.evaluate(() => (window.location.hash = '#/claude'))
+  await expect(page.getByTestId('cli-status')).not.toContainText(/Đang kiểm tra/, { timeout: 30_000 })
 })
 
 test.afterAll(async () => {
