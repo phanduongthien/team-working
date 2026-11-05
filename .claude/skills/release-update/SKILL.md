@@ -1,6 +1,19 @@
 ---
 name: release-update
 description: Quy trình phát hành phiên bản mới của MMC studio lên GitHub Releases để app của các thành viên tự cập nhật (electron-builder + electron-updater + GitHub Actions). Dùng khi cần release, bump version, hoặc sửa pipeline CI/CD.
+metadata:
+  last_verified: 2026-11-05
+  review_every_days: 30
+  depends_on:
+    - file:.github/workflows/release.yml
+    - file:electron-builder.yml
+    - file:src/main/services/updater.ts
+    - file:docs/release.md
+    - file:CHANGELOG.md
+    - npm:electron-builder
+    - npm:electron-updater
+    - cmd:git
+    - url:https://github.com/phanduongthien/team-working/releases
 ---
 
 # Release & auto-update

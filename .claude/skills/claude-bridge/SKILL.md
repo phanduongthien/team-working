@@ -1,6 +1,23 @@
 ---
 name: claude-bridge
 description: Quy ước gọi Claude từ app (ClaudeCliProvider / AnthropicApiProvider) — spawn Claude Code CLI headless, parse stream-json, resume session, chèn system prompt (tên trợ lý, tính cách, memory). Dùng khi viết hoặc sửa bất kỳ code nào gọi AI.
+metadata:
+  last_verified: 2026-11-05
+  review_every_days: 14
+  depends_on:
+    - file:src/main/ai/claudeCli.ts
+    - file:src/main/ai/ClaudeCliProvider.ts
+    - file:src/main/ai/streamJsonParser.ts
+    - file:src/main/ai/systemPrompt.ts
+    - file:src/main/ai/skills.ts
+    - file:src/main/ai/AnthropicApiProvider.ts
+    - file:src/main/ai/__fixtures__
+    - file:src/main/services/chatService.ts
+    - file:src/main/services/attachments.ts
+    - file:src/main/code/approvals.ts
+    - file:resources/permission-mcp.cjs
+    - cmd:claude
+    - npm:@anthropic-ai/sdk
 ---
 
 # Claude bridge

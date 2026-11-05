@@ -1,6 +1,22 @@
 ---
 name: add-feature-module
 description: Cách thêm một tính năng mới vào MMC studio theo kiến trúc module (UI, store, IPC, migration, test, đăng ký registry). Dùng khi người dùng hoặc thành viên team muốn thêm/phát triển tính năng mới.
+metadata:
+  last_verified: 2026-11-05
+  review_every_days: 30
+  depends_on:
+    - file:src/renderer/src/features/registry.ts
+    - file:src/renderer/src/features/chat
+    - file:src/renderer/src/features/__tests__/i18n-keys.test.ts
+    - file:src/main/ipc
+    - file:src/main/index.ts
+    - file:src/shared/ipc.ts
+    - file:src/shared/schemas.ts
+    - file:src/shared/types.ts
+    - file:src/preload/index.ts
+    - file:.github/PULL_REQUEST_TEMPLATE.md
+    - file:CHANGELOG.md
+    - npm:drizzle-kit
 ---
 
 # Thêm feature module

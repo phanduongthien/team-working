@@ -1,6 +1,17 @@
 ---
 name: supabase-migration
 description: Cách thay đổi schema dữ liệu team trên Supabase an toàn — migration, Row Level Security theo vai trò Owner/Manager/Member, test quyền. Dùng khi thêm/sửa bảng, cột, policy của dữ liệu dùng chung.
+metadata:
+  last_verified: 2026-11-05
+  review_every_days: 30
+  depends_on:
+    - file:supabase/migrations
+    - file:supabase/tests/rls.test.ts
+    - file:supabase/tests/harness.ts
+    - file:src/shared/supabase.types.ts
+    - file:docs/supabase-setup.md
+    - cmd:npx
+    - npm:@electric-sql/pglite
 ---
 
 # Supabase migration

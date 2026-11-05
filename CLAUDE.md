@@ -1,3 +1,21 @@
+<!--
+metadata:
+  last_verified: 2026-11-05
+  review_every_days: 30
+  depends_on:
+    - file:package.json
+    - file:src/main/ipc/register.ts
+    - file:src/shared/types.ts
+    - file:src/renderer/src/features/registry.ts
+    - file:src/renderer/src/features/access.ts
+    - file:supabase/migrations
+    - file:assistant-skills
+    - file:docs/release.md
+    - file:docs/supabase-setup.md
+    - file:.github/workflows/release.yml
+    - file:CONTRIBUTING.md
+    - cmd:npm
+-->
 # MMC studio — hướng dẫn cho Claude Code
 
 App desktop Windows (Electron + React + TypeScript) — trợ lý AI cho học tập, quản lý team, giao việc, feedback, hỗ trợ code & thời gian. AI chạy qua Claude Code CLI đã đăng nhập bằng subscription của từng người dùng.
