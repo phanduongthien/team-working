@@ -4,6 +4,10 @@
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-11-05
+
+Thêm đổi team, rời team, nhường quyền Owner và đổi nhanh tài khoản GitHub. Chưa ký số: Windows SmartScreen có thể cảnh báo khi cài — chọn *More info → Run anyway*.
+
 ### Thêm mới
 - Nút team trên thanh bên: đổi nhanh giữa các team và tạo/tham gia thêm team từ bất kỳ màn hình nào.
 - Rời team khi chỉ còn một mình: chọn xóa team vĩnh viễn (gõ tên để xác nhận) hoặc giữ team và nhận mã khôi phục 30 ngày; người đầu tiên vào team trống bằng mã sẽ thành Owner.
@@ -15,9 +19,8 @@
 - Lịch sử chat và cài đặt trợ lý (tên, avatar, tính cách) giờ riêng theo từng tài khoản trên máy, như trí nhớ và hồ sơ cá nhân. Dữ liệu cũ thuộc về tài khoản đầu tiên đã đăng nhập trên máy.
 - Đăng xuất chỉ thu hồi phiên trên máy này, không còn đăng xuất các máy khác của cùng tài khoản.
 
-### Cần làm khi cập nhật
-- Áp migration Supabase `20261101090000_leave_team.sql` (hàm `leave_team`, sửa `guard_last_owner` và `accept_invite`) lên project dev rồi prod trước khi phát hành bản app mới.
-- Áp migration Supabase `20261102090000_transfer_ownership.sql` (hàm `transfer_ownership`).
+### Ghi chú cho người quản trị
+- Bản này cần 2 migration Supabase `20261101090000_leave_team.sql` và `20261102090000_transfer_ownership.sql` (đã áp lên prod trước khi phát hành).
 
 ## [0.1.2] - 2026-10-28
 
