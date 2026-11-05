@@ -45,7 +45,13 @@ irm https://claude.ai/install.ps1 | iex
 2. Mở file vừa tải. Vì app **chưa được ký số**, Windows SmartScreen sẽ hiện *"Windows protected your PC"*: bấm **More info → Run anyway** (Thông tin thêm → Vẫn chạy).
 3. Làm theo trình cài đặt. Lần đầu mở app, màn hình **Kết nối Claude Code** sẽ kiểm tra bước 1 — nếu báo xanh là xong.
 
-Từ đó về sau app **tự cập nhật**: khi có bản mới, app tải ngầm và hiện thông báo *"Có bản mới — khởi động lại để cập nhật"*.
+Từ đó về sau app **tự kiểm tra bản mới** khi mở và mỗi 2 giờ. Có bản mới thì app hiện số phiên bản, ngày phát hành, danh sách thay đổi và 3 lựa chọn:
+
+- **Cập nhật ngay**: tải ở nền (có thanh tiến trình), xong thì hỏi *"Khởi động lại để cập nhật?"*. Lịch sử chat, trí nhớ và cài đặt được giữ nguyên; app còn tự sao lưu dữ liệu vào `%APPDATA%\Team Working\backups\` trước khi chạy bản mới.
+- **Để sau**: nhắc lại ở lần mở app tiếp theo.
+- **Bỏ qua phiên bản này**: không nhắc lại phiên bản đó nữa.
+
+Bản **bắt buộc** (sửa lỗi quan trọng) không bỏ qua được: app nhắc lại mỗi lần kiểm tra và hiện một dải cam trên đầu màn hình, bấm vào là cập nhật. Vào **Cài đặt → Cập nhật** để bật/tắt tự kiểm tra, bấm *Kiểm tra ngay*, hoặc chọn kênh **beta** để dùng thử bản pre-release.
 
 ### 3. Đăng nhập GitHub và vào team
 
@@ -63,6 +69,15 @@ Trưởng nhóm tạo team ở cùng màn hình (**Tạo team mới**), rồi t�
 
 ## Đóng góp code
 
-Muốn sửa lỗi hoặc thêm tính năng? Đọc [**CONTRIBUTING.md**](CONTRIBUTING.md) để biết cách chạy dự án, quy tắc commit, cách thêm module và checklist PR. Quy trình phát hành: [docs/release.md](docs/release.md).
+Muốn sửa lỗi hoặc thêm tính năng? Đọc [**CONTRIBUTING.md**](CONTRIBUTING.md) để biết cách chạy dự án, quy tắc commit, cách thêm module và checklist PR.
+
+### Ra bản mới (để thành viên nhận thông báo cập nhật)
+
+Tóm tắt — chi tiết và cách thử trên máy ở [docs/release.md](docs/release.md):
+
+1. `main` xanh CI. Chuyển mục *Unreleased* trong `CHANGELOG.md` thành `## [x.y.z] - YYYY-MM-DD` — nội dung mục này chính là changelog thành viên thấy trong app. Bản bắt buộc: thêm ` [critical]` vào cuối dòng tiêu đề đó.
+2. `npm version x.y.z` (bản beta: `npm version 0.5.0-beta.1`) → tạo commit + tag.
+3. `git push origin main --follow-tags` → workflow **Release** build installer, tạo GitHub Release (tag có `-beta` → *pre-release*, chỉ máy chọn kênh beta nhận) và đăng `setup.exe`, `.blockmap`, `latest.yml`.
+4. Kiểm tra trang Release: đúng một release cho tag, có đủ 3 file. App của thành viên sẽ báo trong vòng 2 giờ (hoặc khi mở lại app).
 
 Công nghệ: Electron, React, TypeScript, Vite, Tailwind, SQLite (Drizzle), Supabase (Auth, Realtime, RLS), Claude Code CLI.

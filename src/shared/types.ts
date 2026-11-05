@@ -1,5 +1,6 @@
 import type { ChatEvent, ChatMode, ChatUsage, CliStatus } from './ai'
 import type { CsvHeaders, TimeEntry } from './timesheet'
+import type { UpdateState } from './update'
 import type {
   AccountSession,
   SavedAccountInfo,
@@ -27,6 +28,7 @@ import type {
   PlanResult,
   MemoryCategory,
   SuggestionStatus,
+  UpdateSettings,
   UserProfile
 } from './schemas'
 
@@ -178,6 +180,21 @@ export interface TeamWorkingApi {
     setApiKey(key: string): Promise<void>
     clearApiKey(): Promise<void>
   }
+  update: {
+    getState(): Promise<UpdateState>
+    onState(listener: (state: UpdateState) => void): () => void
+    /** Kiểm tra ngay (người dùng bấm) — hiện kết quả kể cả khi đã bỏ qua phiên bản đó. */
+    check(): Promise<void>
+    download(): Promise<void>
+    /** Để sau: bản thường nhắc lại lần mở app sau; bản [critical] nhắc ở lần kiểm tra kế tiếp. */
+    postpone(): Promise<void>
+    /** Không nhắc lại phiên bản này (không áp dụng cho bản [critical]). */
+    skip(): Promise<void>
+    /** Khởi động lại để cài bản đã tải. */
+    install(): Promise<void>
+    getSettings(): Promise<UpdateSettings & { currentVersion: string }>
+    setSettings(settings: UpdateSettings): Promise<UpdateSettings>
+  }
   app: {
     openExternal(url: string): Promise<void>
     /** Main yêu cầu chuyển trang (vd khi bấm thông báo Windows). */
@@ -186,8 +203,6 @@ export interface TeamWorkingApi {
     logError(message: string): Promise<void>
     /** Phiên bản, hệ điều hành, đoạn cuối log (đã che đường dẫn/email) cho báo lỗi. */
     bugInfo(): Promise<{ version: string; os: string; logTail: string }>
-    onUpdateReady(listener: (info: { version: string }) => void): () => void
-    installUpdate(): Promise<void>
   }
   ideas: {
     /** Trợ lý chuẩn hóa ý tưởng/báo lỗi thành GitHub issue (bản nháp để người dùng sửa). */

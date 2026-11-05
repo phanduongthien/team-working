@@ -173,6 +173,14 @@ export class ChatService {
     for (const r of this.active.values()) r.controller.abort()
   }
 
+  /** Dừng mọi lượt đang chạy và chờ chúng lưu xong (vd trước khi thoát để cài bản cập nhật). */
+  async stopAll(timeoutMs: number): Promise<boolean> {
+    this.abortAll()
+    const deadline = Date.now() + timeoutMs
+    while (this.active.size > 0 && Date.now() < deadline) await new Promise((r) => setTimeout(r, 50))
+    return this.active.size === 0
+  }
+
   private async run(args: {
     requestId: string
     conversationId: string
