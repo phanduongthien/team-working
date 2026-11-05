@@ -59,5 +59,34 @@
     "getKey": "Create a key on Claude Console",
     "autoSuggest": "Suggest memories automatically",
     "autoSuggestHelp": "When you leave a chat with 2+ new messages, the assistant suggests what to remember (uses one extra AI call). You still review before saving."
+  },
+  "update": {
+    "heading": "Updates",
+    "description": "The app downloads new versions from the team's GitHub Releases. Chat history and settings are always kept.",
+    "current": "Current version {{version}}",
+    "checkNow": "Check now",
+    "view": "View update",
+    "autoCheck": "Check for updates automatically",
+    "autoCheckHelp": "On launch and every 2 hours. When off, only when you click \"Check now\".",
+    "channel": "Update channel",
+    "channels": {
+      "stable": {
+        "name": "Stable",
+        "description": "Official releases only."
+      },
+      "beta": {
+        "name": "Beta",
+        "description": "Also receive pre-releases to try new features — may contain bugs."
+      }
+    },
+    "status": {
+      "unsupported": "This build does not support auto-update (dev or local build).",
+      "checking": "Checking…",
+      "none": "You're on the latest version.",
+      "available": "Version {{version}} is available.",
+      "downloading": "Downloading {{version}} ({{percent}}%)…",
+      "downloaded": "Version {{version}} downloaded — installs on restart.",
+      "error": "Could not check: {{message}}"
+    }
   }
 }

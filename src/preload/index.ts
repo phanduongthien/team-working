@@ -1,6 +1,7 @@
 import { contextBridge, ipcRenderer, type IpcRendererEvent } from 'electron'
 import { IPC } from '@shared/ipc'
 import type { ChatStreamPayload, CodeApprovalRequest, MemoryEventPayload, TeamWorkingApi } from '@shared/types'
+import type { UpdateState } from '@shared/update'
 
 /** Đăng ký nghe sự kiện main → renderer; trả về hàm hủy. */
 function subscribe<T>(channel: string, listener: (payload: T) => void): () => void {
@@ -54,13 +55,22 @@ const api: TeamWorkingApi = {
     setApiKey: (key) => ipcRenderer.invoke(IPC.settingsSetApiKey, key),
     clearApiKey: () => ipcRenderer.invoke(IPC.settingsClearApiKey)
   },
+  update: {
+    getState: () => ipcRenderer.invoke(IPC.updateGetState),
+    onState: (listener) => subscribe<UpdateState>(IPC.updateState, listener),
+    check: () => ipcRenderer.invoke(IPC.updateCheck),
+    download: () => ipcRenderer.invoke(IPC.updateDownload),
+    postpone: () => ipcRenderer.invoke(IPC.updatePostpone),
+    skip: () => ipcRenderer.invoke(IPC.updateSkip),
+    install: () => ipcRenderer.invoke(IPC.updateInstall),
+    getSettings: () => ipcRenderer.invoke(IPC.settingsGetUpdate),
+    setSettings: (settings) => ipcRenderer.invoke(IPC.settingsSetUpdate, settings)
+  },
   app: {
     openExternal: (url) => ipcRenderer.invoke(IPC.appOpenExternal, url),
     onNavigate: (listener) => subscribe<string>(IPC.appNavigate, listener),
     logError: (message) => ipcRenderer.invoke(IPC.appLogError, message),
-    bugInfo: () => ipcRenderer.invoke(IPC.appBugInfo),
-    onUpdateReady: (listener) => subscribe<{ version: string }>(IPC.updateReady, listener),
-    installUpdate: () => ipcRenderer.invoke(IPC.updateInstall)
+    bugInfo: () => ipcRenderer.invoke(IPC.appBugInfo)
   },
   ideas: {
     format: (input) => ipcRenderer.invoke(IPC.ideasFormat, input)

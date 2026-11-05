@@ -4,6 +4,15 @@
 
 ## [Unreleased]
 
+### Thêm mới
+- Thông báo cập nhật: khi có bản mới, app hiện số phiên bản, ngày phát hành và danh sách thay đổi, kèm 3 lựa chọn *Cập nhật ngay* (tải nền có thanh tiến trình, xong thì hỏi khởi động lại), *Để sau* (nhắc lại lần mở app sau) và *Bỏ qua phiên bản này*.
+- Bản cập nhật bắt buộc (`[critical]`): không bỏ qua được, nhắc lại mỗi lần kiểm tra và hiện dải cam trên đầu app — bấm vào là cập nhật.
+- *Cài đặt → Cập nhật*: bật/tắt tự kiểm tra, nút *Kiểm tra ngay*, chọn kênh **stable** hoặc **beta** (nhận cả bản pre-release).
+- Tự sao lưu dữ liệu (`%APPDATA%\Team Working\backups\`, giữ 3 bản) lần đầu mở phiên bản mới, trước khi nâng cấp cơ sở dữ liệu.
+
+### Thay đổi
+- App không còn tự tải bản cập nhật khi chưa được đồng ý; kiểm tra mỗi 2 giờ thay vì 6 giờ. Trước khi khởi động lại để cài, app dừng và lưu các phản hồi đang chạy.
+
 ## [0.3.0] - 2026-11-05
 
 App đổi tên thành **MMC studio**. Cài đè lên bản cũ như bình thường, không mất dữ liệu. Chưa ký số: Windows SmartScreen có thể cảnh báo khi cài — chọn *More info → Run anyway*.

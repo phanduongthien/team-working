@@ -387,6 +387,20 @@ export const workdaySchema = z.object({
 export type Workday = z.infer<typeof workdaySchema>
 export const DEFAULT_WORKDAY: Workday = { start: '09:00', end: '17:30', focusMinutes: 25, breakMinutes: 5 }
 
+// ---- Cập nhật app ----
+
+export const UPDATE_CHANNELS = ['stable', 'beta'] as const
+
+export const updateSettingsSchema = z.object({
+  /** Tự kiểm tra bản mới lúc mở app và định kỳ. */
+  autoCheck: z.boolean(),
+  /** beta = nhận cả GitHub pre-release. */
+  channel: z.enum(UPDATE_CHANNELS)
+})
+export type UpdateSettings = z.infer<typeof updateSettingsSchema>
+export type UpdateChannel = (typeof UPDATE_CHANNELS)[number]
+export const DEFAULT_UPDATE_SETTINGS: UpdateSettings = { autoCheck: true, channel: 'stable' }
+
 // ---- Cấu hình AI ----
 
 export const AI_PROVIDERS = ['claude-cli', 'anthropic-api'] as const
