@@ -11,9 +11,25 @@
     "copied": "Copied"
   },
   "update": {
-    "ready": "Version {{version}} is ready — restart to update.",
+    "version": "Version {{version}}",
+    "criticalTag": "Required",
+    "criticalHint": "This is a required update (important fixes). You can postpone it, but the app will remind you at the next check.",
+    "noNotes": "This release has no change notes.",
+    "availableTitle": "A new version is available",
+    "skip": "Skip this version",
+    "later": "Later",
+    "now": "Update now",
+    "downloadingTitle": "Downloading {{version}}…",
+    "downloadingHint": "You can close this dialog and keep working — the download continues in the background.",
+    "readyTitle": "Version {{version}} is downloaded",
+    "readyHint": "Restart to update? Your chat history and settings are kept; any running reply will be stopped and saved.",
+    "laterInstall": "Later (install on quit)",
     "restart": "Restart",
-    "later": "Later"
+    "errorTitle": "Could not download the update",
+    "errorHint": "Error: {{message}}. Check your connection and try again.",
+    "bannerAvailable": "Required update {{version}} is available — click to update now",
+    "bannerDownloading": "Downloading required update {{version}} ({{percent}}%)…",
+    "bannerReady": "Required update {{version}} is ready — click to restart"
   },
   "errors": {
     "generic": "Something went wrong: {{message}}",

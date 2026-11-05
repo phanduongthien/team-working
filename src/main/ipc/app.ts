@@ -4,6 +4,9 @@ import { app } from 'electron'
 import { z } from 'zod'
 import { IPC } from '@shared/ipc'
 import { sanitizeLog } from '@shared/release'
+import { updateSettingsSchema, type UpdateSettings } from '@shared/schemas'
+import type { SettingsRepository } from '../db/repositories'
+import type { UpdateController } from '../update/controller'
 import { completeText, type AIProvider } from '../ai/AIProvider'
 import { buildIssuePrompt, parseIssue } from '../assistant/issue'
 import type { HandleFn } from './register'
@@ -11,7 +14,9 @@ import type { HandleFn } from './register'
 export type AppIpcDeps = {
   handle: HandleFn
   log: { file: string; error(msg: string): void; warn(msg: string): void }
-  installUpdate(): void
+  updates: UpdateController
+  settings: SettingsRepository
+  getUpdateSettings(): UpdateSettings
   getProvider(): AIProvider
   loadSkill(name: string): Promise<string | undefined>
   workspaceDir: string
@@ -23,7 +28,21 @@ const LOG_TAIL_LINES = 40
 export function registerAppIpc(deps: AppIpcDeps): void {
   const { handle } = deps
 
-  handle(IPC.updateInstall, z.undefined(), () => deps.installUpdate())
+  const { updates } = deps
+  handle(IPC.updateGetState, z.undefined(), () => updates.getState())
+  handle(IPC.updateCheck, z.undefined(), () => updates.check(true))
+  // Không chờ tải xong: tiến trình đi qua sự kiện update:state.
+  handle(IPC.updateDownload, z.undefined(), () => void updates.download())
+  handle(IPC.updatePostpone, z.undefined(), () => updates.postpone())
+  handle(IPC.updateSkip, z.undefined(), () => updates.skip())
+  handle(IPC.updateInstall, z.undefined(), () => updates.install())
+  handle(IPC.settingsGetUpdate, z.undefined(), () => ({ ...deps.getUpdateSettings(), currentVersion: app.getVersion() }))
+  handle(IPC.settingsSetUpdate, updateSettingsSchema, (next) => {
+    const previous = deps.getUpdateSettings()
+    deps.settings.set('update', next)
+    updates.settingsChanged(previous)
+    return next
+  })
 
   handle(IPC.appLogError, z.string().max(4000), (message) => deps.log.error(`renderer: ${message}`))
 

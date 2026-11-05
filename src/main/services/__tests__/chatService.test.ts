@@ -248,6 +248,21 @@ describe('ChatService', () => {
     await waitForStatus(conv.id, 'aborted')
     expect(msgs.list(conv.id).at(-1)?.content).toBe('đang viết')
   })
+
+  it('stopAll dừng mọi lượt và chờ lưu xong (trước khi cài bản cập nhật)', async () => {
+    const provider = new FakeProvider(async function* (_req, signal) {
+      yield { type: 'text', delta: 'dở dang' }
+      await new Promise<void>((resolve) => signal.addEventListener('abort', () => resolve()))
+    })
+    const conv = convs.create('free')
+    const service = makeService(provider)
+    service.send(conv.id, 'viết dài')
+    await vi.waitFor(() => expect(emitted).toHaveLength(1))
+
+    expect(await service.stopAll(2_000)).toBe(true)
+    expect(service.isBusy(conv.id)).toBe(false)
+    expect(msgs.list(conv.id).at(-1)).toMatchObject({ status: 'aborted', content: 'dở dang' })
+  })
 })
 
 describe('tool của app (xem màn hình)', () => {
