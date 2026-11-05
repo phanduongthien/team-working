@@ -35,13 +35,13 @@ App desktop Windows (Electron + React + TypeScript) — trợ lý AI cho học t
 - `src/renderer/src/` — React UI. `features/<tên>/` cho từng module, đăng ký trong `features/registry.ts` (`roles` lọc menu theo vai trò qua `features/access.ts`).
 - `.github/` — CI (lint/typecheck/test + e2e trên windows-latest), release, mẫu issue/PR, CODEOWNERS. Hướng dẫn đóng góp: `CONTRIBUTING.md`.
 - `src/shared/` — types, zod schemas, tên kênh IPC dùng chung main/renderer.
-- `supabase/migrations/` — schema dữ liệu team, **mọi bảng phải bật RLS**.
+- `supabase/migrations/` — schema dữ liệu team; mọi bảng bật RLS vì app phát hành kèm anon key — RLS là lớp chặn duy nhất giữa người dùng và dữ liệu team khác (chi tiết: skill `supabase-migration`).
 - `assistant-skills/` — skill dành cho con trợ lý lúc chạy; app đọc `SKILL.md` theo chế độ hội thoại và chèn vào system prompt (đóng gói qua `extraResources`).
 - Dữ liệu người dùng: `%APPDATA%/Team Working/` (`team-working.db`, `logs/main.log`, `workspace/`). Thư mục giữ tên cũ dù app đã đổi tên thành MMC studio (`LEGACY_USER_DATA_DIR` trong `src/shared/appConfig.ts`); đổi nó là người dùng mất dữ liệu. Tên hiển thị lấy từ `APP_NAME`.
 
 ## Quy tắc
 - Mọi IPC input validate bằng zod. Không bật `nodeIntegration`.
-- Không bao giờ commit secret, API key, service-role key. Dùng `.env.example`.
+- Không commit secret, API key, service-role key vì repo public (app tải bản cập nhật từ Releases public) — lộ là phải xoay key. Dùng `.env.example`.
 - Không chia sẻ/đóng gói thông tin đăng nhập Claude; mỗi user dùng tài khoản của chính họ.
 - Trợ lý **đề xuất**, người dùng **duyệt**: memory mới, task do AI tạo, thay đổi file code — luôn qua bước xác nhận.
 - UI text đi qua i18next (`vi` mặc định). Không hard-code chuỗi tiếng Việt trong component.

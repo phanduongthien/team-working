@@ -69,8 +69,8 @@ Khi vượt giới hạn: cắt ngữ cảnh thêm → cắt skill → bỏ bớ
 - API: ảnh → `image` base64, PDF → `document` base64, file chữ → `text`.
 
 ## Chế độ Code (`runOptions()` trong chatService.ts)
-- Chưa chọn thư mục → như chat thường. Chọn thư mục → `cwd` = thư mục dự án, tool `Read,Grep,Glob` (tự duyệt). **Không bao giờ cho Bash/PowerShell.**
-- Bật "được sửa file" (người dùng xác nhận) → thêm `Edit,Write` nhưng KHÔNG đưa vào `--allowedTools`; CLI hỏi quyền qua `--permission-prompt-tool mcp__twperm__approve` + `--mcp-config <file tạm>`.
+- Chưa chọn thư mục → như chat thường. Chọn thư mục → `cwd` = thư mục dự án, tool `Read,Grep,Glob` (tự duyệt). Không cấp Bash/PowerShell: lệnh shell chạy ngoài bước duyệt diff, nên có thể sửa file hay chạy bất cứ gì mà người dùng không thấy.
+- Bật "được sửa file" (người dùng xác nhận) → thêm `Edit,Write` nhưng không đưa vào `--allowedTools` (tool đã nằm trong đó được CLI tự duyệt, bỏ qua bước hiện diff); CLI hỏi quyền qua `--permission-prompt-tool mcp__twperm__approve` + `--mcp-config <file tạm>`.
 - MCP server: `resources/permission-mcp.cjs` (chạy bằng `process.execPath` + `ELECTRON_RUN_AS_NODE=1`). Nhận `{tool_name, input, tool_use_id}`, trả `{"behavior":"allow","updatedInput":input}` hoặc `{"behavior":"deny","message":"..."}` (phiên bản đã kiểm chứng: xem mục cuối).
 - Script gọi về `CodeApprovals` (HTTP 127.0.0.1, port ngẫu nhiên, token 24 byte) → app hiện diff (`describeChange`) → người dùng Đồng ý/Từ chối. Tự từ chối: file ngoài thư mục dự án, tool khác Edit/Write, quyền sửa đang tắt, sai token, hết 10 phút.
 - Dừng phản hồi / kết thúc lượt / tắt quyền → hủy mọi yêu cầu duyệt đang chờ.
