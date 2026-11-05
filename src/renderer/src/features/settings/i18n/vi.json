@@ -59,5 +59,10 @@
     "getKey": "Tạo key trên Claude Console",
     "autoSuggest": "Tự đề xuất ghi nhớ",
     "autoSuggestHelp": "Khi bạn rời một cuộc trò chuyện có từ 2 tin nhắn mới, trợ lý đề xuất điều nên nhớ (dùng thêm một lượt gọi AI). Bạn vẫn duyệt trước khi lưu."
+  },
+  "experimental": {
+    "heading": "Tính năng thử nghiệm",
+    "description": "Các tính năng mới, mặc định tắt. Chỉ bật khi bạn đã đọc kỹ hướng dẫn.",
+    "computer": "Điều khiển máy tính (xem màn hình)"
   }
 }

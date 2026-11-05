@@ -1,5 +1,6 @@
 import { contextBridge, ipcRenderer, type IpcRendererEvent } from 'electron'
 import { IPC } from '@shared/ipc'
+import type { ComputerStatus } from '@shared/computer'
 import type { ChatStreamPayload, CodeApprovalRequest, MemoryEventPayload, TeamWorkingApi } from '@shared/types'
 
 /** Đăng ký nghe sự kiện main → renderer; trả về hàm hủy. */
@@ -61,6 +62,15 @@ const api: TeamWorkingApi = {
     bugInfo: () => ipcRenderer.invoke(IPC.appBugInfo),
     onUpdateReady: (listener) => subscribe<{ version: string }>(IPC.updateReady, listener),
     installUpdate: () => ipcRenderer.invoke(IPC.updateInstall)
+  },
+  computer: {
+    status: () => ipcRenderer.invoke(IPC.computerStatus),
+    onStatus: (listener) => subscribe<ComputerStatus>(IPC.computerStatusEvent, listener),
+    setEnabled: (enabled, acceptWarning) => ipcRenderer.invoke(IPC.computerSetEnabled, { enabled, acceptWarning }),
+    setScreenAccess: (on) => ipcRenderer.invoke(IPC.computerSetScreenAccess, on),
+    emergencyStop: () => ipcRenderer.invoke(IPC.computerEmergencyStop),
+    preview: (display) => ipcRenderer.invoke(IPC.computerPreview, { display }),
+    openLogs: () => ipcRenderer.invoke(IPC.computerOpenLogs)
   },
   ideas: {
     format: (input) => ipcRenderer.invoke(IPC.ideasFormat, input)

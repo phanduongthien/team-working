@@ -387,6 +387,19 @@ export const workdaySchema = z.object({
 export type Workday = z.infer<typeof workdaySchema>
 export const DEFAULT_WORKDAY: Workday = { start: '09:00', end: '17:30', focusMinutes: 25, breakMinutes: 5 }
 
+// ---- Điều khiển máy tính (thử nghiệm) ----
+
+export const computerUseSettingsSchema = z.object({
+  enabled: z.boolean(),
+  /** Thời điểm người dùng chấp nhận cảnh báo lần đầu (epoch ms). */
+  warningAcceptedAt: z.number().int().nullable()
+})
+export type ComputerUseSettings = z.infer<typeof computerUseSettingsSchema>
+export const DEFAULT_COMPUTER_USE_SETTINGS: ComputerUseSettings = { enabled: false, warningAcceptedAt: null }
+
+export const computerSetEnabledSchema = z.object({ enabled: z.boolean(), acceptWarning: z.boolean().optional() })
+export const computerPreviewSchema = z.object({ display: z.number().int().min(1).max(16).optional() })
+
 // ---- Cấu hình AI ----
 
 export const AI_PROVIDERS = ['claude-cli', 'anthropic-api'] as const

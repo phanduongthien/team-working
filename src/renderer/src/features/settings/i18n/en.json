@@ -59,5 +59,10 @@
     "getKey": "Create a key on Claude Console",
     "autoSuggest": "Suggest memories automatically",
     "autoSuggestHelp": "When you leave a chat with 2+ new messages, the assistant suggests what to remember (uses one extra AI call). You still review before saving."
+  },
+  "experimental": {
+    "heading": "Experimental features",
+    "description": "New features, off by default. Only enable them after reading the instructions.",
+    "computer": "Computer control (screen viewing)"
   }
 }

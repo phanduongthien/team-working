@@ -85,5 +85,9 @@
     "already_running": "Đang lấy đề xuất, chờ chút nhé.",
     "approval_unavailable": "Không khởi động được bước duyệt thay đổi file. Hãy tắt quyền sửa hoặc khởi động lại app.",
     "no_project_folder": "Hãy chọn thư mục dự án trước."
+  },
+  "tools": {
+    "screenshot": "chụp màn hình",
+    "list_displays": "xem danh sách màn hình"
   }
 }

@@ -85,5 +85,9 @@
     "already_running": "Already fetching suggestions, hang on.",
     "approval_unavailable": "Could not start file-change approval. Turn off editing or restart the app.",
     "no_project_folder": "Choose a project folder first."
+  },
+  "tools": {
+    "screenshot": "screenshot",
+    "list_displays": "list displays"
   }
 }

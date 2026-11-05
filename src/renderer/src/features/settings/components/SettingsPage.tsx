@@ -1,4 +1,4 @@
-import { Bug, Check, Upload } from 'lucide-react'
+import { Bug, Check, Monitor, Upload } from 'lucide-react'
 import { useState, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router'
@@ -211,6 +211,14 @@ export function SettingsPage() {
         <AssistantSection />
         <Section title={t('claude.heading')} description={t('claude.description')}>
           <AiSection />
+        </Section>
+        <Section title={t('experimental.heading')} description={t('experimental.description')}>
+          <Button variant="outline" asChild>
+            <Link to="/computer" data-testid="open-computer">
+              <Monitor />
+              {t('experimental.computer')}
+            </Link>
+          </Button>
         </Section>
         <Section title={t('support.heading')} description={t('support.description')}>
           <Button variant="outline" asChild>

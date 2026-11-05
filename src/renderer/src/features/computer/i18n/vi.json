@@ -1,0 +1,53 @@
+{
+  "title": "Điều khiển máy tính",
+  "experimental": "Thử nghiệm",
+  "description": "Cho trợ lý xem màn hình để giúp bạn sửa lỗi và làm việc trong Unity, Blender, After Effects, DaVinci Resolve, VS Code… Bản hiện tại CHỈ XEM: trợ lý chụp màn hình và hướng dẫn, không tự click hay gõ phím.",
+  "enable": "Bật điều khiển máy tính",
+  "enableHelp": "Mặc định tắt. Khi bật, phím dừng khẩn cấp được đăng ký với Windows; trợ lý chỉ xem được màn hình khi bạn bật thêm \"Cho xem màn hình\" trong mỗi phiên.",
+  "modeView": "Chế độ hiện tại: CHỈ XEM — chụp màn hình và tư vấn. Thao tác chuột/bàn phím chưa được bật trong bản này.",
+  "hotkey": {
+    "label": "Phím dừng khẩn cấp",
+    "armed": "Đã sẵn sàng",
+    "failed": "Không đăng ký được — có app khác đang dùng phím này",
+    "off": "Chưa bật"
+  },
+  "screen": {
+    "heading": "Cho trợ lý xem màn hình",
+    "help": "Chỉ trong phiên này: tự tắt khi khởi động lại app hoặc khi dừng khẩn cấp. Ảnh chụp được gửi cho Claude để phân tích.",
+    "on": "Đang cho xem",
+    "off": "Đang tắt",
+    "toggleOn": "Cho trợ lý xem màn hình",
+    "toggleOff": "Tắt quyền xem màn hình"
+  },
+  "preview": {
+    "button": "Chụp thử",
+    "help": "Chụp thử chỉ hiện ở đây trên máy bạn, không gửi cho Claude — để xem trợ lý sẽ thấy gì.",
+    "alt": "Ảnh chụp thử màn hình"
+  },
+  "logs": "Mở thư mục nhật ký",
+  "stop": {
+    "button": "Dừng khẩn cấp",
+    "short": "Dừng",
+    "done": "Đã dừng khẩn cấp: trợ lý ngừng xem màn hình, mọi phản hồi đang chạy đã dừng."
+  },
+  "indicator": "Trợ lý đang được xem màn hình · {{hotkey}} để dừng",
+  "warning": {
+    "title": "Trước khi bật điều khiển máy tính",
+    "lead": "Đây là tính năng thử nghiệm. Hãy đọc kỹ trước khi bật.",
+    "points": [
+      "Khi bạn cho phép, trợ lý chụp màn hình và gửi ảnh cho Claude (tính vào gói Claude của bạn). Ảnh có thể chứa mọi thứ đang hiện trên màn hình — hãy đóng cửa sổ chứa thông tin nhạy cảm (mật khẩu, ngân hàng, tin nhắn riêng) trước.",
+      "Mọi lần chụp được lưu vào nhật ký kèm ảnh trên máy bạn trong 7 ngày để bạn xem lại.",
+      "Nhấn {{hotkey}} bất cứ lúc nào (kể cả khi đang ở app khác) để dừng ngay: tắt quyền xem màn hình và dừng mọi phản hồi đang chạy.",
+      "Bản hiện tại chỉ xem: trợ lý không click, không gõ phím, không mở app. Thao tác sẽ chỉ được bật khi có xác nhận riêng.",
+      "Trợ lý không bao giờ được nhập mật khẩu hay thông tin thanh toán thay bạn."
+    ],
+    "confirm": "Tôi đã đọc và hiểu các điểm trên.",
+    "accept": "Bật tính năng"
+  },
+  "errors": {
+    "warning_required": "Cần đọc và chấp nhận cảnh báo trước khi bật.",
+    "hotkey_unavailable": "Không đăng ký được phím dừng khẩn cấp {{hotkey}} (có thể app khác đang dùng). Tính năng chỉ bật được khi phím dừng hoạt động.",
+    "not_enabled": "Hãy bật điều khiển máy tính (và kiểm tra phím dừng khẩn cấp) trước.",
+    "display_not_found": "Không tìm thấy màn hình."
+  }
+}

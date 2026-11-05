@@ -4,6 +4,11 @@
 
 ## [Unreleased]
 
+### Thêm mới
+- **Điều khiển máy tính — chế độ chỉ xem** (thử nghiệm, mặc định tắt): bật ở *Cài đặt → Tính năng thử nghiệm*, lần đầu phải đọc cảnh báo. Bấm biểu tượng con mắt ở khung soạn tin để cho trợ lý xem màn hình trong phiên này — trợ lý chụp màn hình (chọn màn hình, phóng to một vùng) rồi hướng dẫn bạn, không tự click hay gõ phím.
+- Phím dừng khẩn cấp **Ctrl+Alt+Q** (dùng được cả khi đang ở app khác) và nút *Dừng*: tắt quyền xem màn hình và dừng ngay mọi phản hồi đang chạy. Không đăng ký được phím này thì tính năng không bật.
+- Nhật ký mọi lần chụp kèm ảnh trong `%APPDATA%\Team Working\logs\computer-use\` (giữ 7 ngày); nút *Chụp thử* để xem trợ lý sẽ thấy gì mà không gửi đi.
+
 ## [0.3.0] - 2026-11-05
 
 App đổi tên thành **MMC studio**. Cài đè lên bản cũ như bình thường, không mất dữ liệu. Chưa ký số: Windows SmartScreen có thể cảnh báo khi cài — chọn *More info → Run anyway*.
