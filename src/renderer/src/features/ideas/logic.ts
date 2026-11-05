@@ -1,3 +1,5 @@
+import { APP_NAME } from '@shared/appConfig'
+
 export type IssueKind = 'idea' | 'bug'
 
 export type BugInfo = { version: string; os: string; logTail: string }
@@ -12,7 +14,7 @@ export function manualDraft(kind: IssueKind, title: string, description: string)
 /** Ghép thông tin môi trường + đoạn log (đã che) vào cuối nội dung báo lỗi. */
 export function composeIssueBody(body: string, info: BugInfo | null, headings: { env: string; log: string }): string {
   if (!info) return body.trim()
-  const parts = [body.trim(), '', `### ${headings.env}`, `- Team Working ${info.version}`, `- ${info.os}`]
+  const parts = [body.trim(), '', `### ${headings.env}`, `- ${APP_NAME} ${info.version}`, `- ${info.os}`]
   if (info.logTail.trim()) parts.push('', `### ${headings.log}`, '```', info.logTail.trim(), '```')
   return parts.join('\n')
 }

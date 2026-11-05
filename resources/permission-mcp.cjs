@@ -1,5 +1,5 @@
 // MCP server (stdio) mà Claude Code CLI gọi qua --permission-prompt-tool mcp__twperm__approve
-// mỗi khi muốn dùng tool cần quyền (Edit/Write ở chế độ Code). Chuyển yêu cầu về app Team Working
+// mỗi khi muốn dùng tool cần quyền (Edit/Write ở chế độ Code). Chuyển yêu cầu về app MMC studio
 // (HTTP 127.0.0.1 + token) để NGƯỜI DÙNG xem diff và duyệt; lỗi/hết giờ → từ chối.
 // Chạy bằng chính Electron với ELECTRON_RUN_AS_NODE=1 — không cần cài Node.
 'use strict'
@@ -21,7 +21,7 @@ function deny(message) {
 
 function askApp(args) {
   return new Promise((resolve) => {
-    if (!URL_BASE || !TOKEN) return resolve(deny('Team Working approval bridge unavailable'))
+    if (!URL_BASE || !TOKEN) return resolve(deny('MMC studio approval bridge unavailable'))
     const body = JSON.stringify({ token: TOKEN, conversationId: CONVERSATION, toolName: args.tool_name, input: args.input })
     const req = http.request(
       `${URL_BASE}/approve`,
@@ -47,7 +47,7 @@ function askApp(args) {
 
 const TOOL = {
   name: 'approve',
-  description: 'Ask the Team Working user to approve a tool call',
+  description: 'Ask the MMC studio user to approve a tool call',
   inputSchema: {
     type: 'object',
     properties: { tool_name: { type: 'string' }, input: { type: 'object' }, tool_use_id: { type: 'string' } },

@@ -1,6 +1,23 @@
 ---
 name: claude-bridge
 description: Quy ước gọi Claude từ app (ClaudeCliProvider / AnthropicApiProvider) — spawn Claude Code CLI headless, parse stream-json, resume session, chèn system prompt (tên trợ lý, tính cách, memory). Dùng khi viết hoặc sửa bất kỳ code nào gọi AI.
+metadata:
+  last_verified: 2026-11-05
+  review_every_days: 14
+  depends_on:
+    - file:src/main/ai/claudeCli.ts
+    - file:src/main/ai/ClaudeCliProvider.ts
+    - file:src/main/ai/streamJsonParser.ts
+    - file:src/main/ai/systemPrompt.ts
+    - file:src/main/ai/skills.ts
+    - file:src/main/ai/AnthropicApiProvider.ts
+    - file:src/main/ai/__fixtures__
+    - file:src/main/services/chatService.ts
+    - file:src/main/services/attachments.ts
+    - file:src/main/code/approvals.ts
+    - file:resources/permission-mcp.cjs
+    - cmd:claude
+    - npm:@anthropic-ai/sdk
 ---
 
 # Claude bridge
@@ -33,7 +50,7 @@ Renderer chỉ thấy `ChatEvent` qua IPC `chat:event` — không bao giờ th�
 - Parser `StreamJsonParser` (fixture thật trong `src/main/ai/__fixtures__/`): `system/init` → session; `stream_event` text_delta → text; `assistant` tool_use → tool (text của assistant chỉ dùng khi message đó không có delta); `result` → done/error (`errors[]`). Bỏ qua thinking, `rate_limit_event`, message subagent (`parent_tool_use_id` ≠ null), dòng hỏng.
 - CLI còn chạy một lúc sau `result`: `ChatService` chỉ phát done/error **sau khi tiến trình thoát** và đã nhả khóa hội thoại.
 - Session mất (`No conversation found`) → xóa `cli_session_id`, thử lại 1 lần kèm 12 tin gần nhất.
-- `cwd`: thường = `%APPDATA%/Team Working/workspace`; chế độ Code = thư mục dự án người dùng chọn.
+- `cwd`: thường = `<userData>/workspace` (`%APPDATA%/Team Working/workspace`, giữ tên thư mục cũ); chế độ Code = thư mục dự án người dùng chọn.
 - Quyền tool: chat thường → `--tools ""`. Code chỉ đọc → `Read,Grep,Glob`. Cho sửa file chỉ khi người dùng bật rõ ràng.
 - `isAvailable`/`checkClaudeCli`: `claude --version` + `claude auth status` (JSON; chỉ giữ `loggedIn`, `subscriptionType`). Không đọc, sao chép hay truyền đi file credential của Claude Code.
 - Kiểm tra lại format khi nâng cấp CLI: chạy thử, cập nhật fixture (xóa đường dẫn/thông tin cá nhân).
@@ -52,9 +69,9 @@ Khi vượt giới hạn: cắt ngữ cảnh thêm → cắt skill → bỏ bớ
 - API: ảnh → `image` base64, PDF → `document` base64, file chữ → `text`.
 
 ## Chế độ Code (`runOptions()` trong chatService.ts)
-- Chưa chọn thư mục → như chat thường. Chọn thư mục → `cwd` = thư mục dự án, tool `Read,Grep,Glob` (tự duyệt). **Không bao giờ cho Bash/PowerShell.**
-- Bật "được sửa file" (người dùng xác nhận) → thêm `Edit,Write` nhưng KHÔNG đưa vào `--allowedTools`; CLI hỏi quyền qua `--permission-prompt-tool mcp__twperm__approve` + `--mcp-config <file tạm>`.
-- MCP server: `resources/permission-mcp.cjs` (chạy bằng `process.execPath` + `ELECTRON_RUN_AS_NODE=1`). Nhận `{tool_name, input, tool_use_id}`, trả `{"behavior":"allow","updatedInput":input}` hoặc `{"behavior":"deny","message":"..."}` (đã kiểm chứng với CLI 2.1.312).
+- Chưa chọn thư mục → như chat thường. Chọn thư mục → `cwd` = thư mục dự án, tool `Read,Grep,Glob` (tự duyệt). Không cấp Bash/PowerShell: lệnh shell chạy ngoài bước duyệt diff, nên có thể sửa file hay chạy bất cứ gì mà người dùng không thấy.
+- Bật "được sửa file" (người dùng xác nhận) → thêm `Edit,Write` nhưng không đưa vào `--allowedTools` (tool đã nằm trong đó được CLI tự duyệt, bỏ qua bước hiện diff); CLI hỏi quyền qua `--permission-prompt-tool mcp__twperm__approve` + `--mcp-config <file tạm>`.
+- MCP server: `resources/permission-mcp.cjs` (chạy bằng `process.execPath` + `ELECTRON_RUN_AS_NODE=1`). Nhận `{tool_name, input, tool_use_id}`, trả `{"behavior":"allow","updatedInput":input}` hoặc `{"behavior":"deny","message":"..."}` (phiên bản đã kiểm chứng: xem mục cuối).
 - Script gọi về `CodeApprovals` (HTTP 127.0.0.1, port ngẫu nhiên, token 24 byte) → app hiện diff (`describeChange`) → người dùng Đồng ý/Từ chối. Tự từ chối: file ngoài thư mục dự án, tool khác Edit/Write, quyền sửa đang tắt, sai token, hết 10 phút.
 - Dừng phản hồi / kết thúc lượt / tắt quyền → hủy mọi yêu cầu duyệt đang chờ.
 
@@ -62,6 +79,17 @@ Khi vượt giới hạn: cắt ngữ cảnh thêm → cắt skill → bỏ bớ
 `completeText()` + `ephemeral: true` (CLI: `--no-session-persistence`) — không tạo session rác. Kết quả chỉ là **đề xuất** vào `memory_suggestions`; người dùng duyệt ở trang Trí nhớ.
 
 ## AnthropicApiProvider (dự phòng)
-- `@anthropic-ai/sdk` `client.beta.messages.stream(...)`, model `claude-opus-5-5` (theo skill `claude-api` — không đoán ID), `output_config.effort: 'medium'`, `fallbacks: 'default'` + beta `server-side-fallback-2026-07-01` (tự chạy lại trên model dự phòng khi bị từ chối vì an toàn), `signal` để hủy.
+- `@anthropic-ai/sdk` `client.beta.messages.stream(...)`, model `ANTHROPIC_MODEL` trong `AnthropicApiProvider.ts` (lấy ID từ skill `claude-api`, không đoán), `output_config.effort`, `fallbacks: 'default'` + beta server-side fallback (tự chạy lại trên model dự phòng khi bị từ chối vì an toàn), `signal` để hủy.
 - Không có session → `ChatService` gửi kèm 30 tin gần nhất (`provider.stateful === false`).
 - Key người dùng tự nhập, lưu mã hóa bằng `safeStorage` (`SecretStore`), không bao giờ trả về renderer. Lỗi map sang mã: `invalid_api_key`, `rate_limit`, `network_error`, `refusal`…
+
+## Giá trị dễ lỗi thời: kiểm tra lại khi nâng cấp CLI/SDK/model
+Nguồn sự thật là code; bảng này để health-check so khớp và biết cần kiểm chứng lại gì.
+| Giá trị | Hiện tại | Ở đâu | Kiểm chứng gần nhất |
+|---|---|---|---|
+| Claude Code CLI | 2.1.318 | máy dev | 2026-11-05 |
+| `--system-prompt-file`, `--append-system-prompt-file` | cờ **ẩn** khỏi `claude --help` nhưng vẫn chạy | `claudeCli.ts` | 2026-11-05, chạy thật với `-p --restricted --tools ""` |
+| Format stream-json | fixture trong `src/main/ai/__fixtures__/` | `streamJsonParser.ts` | 2026-10-28 (theo git log fixture) |
+| Phản hồi permission-prompt-tool `{behavior, updatedInput}` | như trên | `permission-mcp.cjs` | CLI 2.1.312 |
+| Model API | `claude-opus-5-5` | `ANTHROPIC_MODEL` | chưa gọi thật (giá trị đọc từ code 2026-11-05) |
+| Beta fallback | `server-side-fallback-2026-07-01`, `effort: 'medium'` | `AnthropicApiProvider.ts` | chưa gọi thật (giá trị đọc từ code 2026-11-05) |

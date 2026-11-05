@@ -90,7 +90,7 @@
     "expires": "hết hạn {{date}}",
     "copy": "Chép mã",
     "revoke": "Thu hồi",
-    "hint": "Gửi mã cho người được mời: họ đăng nhập Team Working bằng GitHub rồi nhập mã ở màn hình Team."
+    "hint": "Gửi mã cho người được mời: họ đăng nhập MMC studio bằng GitHub rồi nhập mã ở màn hình Team."
   },
   "profile": {
     "heading": "Hồ sơ của tôi trong team",

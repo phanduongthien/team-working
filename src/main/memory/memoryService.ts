@@ -6,6 +6,7 @@ import {
   type MemoryCategory,
   type UserProfile
 } from '@shared/schemas'
+import { APP_NAME } from '@shared/appConfig'
 import type { ExtractResult, Memory, MemoryEventPayload } from '@shared/types'
 import { completeText, type AIProvider } from '../ai/AIProvider'
 import type { UserProfileContext } from '../ai/systemPrompt'
@@ -157,7 +158,7 @@ export class MemoryService {
 
   exportData(): { app: string; exportedAt: string; profile: UserProfile; memories: Memory[] } {
     return {
-      app: 'Team Working',
+      app: APP_NAME,
       exportedAt: new Date().toISOString(),
       profile: this.getProfile(),
       memories: this.deps.memories.list()

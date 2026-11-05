@@ -1,6 +1,22 @@
 ---
 name: add-feature-module
-description: Cách thêm một tính năng mới vào Team Assistant theo kiến trúc module (UI, store, IPC, migration, test, đăng ký registry). Dùng khi người dùng hoặc thành viên team muốn thêm/phát triển tính năng mới.
+description: Cách thêm một tính năng mới vào MMC studio theo kiến trúc module (UI, store, IPC, migration, test, đăng ký registry). Dùng khi người dùng hoặc thành viên team muốn thêm/phát triển tính năng mới.
+metadata:
+  last_verified: 2026-11-05
+  review_every_days: 30
+  depends_on:
+    - file:src/renderer/src/features/registry.ts
+    - file:src/renderer/src/features/chat
+    - file:src/renderer/src/features/__tests__/i18n-keys.test.ts
+    - file:src/main/ipc
+    - file:src/main/index.ts
+    - file:src/shared/ipc.ts
+    - file:src/shared/schemas.ts
+    - file:src/shared/types.ts
+    - file:src/preload/index.ts
+    - file:.github/PULL_REQUEST_TEMPLATE.md
+    - file:CHANGELOG.md
+    - npm:drizzle-kit
 ---
 
 # Thêm feature module
@@ -10,10 +26,10 @@ description: Cách thêm một tính năng mới vào Team Assistant theo kiến
    - `index.ts` — export `FeatureDefinition` `{ id, titleKey, icon, route, roles, component, i18n, nav, setup? }` (`id` cũng là namespace i18n; `setup` chạy một lần lúc app khởi động, ví dụ đăng ký listener IPC)
    - `components/`, `store.ts` (Zustand), `api.ts` (gọi preload/Supabase), `i18n/vi.json`, `i18n/en.json`
    - `__tests__/`
-3. Nếu cần main process: `src/main/features/<ten>/ipc.ts`, schema zod trong `src/shared/`, expose qua preload với tên có namespace (`window.api.<ten>.*`).
+3. Nếu cần main process: logic thuần trong `src/main/<ten>/` (kèm `__tests__/`), handler IPC trong `src/main/ipc/<khu-vực>.ts` (thêm vào file sẵn có như `work.ts`/`team.ts`/`app.ts` hoặc tạo `register<Ten>Ipc` mới và gọi trong `bootstrap()` của `src/main/index.ts`). Tên kênh trong `src/shared/ipc.ts`, schema zod trong `src/shared/schemas.ts`, kiểu trong `TeamWorkingApi` (`src/shared/types.ts`), expose qua `src/preload/index.ts` dưới namespace `window.api.<ten>.*`.
 4. Dữ liệu local → bảng Drizzle mới + `npm run db:generate`. Dữ liệu team → skill `supabase-migration`.
 5. Cần AI → dùng `AIProvider` (skill `claude-bridge`); nếu cần hành vi riêng, thêm skill vào `assistant-skills/<ten>/SKILL.md`.
-6. Đăng ký trong `src/renderer/src/features/registry.ts` — **đây là chỗ duy nhất** chạm vào lõi. Test `features/__tests__/i18n-keys.test.ts` bắt buộc `vi.json`/`en.json` có cùng bộ khóa.
+6. Đăng ký trong `src/renderer/src/features/registry.ts`: ở renderer đây là chỗ duy nhất chạm vào lõi (menu, route, i18n lấy từ đây) để các module không sửa đè nhau; phía main thì thêm lời gọi `register…Ipc` ở bước 3. Test `features/__tests__/i18n-keys.test.ts` đỏ nếu `vi.json`/`en.json` lệch khóa.
 7. Chạy `npm run lint && npm run typecheck && npm test`, chạy thử app.
 8. Cập nhật `CHANGELOG.md` mục Unreleased; commit `feat(<ten>): ...`; mở PR theo template.
 

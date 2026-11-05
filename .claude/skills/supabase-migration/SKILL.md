@@ -1,19 +1,30 @@
 ---
 name: supabase-migration
 description: Cách thay đổi schema dữ liệu team trên Supabase an toàn — migration, Row Level Security theo vai trò Owner/Manager/Member, test quyền. Dùng khi thêm/sửa bảng, cột, policy của dữ liệu dùng chung.
+metadata:
+  last_verified: 2026-11-05
+  review_every_days: 30
+  depends_on:
+    - file:supabase/migrations
+    - file:supabase/tests/rls.test.ts
+    - file:supabase/tests/harness.ts
+    - file:src/shared/supabase.types.ts
+    - file:docs/supabase-setup.md
+    - cmd:npx
+    - npm:@electric-sql/pglite
 ---
 
 # Supabase migration
 
-1. `supabase migration new <mo_ta>` → viết SQL trong `supabase/migrations/`.
+1. `npx supabase migration new <mo_ta>` → viết SQL trong `supabase/migrations/`.
 2. Mọi bảng mới: `alter table ... enable row level security;` + policy cho select/insert/update/delete. Không có policy = không ai truy cập được (an toàn mặc định).
 3. Quyền dựa trên bảng `team_members(team_id, user_id, role)`. Dùng hàm SQL helper `is_team_member(team_id)` và `has_team_role(team_id, roles[])` (security definer) thay vì lặp lại subquery.
 4. Quy tắc mẫu:
    - Task: member trong team xem được; assignee sửa `status`/giờ; manager/owner sửa tất cả.
    - Feedback: chỉ `author`, `recipient` và manager/owner của team xem; ẩn danh thì không trả `author_id` cho Member (dùng view).
    - Tiến độ học: chỉ chủ sở hữu, manager xem khi `shared = true`.
-5. Viết test quyền trong `supabase/tests/rls.test.ts` cho mỗi policy mới. Test chạy migration THẬT trên PGlite (Postgres WASM, không cần Docker) với schema `auth`/`storage` giả lập trong `supabase/tests/harness.ts`; dùng `db.as(user, tx => ...)` để đóng vai Owner/Manager/Member/người ngoài. Luôn có cả ca "được phép" và "bị chặn".
+5. Viết test quyền trong `supabase/tests/rls.test.ts` cho mỗi policy mới. Test chạy migration thật trên PGlite (Postgres WASM, không cần Docker) — không mock policy, vì lỗi RLS chỉ lộ ra khi Postgres thật đánh giá policy — với schema `auth`/`storage` giả lập trong `supabase/tests/harness.ts`; dùng `db.as(user, tx => ...)` để đóng vai Owner/Manager/Member/người ngoài. Luôn có cả ca "được phép" và "bị chặn".
    - Ràng buộc theo cột (vd người được giao chỉ đổi status) đặt trong trigger BEFORE (chạy trước RLS WITH CHECK); thao tác cần nguyên tử (tạo team, nhận lời mời) đặt trong RPC `security definer` với `set search_path = ''`.
-6. Sinh lại types: `npx supabase gen types typescript --linked` → `src/shared/supabase.types.ts` (hiện đang viết tay khớp migration).
+6. Cập nhật `src/shared/supabase.types.ts` bằng tay cho khớp migration. File viết tay và import kiểu từ `schemas.ts`, nên đừng sinh đè. Muốn đối chiếu thì chạy `npx supabase gen types typescript --linked` ra file tạm rồi so.
 6b. Áp lên project: dev có thể chạy file trong SQL Editor; prod dùng `npx supabase db push` (xem `docs/supabase-setup.md`).
 7. Không bao giờ dùng service-role key trong app; không tắt RLS để "cho nhanh".

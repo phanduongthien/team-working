@@ -1,4 +1,4 @@
-# Điều khoản dùng Claude trong Team Assistant
+# Điều khoản dùng Claude trong MMC studio
 
 > Kiểm tra ngày 2026-10-28. Chính sách của Anthropic đã đổi nhiều lần trong 2026 — **kiểm tra lại trước mỗi bản phát hành lớn**.
 
@@ -17,7 +17,7 @@
 5. Giới hạn sử dụng Pro/Max giả định **mức dùng cá nhân thông thường**. `claude -p` và Agent SDK khi đăng nhập bằng gói Claude vẫn tính vào hạn mức subscription (thay đổi tính phí tháng 6/2026 đã tạm dừng).
 6. Không dùng tên/logo "Claude"/"Anthropic" làm tên sản phẩm hay logo; chỉ được ghi dạng văn bản "chạy bằng Claude Code".
 
-## Đánh giá thiết kế của Team Assistant
+## Đánh giá thiết kế của MMC studio
 
 | Cách làm | Đánh giá |
 |---|---|
@@ -27,11 +27,11 @@
 | Một tài khoản dùng chung cho cả team / server proxy | ❌ Cấm. **Không làm.** |
 | `AnthropicApiProvider` với API key người dùng tự nhập, lưu bằng `safeStorage` | ✅ Đây là cách Anthropic khuyến nghị cho developer. |
 | Tác vụ AI chạy ngầm liên tục (tự trích memory, tự lập kế hoạch mỗi sáng…) bằng subscription | ⚠️ Vùng xám với "ordinary, individual usage". Giữ ở mức người dùng chủ động kích hoạt hoặc tần suất thấp, có thể tắt. |
-| Đặt tên app chứa "Claude" | ❌ Không. Tên "Team Assistant" ổn. |
+| Đặt tên app chứa "Claude" | ❌ Không. Tên "MMC studio" ổn. |
 
 ## Kết luận
 - Thiết kế **không vi phạm điều nào được nêu rõ**, với điều kiện giữ các ràng buộc ở bảng trên.
-- **Rủi ro còn lại**: câu "developers building products… should use API key authentication" — nếu Team Assistant được coi là "sản phẩm" phát hành rộng (không chỉ nội bộ team), Anthropic có thể yêu cầu dùng API key. Anthropic có quyền thực thi mà không báo trước.
+- **Rủi ro còn lại**: câu "developers building products… should use API key authentication" — nếu MMC studio được coi là "sản phẩm" phát hành rộng (không chỉ nội bộ team), Anthropic có thể yêu cầu dùng API key. Anthropic có quyền thực thi mà không báo trước.
 - **Khuyến nghị**: dùng nội bộ team, phi thương mại; giữ `AnthropicApiProvider` hoạt động đầy đủ để chuyển đổi được ngay; nếu muốn phân phối công khai/thương mại thì liên hệ Anthropic sales trước.
 
 ## Ràng buộc kỹ thuật rút ra (bắt buộc trong code)

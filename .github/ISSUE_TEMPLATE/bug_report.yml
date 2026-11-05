@@ -1,5 +1,5 @@
 name: Báo lỗi
-description: Có gì đó chạy sai trong Team Working
+description: Có gì đó chạy sai trong MMC studio
 labels: [bug]
 body:
   - type: markdown

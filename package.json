@@ -1,11 +1,11 @@
 {
   "name": "team-working",
-  "productName": "Team Working",
+  "productName": "MMC studio",
   "version": "0.2.0",
   "private": true,
   "description": "Trợ lý AI cho học tập, quản lý team, giao việc và feedback",
   "main": "./out/main/index.js",
-  "author": "Team Working",
+  "author": "MMC studio",
   "license": "UNLICENSED",
   "repository": {
     "type": "git",

@@ -1,4 +1,22 @@
-# Team Working — hướng dẫn cho Claude Code
+<!--
+metadata:
+  last_verified: 2026-11-05
+  review_every_days: 30
+  depends_on:
+    - file:package.json
+    - file:src/main/ipc/register.ts
+    - file:src/shared/types.ts
+    - file:src/renderer/src/features/registry.ts
+    - file:src/renderer/src/features/access.ts
+    - file:supabase/migrations
+    - file:assistant-skills
+    - file:docs/release.md
+    - file:docs/supabase-setup.md
+    - file:.github/workflows/release.yml
+    - file:CONTRIBUTING.md
+    - cmd:npm
+-->
+# MMC studio — hướng dẫn cho Claude Code
 
 App desktop Windows (Electron + React + TypeScript) — trợ lý AI cho học tập, quản lý team, giao việc, feedback, hỗ trợ code & thời gian. AI chạy qua Claude Code CLI đã đăng nhập bằng subscription của từng người dùng.
 
@@ -17,15 +35,19 @@ App desktop Windows (Electron + React + TypeScript) — trợ lý AI cho học t
 - `src/renderer/src/` — React UI. `features/<tên>/` cho từng module, đăng ký trong `features/registry.ts` (`roles` lọc menu theo vai trò qua `features/access.ts`).
 - `.github/` — CI (lint/typecheck/test + e2e trên windows-latest), release, mẫu issue/PR, CODEOWNERS. Hướng dẫn đóng góp: `CONTRIBUTING.md`.
 - `src/shared/` — types, zod schemas, tên kênh IPC dùng chung main/renderer.
-- `supabase/migrations/` — schema dữ liệu team, **mọi bảng phải bật RLS**.
+- `supabase/migrations/` — schema dữ liệu team; mọi bảng bật RLS vì app phát hành kèm anon key — RLS là lớp chặn duy nhất giữa người dùng và dữ liệu team khác (chi tiết: skill `supabase-migration`).
 - `assistant-skills/` — skill dành cho con trợ lý lúc chạy; app đọc `SKILL.md` theo chế độ hội thoại và chèn vào system prompt (đóng gói qua `extraResources`).
-- Dữ liệu người dùng: `%APPDATA%/Team Working/` (`team-working.db`, `logs/main.log`, `workspace/`).
+- Dữ liệu người dùng: `%APPDATA%/Team Working/` (`team-working.db`, `logs/main.log`, `workspace/`). Thư mục giữ tên cũ dù app đã đổi tên thành MMC studio (`LEGACY_USER_DATA_DIR` trong `src/shared/appConfig.ts`); đổi nó là người dùng mất dữ liệu. Tên hiển thị lấy từ `APP_NAME`.
 
 ## Quy tắc
 - Mọi IPC input validate bằng zod. Không bật `nodeIntegration`.
-- Không bao giờ commit secret, API key, service-role key. Dùng `.env.example`.
+- Không commit secret, API key, service-role key vì repo public (app tải bản cập nhật từ Releases public) — lộ là phải xoay key. Dùng `.env.example`.
 - Không chia sẻ/đóng gói thông tin đăng nhập Claude; mỗi user dùng tài khoản của chính họ.
 - Trợ lý **đề xuất**, người dùng **duyệt**: memory mới, task do AI tạo, thay đổi file code — luôn qua bước xác nhận.
 - UI text đi qua i18next (`vi` mặc định). Không hard-code chuỗi tiếng Việt trong component.
 - Commit theo Conventional Commits (`feat:`, `fix:`, `docs:`…). Mỗi tính năng mới kèm test.
 - Thêm tính năng: dùng skill `add-feature-module`. Gọi Claude: skill `claude-bridge`. Đổi schema team: skill `supabase-migration`. Phát hành: skill `release-update`.
+
+## Bảo trì cấu hình agent
+- Khi bị người dùng sửa lỗi, hoặc mắc cùng một lỗi lần thứ hai, gợi ý chạy `/learn` để biến nó thành rule. Không tự sửa skill hay CLAUDE.md khi chưa được duyệt, vì rule sai sẽ ảnh hưởng mọi phiên sau.
+- Hook SessionStart nhắc khi có skill quá hạn review; khi đó gợi ý `/health-check`. Chi tiết: `.claude/README-maintenance.md`.

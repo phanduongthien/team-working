@@ -1,5 +1,5 @@
 import { createServer, type Server } from 'node:http'
-import { OAUTH_CALLBACK_PORT } from '@shared/appConfig'
+import { APP_NAME, OAUTH_CALLBACK_PORT } from '@shared/appConfig'
 
 export type OAuthResult = { code: string } | { error: string }
 
@@ -36,8 +36,8 @@ const page = (title: string, body: string): string => `<!doctype html>
 main{text-align:center;max-width:420px}h1{font-size:20px}</style></head>
 <body><main><h1>${title}</h1><p>${body}</p></main></body></html>`
 
-const SUCCESS = page('Đăng nhập thành công', 'Bạn có thể đóng tab này và quay lại Team Working.')
-const FAILURE = page('Đăng nhập chưa thành công', 'Hãy quay lại Team Working và thử lại.')
+const SUCCESS = page('Đăng nhập thành công', `Bạn có thể đóng tab này và quay lại ${APP_NAME}.`)
+const FAILURE = page('Đăng nhập chưa thành công', `Hãy quay lại ${APP_NAME} và thử lại.`)
 
 /**
  * Mở cổng 127.0.0.1:47823 chờ đúng MỘT callback OAuth rồi đóng ngay.

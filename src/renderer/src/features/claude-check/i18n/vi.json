@@ -1,7 +1,7 @@
 {
   "title": "Claude Code",
   "heading": "Kết nối Claude Code",
-  "intro": "Team Working dùng Claude Code CLI cài trên máy bạn, đăng nhập bằng tài khoản Claude (Pro/Max) của chính bạn. App không bao giờ đọc hay lưu thông tin đăng nhập Claude.",
+  "intro": "MMC studio dùng Claude Code CLI cài trên máy bạn, đăng nhập bằng tài khoản Claude (Pro/Max) của chính bạn. App không bao giờ đọc hay lưu thông tin đăng nhập Claude.",
   "checking": "Đang kiểm tra…",
   "recheck": "Kiểm tra lại",
   "continue": "Vào trò chuyện",
@@ -20,7 +20,7 @@
   "install": {
     "step1": "Mở PowerShell (không cần quyền Administrator).",
     "step2": "Chạy lệnh cài đặt chính thức:",
-    "step3": "Đóng và mở lại Team Working, rồi bấm “Kiểm tra lại”."
+    "step3": "Đóng và mở lại MMC studio, rồi bấm “Kiểm tra lại”."
   },
   "login": {
     "step1": "Mở PowerShell hoặc Terminal.",

@@ -1,5 +1,6 @@
 import { Notification, type BrowserWindow } from 'electron'
 import electronUpdater from 'electron-updater'
+import { APP_NAME } from '@shared/appConfig'
 import { IPC } from '@shared/ipc'
 
 const SIX_HOURS = 6 * 60 * 60 * 1000
@@ -24,7 +25,7 @@ export function startAutoUpdate(opts: {
     opts.log.info(`Đã tải bản ${info.version}`)
     opts.getWindow()?.webContents.send(IPC.updateReady, { version: info.version })
     if (Notification.isSupported()) {
-      new Notification({ title: 'Team Working', body: `Có bản mới ${info.version} — khởi động lại để cập nhật.` }).show()
+      new Notification({ title: APP_NAME, body: `Có bản mới ${info.version} — khởi động lại để cập nhật.` }).show()
     }
   })
   autoUpdater.on('error', (err) => opts.log.warn(`Cập nhật lỗi: ${err.message}`))

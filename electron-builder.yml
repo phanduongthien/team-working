@@ -2,7 +2,7 @@
 # Cấu hình publish (GitHub owner/repo) truyền qua -c.publish.* trong .github/workflows/release.yml,
 # để build cục bộ không cần biết repo; bản build cục bộ vì vậy không tự cập nhật.
 appId: com.phanduongthien.teamworking
-productName: Team Working
+productName: MMC studio
 directories:
   buildResources: build
   output: release/${version}

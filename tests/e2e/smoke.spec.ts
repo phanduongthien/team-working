@@ -31,7 +31,7 @@ test.afterAll(async () => {
 })
 
 test('mở app, bảo mật cửa sổ đúng cấu hình', async () => {
-  await expect(page).toHaveTitle('Team Working')
+  await expect(page).toHaveTitle('MMC studio')
   const prefs = await app.evaluate(({ BrowserWindow }) => {
     // Có lúc runtime nhưng không có trong typings của Electron.
     type WithPrefs = { getLastWebPreferences(): Electron.WebPreferences | null }
@@ -140,7 +140,7 @@ test('Cài đặt → Gửi báo lỗi: bản nháp tự viết kèm phiên bả
   await page.getByLabel('Mô tả').fill('Bấm Lưu nhưng thẻ biến mất')
   await page.getByRole('button', { name: 'Tự viết, không cần trợ lý' }).click()
   await expect(page.getByTestId('issue-draft')).toBeVisible()
-  await expect(page.getByTestId('bug-info')).toContainText('Team Working')
+  await expect(page.getByTestId('bug-info')).toContainText('MMC studio')
   await expect(page.getByTestId('bug-info')).not.toContainText(/C:\\Users\\[^%]/)
   await page.screenshot({ path: 'test-results/ideas.png' })
 })

@@ -1,3 +1,5 @@
+> Đã lỗi thời, chỉ để tham khảo.
+
 # PROMPT GỬI CHO CLAUDE CODE
 
 > Cách dùng: tạo một thư mục dự án mới (ví dụ `team-assistant`), copy **toàn bộ** nội dung bộ kit này vào (gồm `CLAUDE.md`, `.claude/skills/`, `assistant-skills/`), `git init`, mở Claude Code trong thư mục đó rồi dán phần dưới đường kẻ.

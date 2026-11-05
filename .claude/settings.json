@@ -1,0 +1,17 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|resume|clear",
+        "hooks": [
+          {
+            "type": "command",
+            "shell": "powershell",
+            "command": "node \"$env:CLAUDE_PROJECT_DIR/.claude/hooks/rot-check.mjs\"",
+            "timeout": 5
+          }
+        ]
+      }
+    ]
+  }
+}

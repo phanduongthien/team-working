@@ -50,6 +50,15 @@ export function appEnvironment(mode: string | undefined, declared?: string): App
   return mode === 'production' ? 'production' : 'development'
 }
 
+/** Tên hiển thị của app. Đổi tên thì sửa ở đây + productName (package.json, electron-builder.yml) + i18n `appName`. */
+export const APP_NAME = 'MMC studio'
+
+/**
+ * Thư mục dữ liệu trong %APPDATA% — giữ tên cũ từ khi app còn tên "Team Working" để người dùng
+ * hiện tại không mất DB, secrets, phiên đăng nhập. KHÔNG đổi cho khớp APP_NAME.
+ */
+export const LEGACY_USER_DATA_DIR = 'Team Working'
+
 /** Cổng loopback nhận callback OAuth — phải khớp Redirect URL đã khai báo trên Supabase. */
 export const OAUTH_CALLBACK_PORT = 47823
 export const OAUTH_REDIRECT_URL = `http://127.0.0.1:${OAUTH_CALLBACK_PORT}/auth/callback`

@@ -56,7 +56,7 @@ jobs:
             ($(if ($end -ge 0) { $rest[0..($end - 1)] } else { $rest }) -join "`n").Trim()
           } else { 'Xem CHANGELOG.md' }
           $notes | Out-File -Encoding utf8NoBOM notes.md
-          gh release create '${{ github.ref_name }}' --title "Team Working $version" --notes-file notes.md --verify-tag
+          gh release create '${{ github.ref_name }}' --title "MMC studio $version" --notes-file notes.md --verify-tag
 
       - name: Đóng gói và tải file lên release
         # bash: PowerShell tách sai tham số dạng -c.publish.x=y

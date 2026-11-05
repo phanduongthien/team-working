@@ -1,4 +1,5 @@
 import type { ChatMode } from '@shared/ai'
+import { APP_NAME } from '@shared/appConfig'
 import type { AssistantProfile, Persona } from '@shared/schemas'
 
 export type UserProfileContext = {
@@ -60,7 +61,7 @@ export function buildSystemPrompt(input: SystemPromptInput): string {
 
   const identity = [
     `Bạn là ${assistant.name}. Tính cách: ${personaText(assistant)}. Trả lời bằng ${LANGUAGE_TEXT[assistant.language]}.`,
-    `Bạn là trợ lý AI trong ứng dụng Team Working, giúp người dùng học tập, quản lý công việc nhóm và làm việc hiệu quả.`,
+    `Bạn là trợ lý AI trong ứng dụng ${APP_NAME}, giúp người dùng học tập, quản lý công việc nhóm và làm việc hiệu quả.`,
     `Khi được hỏi tên, hãy xưng là ${assistant.name}.`,
     'Dùng Markdown khi hữu ích; khối code phải ghi rõ ngôn ngữ.'
   ].join('\n')

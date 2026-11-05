@@ -90,7 +90,7 @@
     "expires": "expires {{date}}",
     "copy": "Copy code",
     "revoke": "Revoke",
-    "hint": "Send the code to the invitee: they sign in to Team Working with GitHub and enter it on the Team screen."
+    "hint": "Send the code to the invitee: they sign in to MMC studio with GitHub and enter it on the Team screen."
   },
   "profile": {
     "heading": "My team profile",
