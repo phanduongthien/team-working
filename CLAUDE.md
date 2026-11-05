@@ -47,3 +47,7 @@ App desktop Windows (Electron + React + TypeScript) — trợ lý AI cho học t
 - UI text đi qua i18next (`vi` mặc định). Không hard-code chuỗi tiếng Việt trong component.
 - Commit theo Conventional Commits (`feat:`, `fix:`, `docs:`…). Mỗi tính năng mới kèm test.
 - Thêm tính năng: dùng skill `add-feature-module`. Gọi Claude: skill `claude-bridge`. Đổi schema team: skill `supabase-migration`. Phát hành: skill `release-update`.
+
+## Bảo trì cấu hình agent
+- Khi bị người dùng sửa lỗi, hoặc mắc cùng một lỗi lần thứ hai, gợi ý chạy `/learn` để biến nó thành rule. Không tự sửa skill hay CLAUDE.md khi chưa được duyệt, vì rule sai sẽ ảnh hưởng mọi phiên sau.
+- Hook SessionStart nhắc khi có skill quá hạn review; khi đó gợi ý `/health-check`. Chi tiết: `.claude/README-maintenance.md`.
