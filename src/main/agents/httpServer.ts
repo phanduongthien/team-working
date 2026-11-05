@@ -115,8 +115,13 @@ export function agentHttpServer(hub: AgentHub, assistantName: () => string, log:
 
     const client = hub.authenticate(bearer(req.headers.authorization))
     if (!client) return json(res, 401, { error: 'invalid_token' }, { 'WWW-Authenticate': 'Bearer' })
-    if (!(await hub.ensureApproved(client))) {
-      return json(res, 403, { error: 'not_approved', message: 'Người dùng chưa cho phép agent này. Mở MMC studio → Kết nối agent để duyệt, rồi kết nối lại.' })
+    if (!client.approved) {
+      // Trả lời ngay (không giữ kết nối) — agent thử lại sau khi người dùng bấm Cho phép.
+      hub.requestApproval(client)
+      return json(res, 403, {
+        error: 'not_approved',
+        message: `Đang chờ người dùng duyệt trong MMC studio: mở MMC studio, bấm "Cho phép" cho agent "${client.name}", rồi thử lại.`
+      })
     }
     if (req.method !== 'POST') return json(res, 405, { error: 'method_not_allowed' }, { Allow: 'POST' })
 

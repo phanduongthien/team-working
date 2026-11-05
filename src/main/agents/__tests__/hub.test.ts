@@ -45,7 +45,6 @@ function setup(opts: { hotkeyTaken?: boolean; perHour?: number; answer?: Answer;
     emitStatus: () => {},
     emitNotice: (n) => void notices.push(n),
     log: { info: () => {}, warn: () => {} },
-    pairingTimeoutMs: 3_000,
     askWaitMs: 3_000
   })
   return { hub, answer, notices, rows, killSwitch, press: () => keys.has(EMERGENCY_HOTKEY) && killSwitch.trigger(), settings: () => settings, clients: () => clients }
@@ -104,13 +103,19 @@ describe('AgentHub + MCP server', () => {
     expect(JSON.parse(created.claudeDesktop).mcpServers.mizuki.env).toMatchObject({ MIZUKI_TOKEN: created.token, ELECTRON_RUN_AS_NODE: '1' })
   })
 
-  it('lần đầu kết nối phải được duyệt; sau đó dùng được 4 tool, ask_mizuki trả lời và ghi lịch sử', async () => {
+  it('lần đầu kết nối: trả not_approved NGAY (không giữ kết nối) + hiện yêu cầu trong app; duyệt xong thì kết nối lại được', async () => {
     const t = await enabled()
     const { token, client } = t.hub.createClient('Claude Code', bridge)
-    const connecting = connect(t.url, token)
-    await vi.waitFor(() => expect(t.hub.status().pending.map((p) => p.name)).toEqual(['Claude Code']))
+    const started = Date.now()
+    await expect(connect(t.url, token)).rejects.toThrow(/Đang chờ người dùng duyệt trong MMC studio/)
+    expect(Date.now() - started).toBeLessThan(2_000)
+    expect(t.hub.status().pending.map((p) => p.name)).toEqual(['Claude Code'])
+    // Thử lại khi chưa duyệt: không tạo thêm yêu cầu trùng.
+    await expect(connect(t.url, token)).rejects.toThrow()
+    expect(t.hub.status().pending).toHaveLength(1)
     t.hub.respondPairing(client.id, true)
-    const mcp = await connecting
+    expect(t.hub.status().pending).toEqual([])
+    const mcp = await connect(t.url, token)
     expect((await mcp.listTools()).tools.map((x) => x.name).sort()).toEqual(['ask_mizuki', 'get_task', 'list_tasks', 'submit_task'])
     const r = await mcp.callTool({ name: 'ask_mizuki', arguments: { message: 'Tóm tắt GDD giúp mình' } })
     expect(r.content).toEqual([{ type: 'text', text: 'Mizuki trả lời: Tóm tắt GDD giúp mình' }])
@@ -124,11 +129,11 @@ describe('AgentHub + MCP server', () => {
   it('từ chối agent mới → 403 và token bị thu hồi', async () => {
     const t = await enabled()
     const { token, client } = t.hub.createClient('Lạ', bridge)
-    const connecting = connect(t.url, token).catch((e: Error) => e)
-    await vi.waitFor(() => expect(t.hub.status().pending).toHaveLength(1))
+    await expect(connect(t.url, token)).rejects.toThrow()
+    expect(t.hub.status().pending).toHaveLength(1)
     t.hub.respondPairing(client.id, false)
-    expect(await connecting).toBeInstanceOf(Error)
     expect(t.clients()).toEqual([])
+    expect(await raw(t.url, { Authorization: `Bearer ${token}` })).toBe(401)
   })
 
   it('sai token → 401; Host lạ / Origin trang web → 403 (chống DNS rebinding)', async () => {

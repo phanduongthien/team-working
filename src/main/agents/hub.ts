@@ -54,8 +54,6 @@ export type AgentHubDeps = {
   emitNotice(n: AgentNotice): void
   log: { info(msg: string): void; warn(msg: string): void }
   now?: () => number
-  /** Thời gian chờ người dùng duyệt agent mới. */
-  pairingTimeoutMs?: number
   /** ask_mizuki chờ tối đa bấy lâu rồi trả mã việc để agent hỏi lại sau. */
   askWaitMs?: number
 }
@@ -180,26 +178,15 @@ export class AgentHub {
     return this.deps.getClients().find((c) => tokenMatches(token, c.tokenHash)) ?? null
   }
 
-  /** Lần đầu kết nối phải được người dùng duyệt; chờ tối đa pairingTimeoutMs. */
-  ensureApproved(client: StoredClient): Promise<boolean> {
-    if (client.approved) return Promise.resolve(true)
-    return new Promise<boolean>((resolve) => {
-      const entry = this.pending.get(client.id) ?? { at: this.now(), waiters: [] }
-      entry.waiters.push(resolve)
-      const isNew = !this.pending.has(client.id)
-      this.pending.set(client.id, entry)
-      if (isNew) {
-        this.deps.log.info(`Kết nối agent: "${client.name}" chờ duyệt lần đầu`)
-        this.changed()
-      }
-      setTimeout(() => {
-        const i = entry.waiters.indexOf(resolve)
-        if (i >= 0) {
-          entry.waiters.splice(i, 1)
-          resolve(false)
-        }
-      }, this.deps.pairingTimeoutMs ?? 60_000)
-    })
+  /**
+   * Agent chưa được duyệt: ghi nhận yêu cầu (hiện hộp thoại trong app) và để server trả not_approved NGAY —
+   * không giữ kết nối chờ, vì Claude Code hết thời gian chờ sau ~30 giây. Agent thử lại sau khi người dùng bấm Cho phép.
+   */
+  requestApproval(client: StoredClient): void {
+    if (client.approved || this.pending.has(client.id)) return
+    this.pending.set(client.id, { at: this.now(), waiters: [] })
+    this.deps.log.info(`Kết nối agent: "${client.name}" chờ duyệt lần đầu`)
+    this.changed()
   }
 
   /** ask_mizuki: hỏi và chờ câu trả lời (lâu quá thì trả mã việc). */

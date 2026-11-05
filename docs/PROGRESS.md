@@ -11,8 +11,11 @@
 ## PR đang mở
 - **#8 `feat/agent-connect`** — Kết nối agent: Mizuki làm MCP server cho Claude Code / Claude Desktop (kèm cầu nối stdio), Mizuki dùng MCP server khác, Ctrl+Alt+Q dùng chung. CI xanh. **Chờ người dùng test tay rồi merge.**
 
-## Đang làm dở
-Không có (mọi thay đổi đã commit và push).
+## Đang làm dở / sửa trên `feat/agent-connect` (PR #8)
+1. ✅ **Duyệt agent lần đầu:** trước đây Mizuki giữ kết nối chờ duyệt tối đa 60 giây, trong khi Claude Code hết thời gian chờ sau 30 giây. Giờ server trả `not_approved` **ngay lập tức** kèm thông báo "Đang chờ người dùng duyệt trong MMC studio…", đồng thời hiện yêu cầu trong app. Agent thử lại sau khi bạn bấm Cho phép.
+2. ✅ **Lịch sử trao đổi không hiện yêu cầu lúc 9:22 PM:** dữ liệu thực ra **đã được lưu** trong DB (`ask_mizuki`, trạng thái xong). Mở app với bản sao DB thì lịch sử hiện đúng. Nguyên nhân: trang chỉ làm mới lịch sử khi nhận sự kiện từ main, nên lỡ một sự kiện là danh sách đứng yên. Đã sửa: trang tự làm mới mỗi 5 giây và mỗi khi cửa sổ app được chọn lại.
+3. ⏳ **Chờ test tay lại:** mục 2–6 của PR #8 (Claude Code, Claude Desktop, Ctrl+Alt+Q, MCP client).
+4. ⚠️ **Token "Claude Code" cũ đã lộ trong ảnh chụp màn hình:** thu hồi và tạo token mới trước khi test lại.
 
 ## Bước tiếp theo
 1. Test tay #8 với Claude Code và Claude Desktop thật (xem mô tả PR #8 và `docs/agents.md`), rồi merge.

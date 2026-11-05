@@ -57,8 +57,16 @@ export function AgentsPage() {
   const [limits, setLimits] = useState<{ perHour: number; concurrency: number } | null>(null)
   const [expanded, setExpanded] = useState<string | null>(null)
 
+  // Không chỉ dựa vào sự kiện từ main: làm mới định kỳ và khi quay lại cửa sổ app (lỡ sự kiện vẫn thấy lịch sử mới).
   useEffect(() => {
     void refreshExchanges()
+    const timer = setInterval(() => void refreshExchanges(), 5_000)
+    const onFocus = (): void => void refreshExchanges()
+    window.addEventListener('focus', onFocus)
+    return () => {
+      clearInterval(timer)
+      window.removeEventListener('focus', onFocus)
+    }
   }, [refreshExchanges])
 
   if (!status) return null

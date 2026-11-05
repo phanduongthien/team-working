@@ -71,12 +71,13 @@ test('sai token → bị từ chối, không hỏi người dùng', async () => 
   await expect(page.getByTestId('agent-pairing')).toHaveCount(0)
 })
 
-test('lần đầu kết nối → app hỏi Cho phép; sau đó dùng được tool', async () => {
-  const connecting = connect()
+test('lần đầu kết nối → agent nhận lỗi "đang chờ duyệt" ngay; app hỏi Cho phép; thử lại thì dùng được tool', async () => {
+  await expect(connect()).rejects.toThrow(/Đang chờ người dùng duyệt trong MMC studio/)
   const pairing = page.getByTestId('agent-pairing')
   await expect(pairing).toContainText('"Claude Code" muốn dùng trợ lý của bạn')
   await pairing.getByRole('button', { name: 'Cho phép' }).click()
-  const mcp = await connecting
+  await expect(pairing).toBeHidden()
+  const mcp = await connect()
   expect((await mcp.listTools()).tools.map((t) => t.name).sort()).toEqual(['ask_mizuki', 'get_task', 'list_tasks', 'submit_task'])
   await expect(page.getByTestId('agent-client')).toContainText('Đã cho phép')
   await mcp.close()
