@@ -148,6 +148,8 @@ test('Cài đặt → Gửi báo lỗi: bản nháp tự viết kèm phiên bả
 // Gọi Claude thật (tốn hạn mức subscription) — chỉ chạy khi bật E2E_REAL_CLI=1.
 test('chat thật qua Claude Code CLI: stream, lưu lịch sử, resume', async () => {
   test.skip(process.env.E2E_REAL_CLI !== '1', 'Đặt E2E_REAL_CLI=1 để gọi Claude thật')
+  // Test trước dừng ở trang Ý tưởng — về màn hình chat trước.
+  await go('#/')
   const box = page.getByRole('textbox', { name: /Nhắn cho/ })
   await box.fill('Nhớ giúp mình con số 7391. Chỉ trả lời "OK".')
   await box.press('Enter')
