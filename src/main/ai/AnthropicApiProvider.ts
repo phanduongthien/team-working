@@ -26,11 +26,13 @@ export async function attachmentBlocks(
 ): Promise<Anthropic.Beta.BetaContentBlockParam[]> {
   const blocks: Anthropic.Beta.BetaContentBlockParam[] = []
   for (const a of attachments) {
-    const data = await read(a.path)
-    if ((IMAGE_TYPES as readonly string[]).includes(a.mimeType)) {
+    // Ảnh vượt giới hạn của Claude có bản thu nhỏ riêng (modelPath); bản gốc chỉ để xem lại.
+    const data = await read(a.modelPath ?? a.path)
+    const mime = a.modelMimeType ?? a.mimeType
+    if ((IMAGE_TYPES as readonly string[]).includes(mime)) {
       blocks.push({
         type: 'image',
-        source: { type: 'base64', media_type: a.mimeType as ImageType, data: data.toString('base64') }
+        source: { type: 'base64', media_type: mime as ImageType, data: data.toString('base64') }
       })
     } else if (a.mimeType === 'application/pdf') {
       blocks.push({

@@ -62,6 +62,8 @@ import { OAuthLoopback } from './services/oauthLoopback'
 import { AccountScope } from './memory/accountScope'
 import { MemoryService } from './memory/memoryService'
 import { AttachmentStore } from './services/attachments'
+import { electronClipboard } from './services/electronClipboard'
+import { electronImages } from './services/electronImages'
 import { ChatService } from './services/chatService'
 import { createLogger } from './services/logger'
 import { SavedAccountStore } from './services/savedAccounts'
@@ -286,7 +288,8 @@ async function bootstrap(): Promise<void> {
     account: accountScope,
     chat,
     memory,
-    attachments: new AttachmentStore(join(workspaceDir, 'attachments')),
+    attachments: new AttachmentStore(join(workspaceDir, 'attachments'), electronImages),
+    clipboard: electronClipboard,
     secrets,
     log,
     getWindow,

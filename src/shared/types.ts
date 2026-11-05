@@ -58,10 +58,17 @@ export type Attachment = {
   name: string
   mimeType: string
   size: number
+  /** Thumbnail (data URL) trả về lúc vừa thêm ảnh — chỉ dùng ở khung soạn tin, không lưu DB. */
+  thumbnail?: string
 }
 
 /** Bản lưu trong main — có đường dẫn file đã copy vào workspace. */
-export type StoredAttachment = Attachment & { path: string }
+export type StoredAttachment = Attachment & {
+  path: string
+  /** Bản thu nhỏ gửi cho Claude khi ảnh gốc vượt giới hạn (bản gốc vẫn là `path`). */
+  modelPath?: string
+  modelMimeType?: string
+}
 
 export type Message = {
   id: string
@@ -156,6 +163,12 @@ export interface TeamWorkingApi {
     abort(requestId: string): Promise<void>
     onEvent(listener: (payload: ChatStreamPayload) => void): () => void
     pickAttachments(): Promise<PickAttachmentsResult>
+    /** Thêm một file từ kéo thả / dán (gửi nội dung, không gửi đường dẫn). */
+    addFile(name: string, data: Uint8Array): Promise<PickAttachmentsResult>
+    /** Ctrl+V khi trình duyệt không đưa ra file: main đọc ảnh / file trong clipboard của Windows. */
+    pasteClipboard(): Promise<PickAttachmentsResult>
+    /** Ảnh xem trước (data URL); null nếu không phải ảnh hoặc không có quyền xem. */
+    attachmentPreview(id: string, size: 'thumb' | 'large'): Promise<string | null>
   }
   memory: {
     getProfile(): Promise<UserProfile>

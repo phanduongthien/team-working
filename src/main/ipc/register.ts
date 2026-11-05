@@ -11,6 +11,8 @@ import {
   assistantProfileSchema,
   chatAbortSchema,
   chatSendSchema,
+  chatAddFileSchema,
+  chatAttachmentPreviewSchema,
   conversationCreateSchema,
   conversationListSchema,
   conversationUpdateSchema,
@@ -31,7 +33,7 @@ import type {
 } from '../db/repositories'
 import type { AccountScope } from '../memory/accountScope'
 import type { MemoryService } from '../memory/memoryService'
-import { ATTACHMENT_EXTENSIONS, type AttachmentStore } from '../services/attachments'
+import { ATTACHMENT_EXTENSIONS, type AttachmentStore, type ClipboardPort } from '../services/attachments'
 import type { ChatService } from '../services/chatService'
 import type { Logger } from '../services/logger'
 import type { SecretStore } from '../services/secrets'
@@ -46,6 +48,8 @@ export type IpcDeps = {
   chat: ChatService
   memory: MemoryService
   attachments: AttachmentStore
+  /** Clipboard của Windows (Ctrl+V ảnh / file copy từ Explorer). */
+  clipboard: ClipboardPort
   secrets: SecretStore
   log: Logger
   getWindow(): BrowserWindow | null
@@ -119,6 +123,14 @@ export function registerIpc(deps: IpcDeps): void {
     if (picked.canceled) return { attachments: [], rejected: [] }
     return deps.attachments.add(picked.filePaths)
   })
+  handle(deps, IPC.chatAddFile, chatAddFileSchema, ({ name, data }) =>
+    deps.attachments.addBuffers([{ name, data: Buffer.from(data.buffer, data.byteOffset, data.byteLength) }])
+  )
+  handle(deps, IPC.chatPasteClipboard, none, () => deps.attachments.addFromClipboard(deps.clipboard))
+  // Chỉ xem được ảnh đang chờ gửi hoặc nằm trong hội thoại của tài khoản hiện tại.
+  handle(deps, IPC.chatAttachmentPreview, chatAttachmentPreviewSchema, async ({ id, size }) =>
+    deps.attachments.isPending(id) || deps.conversations.hasAttachment(id) ? deps.attachments.preview(id, size) : null
+  )
 
   // ---- Trí nhớ ----
   handle(deps, IPC.memoryGetProfile, none, () => deps.memory.getProfile())

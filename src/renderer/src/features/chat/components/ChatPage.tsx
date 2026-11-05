@@ -1,5 +1,5 @@
 import { CircleAlert, X } from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type DragEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router'
 import type { ChatMode } from '@shared/ai'
@@ -7,6 +7,7 @@ import { AssistantAvatar } from '@renderer/components/AssistantAvatar'
 import { Button } from '@renderer/components/ui/button'
 import { useCliStatus } from '@renderer/stores/cli'
 import { usePreferences } from '@renderer/stores/preferences'
+import { dragHasFiles, useDraft } from '../draft'
 import { useChat } from '../store'
 import { ChatHeader } from './ChatHeader'
 import { CodeBar } from './CodeBar'
@@ -27,6 +28,7 @@ export function ChatPage() {
   const mode = active?.mode ?? draftMode
   const isStreaming = !!(activeId && streaming[activeId])
   const bottomRef = useRef<HTMLDivElement>(null)
+  const addFiles = useDraft((s) => s.addFiles)
 
   useEffect(() => {
     void loadConversations()
@@ -42,10 +44,42 @@ export function ChatPage() {
     else setDraftMode(m)
   }
 
+  // Kéo thả ảnh / file vào bất kỳ đâu trong khung chat.
+  const [dragging, setDragging] = useState(false)
+  const onDragOver = (e: DragEvent): void => {
+    if (!dragHasFiles(e.dataTransfer.types)) return
+    e.preventDefault()
+    e.dataTransfer.dropEffect = 'copy'
+    if (!dragging) setDragging(true)
+  }
+  const onDragLeave = (e: DragEvent): void => {
+    if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setDragging(false)
+  }
+  const onDrop = (e: DragEvent): void => {
+    if (!dragHasFiles(e.dataTransfer.types)) return
+    e.preventDefault()
+    setDragging(false)
+    void addFiles(Array.from(e.dataTransfer.files))
+  }
+
   return (
     <div className="flex h-full min-h-0">
       <ConversationSidebar />
-      <section className="flex min-w-0 flex-1 flex-col">
+      <section
+        className="relative flex min-w-0 flex-1 flex-col"
+        onDragOver={onDragOver}
+        onDragLeave={onDragLeave}
+        onDrop={onDrop}
+        data-testid="chat-drop-zone"
+      >
+        {dragging && (
+          <div
+            className="pointer-events-none absolute inset-3 z-30 flex items-center justify-center rounded-xl border-2 border-dashed border-primary bg-primary/5 text-sm font-medium text-primary"
+            data-testid="drop-overlay"
+          >
+            {t('attach.drop')}
+          </div>
+        )}
         {active && messages.length > 0 && <ChatHeader key={active.id} conversation={active} busy={isStreaming} />}
         <div className="flex-1 overflow-y-auto">
           <div className="mx-auto max-w-3xl space-y-6 px-6 py-6">

@@ -33,15 +33,19 @@
     "project": "Project management"
   },
   "attach": {
-    "button": "Attach files (images, PDF, text/code — up to 10 MB)",
+    "button": "Attach files (images up to 30 MB; PDF, text/code up to 10 MB). You can also paste (Ctrl+V) or drag and drop.",
     "remove": "Remove {{name}}",
     "rejected": "Could not attach {{name}}: {{reason}}",
     "tooMany": "At most {{max}} files per message.",
     "reasons": {
-      "unsupported_type": "file type not supported",
-      "too_large": "file is larger than 10 MB",
-      "not_found": "file could not be read"
-    }
+      "unsupported_type": "unsupported file type",
+      "too_large": "file too large (images up to 30 MB, other files 10 MB)",
+      "not_found": "could not read the file"
+    },
+    "view": "View image {{name}}",
+    "drop": "Drop images or files here to attach",
+    "adding": "Adding files…",
+    "previewFailed": "Could not open this image."
   },
   "code": {
     "chooseFolder": "Choose project folder",

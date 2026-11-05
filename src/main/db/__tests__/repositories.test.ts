@@ -28,6 +28,18 @@ describe('repositories (SQLite in-memory)', () => {
   })
   afterEach(() => handle.close())
 
+  it('hasAttachment: chỉ thấy file đính kèm trong hội thoại của tài khoản hiện tại', () => {
+    let owner = 'u1'
+    const scoped = new ConversationRepository(handle.db, () => owner)
+    const conv = scoped.create('free')
+    const id = '11111111-2222-4333-8444-555555555555'
+    msgs.insert({ conversationId: conv.id, role: 'user', content: '', attachments: [{ id, name: 'a.png', mimeType: 'image/png', size: 1, path: 'C:\\ws\\a.png' }] })
+    expect(scoped.hasAttachment(id)).toBe(true)
+    expect(scoped.hasAttachment('99999999-2222-4333-8444-555555555555')).toBe(false)
+    owner = 'u2'
+    expect(scoped.hasAttachment(id)).toBe(false)
+  })
+
   it('tạo, đổi tên, ghim và sắp xếp hội thoại (ghim lên đầu)', async () => {
     const a = convs.create('free')
     await new Promise((r) => setTimeout(r, 2))
