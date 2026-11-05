@@ -8,37 +8,66 @@ export type ShortcutPort = {
 /** Phím dừng khẩn cấp toàn hệ thống (kể cả khi app không được focus). */
 export const EMERGENCY_HOTKEY = 'Control+Alt+Q'
 
+export type StopSource = 'hotkey' | 'button'
+
 /**
- * Dừng khẩn cấp: phím tắt toàn cục + nút trong app cùng gọi `onStop`.
- * Điều khiển máy tính CHỈ được bật khi phím tắt đăng ký thành công (`armed`) — nếu app khác đã
- * chiếm phím, tính năng không chạy chứ không chạy mà thiếu phanh.
+ * Dừng khẩn cấp dùng chung cho cả app: phím tắt toàn cục + nút trong app. Mỗi tính năng nguy hiểm
+ * (điều khiển máy tính, kết nối agent) "giữ" phím khi được bật (`arm(holder)`); phím chỉ được gỡ khi
+ * không còn tính năng nào giữ. Nhấn phím → gọi MỌI listener (dừng tất cả cùng lúc).
+ *
+ * Tính năng chỉ được bật khi phím đăng ký thành công — nếu app khác đã chiếm phím, tính năng không
+ * chạy chứ không chạy mà thiếu phanh.
  */
 export class KillSwitch {
-  private isArmed = false
+  private holders = new Set<string>()
+  private listeners = new Set<(source: StopSource) => void>()
+  private registered = false
 
   constructor(
     private readonly shortcuts: ShortcutPort,
-    private readonly onStop: (source: 'hotkey' | 'button') => void
-  ) {}
+    onStop?: (source: StopSource) => void
+  ) {
+    if (onStop) this.listeners.add(onStop)
+  }
 
+  /** Phím đang hoạt động (có ít nhất một tính năng giữ và Windows vẫn giữ đăng ký). */
   get armed(): boolean {
-    return this.isArmed && this.shortcuts.isRegistered(EMERGENCY_HOTKEY)
+    return this.registered && this.holders.size > 0 && this.shortcuts.isRegistered(EMERGENCY_HOTKEY)
   }
 
-  /** Đăng ký phím tắt; trả false nếu không đăng ký được (app khác đang dùng). */
-  arm(): boolean {
-    if (this.armed) return true
-    this.isArmed = this.shortcuts.register(EMERGENCY_HOTKEY, () => this.onStop('hotkey'))
-    return this.isArmed
+  isHeldBy(holder: string): boolean {
+    return this.holders.has(holder) && this.armed
   }
 
-  disarm(): void {
-    if (this.isArmed) this.shortcuts.unregister(EMERGENCY_HOTKEY)
-    this.isArmed = false
+  onStop(listener: (source: StopSource) => void): () => void {
+    this.listeners.add(listener)
+    return () => this.listeners.delete(listener)
+  }
+
+  /** Tính năng `holder` cần phím dừng; trả false nếu không đăng ký được (app khác đang dùng). */
+  arm(holder = 'default'): boolean {
+    if (!this.registered || !this.shortcuts.isRegistered(EMERGENCY_HOTKEY)) {
+      this.registered = this.shortcuts.register(EMERGENCY_HOTKEY, () => this.fire('hotkey'))
+    }
+    if (!this.registered) return false
+    this.holders.add(holder)
+    return true
+  }
+
+  disarm(holder = 'default'): void {
+    this.holders.delete(holder)
+    if (this.holders.size === 0 && this.registered) {
+      this.shortcuts.unregister(EMERGENCY_HOTKEY)
+      this.registered = false
+    }
   }
 
   /** Nút "Dừng khẩn cấp" trong app. */
   trigger(): void {
-    this.onStop('button')
+    this.fire('button')
+  }
+
+  private fire(source: StopSource): void {
+    for (const listener of [...this.listeners]) listener(source)
   }
 }

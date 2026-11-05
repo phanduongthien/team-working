@@ -9,6 +9,8 @@ export type ApprovalDeps = {
   /** Thư mục dự án của hội thoại nếu chế độ Code đang BẬT quyền sửa; null = không được phép. */
   writableRoot(conversationId: string): string | null
   emit(request: CodeApprovalRequest): void
+  /** Duyệt lần gọi tool của MCP server người dùng thêm (mcp__<server>__<tool>). */
+  mcpApproval?(conversationId: string, toolName: string, input: unknown): Promise<Decision>
   log: { warn(msg: string): void }
 }
 
@@ -70,6 +72,10 @@ export class CodeApprovals {
     if (!this.tokenOk(body.token)) return { allow: false, message: 'invalid_token' }
     const conversationId = typeof body.conversationId === 'string' ? body.conversationId : ''
     const toolName = typeof body.toolName === 'string' ? body.toolName : ''
+    // Tool của MCP server người dùng thêm → hộp thoại duyệt riêng (không phải diff sửa file).
+    if (toolName.startsWith('mcp__')) {
+      return this.deps.mcpApproval ? this.deps.mcpApproval(conversationId, toolName, body.input) : { allow: false, message: 'Không duyệt được tool này.' }
+    }
     const root = this.deps.writableRoot(conversationId)
     if (!root) return { allow: false, message: 'Chế độ sửa file đang tắt.' }
 

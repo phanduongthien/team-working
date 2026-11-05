@@ -1,0 +1,111 @@
+{
+  "title": "Kết nối agent",
+  "experimental": "Thử nghiệm",
+  "description": "Cho Claude Code, Claude Desktop và agent khác trên máy này dùng trợ lý của bạn như một công cụ (hỏi, giao việc, đọc kết quả), và cho trợ lý dùng MCP server khác. Chỉ trên máy này (127.0.0.1).",
+  "server": {
+    "heading": "Cho agent khác dùng trợ lý (MCP server)",
+    "help": "Agent khác KHÔNG kế thừa quyền của bạn: khi trả lời agent khác, trợ lý không có công cụ nào (không xem màn hình, không điều khiển máy, không đọc email/tin nhắn) và không dùng trí nhớ của bạn. Mỗi yêu cầu tốn hạn mức gói Claude của bạn.",
+    "enable": "Bật kết nối agent",
+    "enableHelp": "Mặc định tắt. Chỉ nghe trên 127.0.0.1; phím Ctrl+Alt+Q ngắt mọi kết nối ngay lập tức.",
+    "running": "Đang chạy: {{url}}",
+    "stopped": "Đang tắt",
+    "hotkey": "Ctrl+Alt+Q để ngắt",
+    "stopAll": "Ngắt tất cả"
+  },
+  "limits": {
+    "perHour": "Yêu cầu / giờ / agent",
+    "concurrency": "Việc chạy cùng lúc",
+    "help": "Chạm giới hạn: agent kia nhận lỗi kèm giờ gọi lại được, bạn thấy thông báo nhỏ trong app."
+  },
+  "clients": {
+    "heading": "Agent được cấp quyền",
+    "help": "Mỗi agent một token riêng (chỉ hiện một lần). Lần đầu agent kết nối, bạn phải bấm Cho phép. Thu hồi = xoá token.",
+    "name": "Tên agent",
+    "namePlaceholder": "Claude Code, Claude Desktop…",
+    "add": "Tạo token",
+    "empty": "Chưa có agent nào.",
+    "approved": "Đã cho phép",
+    "waiting": "Chưa kết nối lần đầu",
+    "lastSeen": "dùng lần cuối {{time}}",
+    "never": "chưa dùng",
+    "requests_one": "{{count}} yêu cầu",
+    "requests_other": "{{count}} yêu cầu",
+    "revoke": "Thu hồi quyền"
+  },
+  "token": {
+    "title": "Token cho {{name}}",
+    "once": "Token chỉ hiện MỘT lần này. App chỉ lưu bản băm — mất thì tạo token mới. Không chia sẻ token cho người khác.",
+    "token": "Token",
+    "claudeCode": "Claude Code — chạy lệnh này trong terminal",
+    "claudeDesktop": "Claude Desktop — thêm vào claude_desktop_config.json (Settings → Developer → Edit Config)",
+    "next": "Lần đầu agent kết nối, MMC studio sẽ hỏi bạn có cho phép không. Xem hướng dẫn đầy đủ trong docs/agents.md."
+  },
+  "history": {
+    "heading": "Lịch sử trao đổi",
+    "help": "Mọi yêu cầu từ agent khác và câu trả lời của trợ lý (bấm để xem chi tiết).",
+    "empty": "Chưa có trao đổi nào.",
+    "request": "Yêu cầu",
+    "response": "Trả lời",
+    "status": {
+      "queued": "đang chờ",
+      "running": "đang chạy",
+      "done": "xong",
+      "error": "lỗi",
+      "rejected": "bị từ chối"
+    },
+    "errors": {
+      "rate_limited": "Chạm giới hạn yêu cầu/giờ.",
+      "stopped": "Đã bị ngắt (Ctrl+Alt+Q hoặc Ngắt tất cả).",
+      "interrupted": "App bị đóng khi đang chạy.",
+      "queue_full": "Quá nhiều việc đang chờ."
+    }
+  },
+  "pairing": {
+    "title": "Agent mới muốn kết nối",
+    "body": "\"{{name}}\" muốn dùng trợ lý của bạn.",
+    "hint": "Chỉ cho phép nếu bạn vừa tự cấu hình agent này. Agent sẽ hỏi và giao việc cho trợ lý (không có quyền xem màn hình, điều khiển máy hay đọc dữ liệu của bạn). Thu hồi được bất cứ lúc nào.",
+    "allow": "Cho phép",
+    "deny": "Từ chối và xoá token"
+  },
+  "mcpApproval": {
+    "title": "Trợ lý muốn dùng một công cụ",
+    "body": "Gọi \"{{tool}}\" của MCP server \"{{server}}\" với tham số:",
+    "hint": "\"Luôn cho phép\" chỉ áp dụng cho đúng công cụ này, thu hồi được trong trang Kết nối agent.",
+    "once": "Cho phép lần này",
+    "always": "Luôn cho phép công cụ này",
+    "deny": "Từ chối"
+  },
+  "notice": {
+    "rateLimited": "Agent \"{{name}}\" chạm giới hạn lúc {{time}} — bị chặn khoảng {{minutes}} phút.",
+    "queueFull": "Agent \"{{name}}\" gửi quá nhiều việc lúc {{time}} — bị từ chối.",
+    "stopped": "Đã ngắt mọi kết nối agent lúc {{time}}.",
+    "close": "Đóng"
+  },
+  "mcp": {
+    "heading": "Trợ lý dùng MCP server khác",
+    "help": "Thêm MCP server (Notion, GitHub, hệ thống file…) để trợ lý dùng khi trò chuyện. Mỗi lần gọi công cụ, bạn phải duyệt (trừ công cụ đã bấm \"luôn cho phép\").",
+    "add": "Thêm server",
+    "empty": "Chưa có MCP server nào.",
+    "name": "Tên (chữ thường, số, - _)",
+    "type": "Loại",
+    "types": { "stdio": "Chạy lệnh (stdio)", "http": "URL (HTTP)" },
+    "command": "Lệnh",
+    "args": "Tham số (mỗi dòng một tham số)",
+    "env": "Biến môi trường bí mật (KEY=VALUE, mỗi dòng một cặp)",
+    "headers": "Header bí mật (Tên: giá trị, mỗi dòng một cặp)",
+    "secretsHelp": "Giá trị bí mật được mã hoá bằng Windows (DPAPI), không hiện lại sau khi lưu.",
+    "secretKeys": "bí mật: {{keys}}",
+    "alwaysAllowed": "Luôn cho phép:",
+    "revokeTool": "Thu hồi {{tool}}",
+    "remove": "Xoá",
+    "errors": {
+      "reserved_name": "Tên này app dùng riêng — chọn tên khác.",
+      "duplicate_name": "Đã có server trùng tên.",
+      "secure_storage_unavailable": "Máy không hỗ trợ mã hoá an toàn — không lưu được giá trị bí mật."
+    }
+  },
+  "errors": {
+    "hotkey_unavailable": "Không đăng ký được phím dừng khẩn cấp Ctrl+Alt+Q (có thể app khác đang dùng). Chỉ bật được khi phím dừng hoạt động.",
+    "port_in_use": "Cổng {{port}} đang bị chương trình khác dùng."
+  }
+}

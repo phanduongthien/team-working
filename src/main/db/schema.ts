@@ -101,3 +101,22 @@ export const memorySuggestions = sqliteTable(
   },
   (t) => [index('memory_suggestions_status_idx').on(t.status, t.createdAt)]
 )
+
+/** Lịch sử trao đổi với agent khác (Claude Code, Claude Desktop…) qua MCP server của app. */
+export const agentExchanges = sqliteTable(
+  'agent_exchanges',
+  {
+    id: text('id').primaryKey(),
+    clientId: text('client_id').notNull(),
+    clientName: text('client_name').notNull(),
+    tool: text('tool').notNull(),
+    /** Yêu cầu của agent (đã cắt ngắn). */
+    input: text('input').notNull().default(''),
+    output: text('output'),
+    status: text('status').$type<'queued' | 'running' | 'done' | 'error' | 'rejected'>().notNull(),
+    error: text('error'),
+    createdAt: integer('created_at').notNull().default(now),
+    finishedAt: integer('finished_at')
+  },
+  (t) => [index('agent_exchanges_created_idx').on(t.createdAt), index('agent_exchanges_client_idx').on(t.clientId)]
+)

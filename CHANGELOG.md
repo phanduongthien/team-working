@@ -5,6 +5,15 @@
 ## [Unreleased]
 
 ### Thêm mới
+- **Kết nối agent** (thử nghiệm, mặc định tắt): Claude Code, Claude Desktop và agent khác trên máy dùng được trợ lý qua MCP — `ask_mizuki`, `submit_task`, `get_task`, `list_tasks`. Chỉ nghe 127.0.0.1; mỗi agent một token (chỉ hiện một lần); lần đầu kết nối phải bấm Cho phép; danh sách agent đã cho phép có nút thu hồi; lịch sử trao đổi. Hướng dẫn thêm vào Claude Code / Claude Desktop: `docs/agents.md`.
+- Agent khác **không kế thừa quyền của bạn**: khi trả lời agent khác, trợ lý không có công cụ nào và không dùng trí nhớ của bạn; nội dung agent gửi chỉ là dữ liệu.
+- Giới hạn mặc định 20 yêu cầu/giờ/agent và 1 việc cùng lúc (chỉnh được); chạm giới hạn thì agent nhận lỗi kèm giờ gọi lại và app hiện thông báo nhỏ.
+- **Trợ lý dùng MCP server khác** (Notion, GitHub…): thêm/xoá/bật/tắt trong trang Kết nối agent, giá trị bí mật mã hoá; mỗi lần gọi công cụ phải duyệt, có "luôn cho phép công cụ này" (thu hồi được).
+
+### Thay đổi
+- Ctrl+Alt+Q là phím dừng khẩn cấp dùng chung: ngắt cả điều khiển máy tính lẫn kết nối agent.
+
+### Thêm mới
 - **Dán ảnh trực tiếp vào khung chat (Ctrl+V)**: ảnh chụp bằng Win+Shift+S / Snipping Tool / Print Screen, ảnh copy từ trình duyệt hoặc Photoshop, và file copy từ File Explorer (nhiều file một lần). Dán chữ vẫn như cũ.
 - **Kéo thả** ảnh và file vào bất kỳ đâu trong khung chat.
 - Ảnh hiện thành thumbnail phía trên ô nhập (có nút X để bỏ, bấm để xem to) và trong lịch sử chat. Gửi được chỉ ảnh, hoặc ảnh kèm chữ; tối đa 10 file mỗi tin (trước là 5).

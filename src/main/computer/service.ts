@@ -19,6 +19,8 @@ export type ComputerUseDeps = {
   getSettings(): ComputerUseSettings
   setSettings(s: ComputerUseSettings): void
   shortcuts: ShortcutPort
+  /** Phím dừng dùng chung (app thật); bỏ trống thì service tự tạo từ `shortcuts`. */
+  killSwitch?: KillSwitch
   capture: CapturePort
   actions: ActionLog
   /** Dừng mọi lượt chat đang chạy (kill cả cây tiến trình CLI + MCP). */
@@ -43,6 +45,8 @@ export type SidecarPort = {
 }
 
 export class ComputerUseError extends Error {}
+
+const HOLDER = 'computer'
 
 export const SCREEN_TOOLS = ['list_displays', 'screenshot'] as const
 export const LOG_TOOLS = ['list_app_logs', 'read_app_log'] as const
@@ -90,8 +94,10 @@ export class ComputerUseService {
   private lastStop: ComputerStatus['lastStop'] = null
 
   constructor(private readonly deps: ComputerUseDeps) {
-    this.killSwitch = new KillSwitch(deps.shortcuts, (source) => this.emergencyStop(source))
-    if (deps.getSettings().enabled && !this.killSwitch.arm()) {
+    // Phím dừng dùng chung cả app (cùng tính năng kết nối agent); test có thể không truyền → tự tạo.
+    this.killSwitch = deps.killSwitch ?? new KillSwitch(deps.shortcuts)
+    this.killSwitch.onStop((source) => this.emergencyStop(source))
+    if (deps.getSettings().enabled && !this.killSwitch.arm(HOLDER)) {
       deps.log.warn(`Không đăng ký được phím dừng khẩn cấp ${EMERGENCY_HOTKEY} — điều khiển máy tính tạm không chạy`)
     }
   }
@@ -102,7 +108,7 @@ export class ComputerUseService {
       enabled: s.enabled,
       warningAccepted: s.warningAcceptedAt !== null,
       hotkey: EMERGENCY_HOTKEY,
-      armed: s.enabled && this.killSwitch.armed,
+      armed: s.enabled && this.killSwitch.isHeldBy(HOLDER),
       screenAccess: this.screenAccess,
       mode: 'view',
       lastStop: this.lastStop
@@ -113,14 +119,14 @@ export class ComputerUseService {
     const s = this.deps.getSettings()
     if (!enabled) {
       this.screenAccess = false
-      this.killSwitch.disarm()
+      this.killSwitch.disarm(HOLDER)
       this.deps.setSettings({ ...s, enabled: false })
       return this.changed()
     }
     // Lần đầu bật phải qua hộp thoại cảnh báo.
     if (s.warningAcceptedAt === null && !acceptWarning) throw new ComputerUseError('warning_required')
     // Phanh phải có trước: không đăng ký được phím dừng khẩn cấp thì không bật.
-    if (!this.killSwitch.arm()) throw new ComputerUseError('hotkey_unavailable')
+    if (!this.killSwitch.arm(HOLDER)) throw new ComputerUseError('hotkey_unavailable')
     this.deps.setSettings({ enabled: true, warningAcceptedAt: s.warningAcceptedAt ?? this.now() })
     return this.changed()
   }
@@ -329,7 +335,7 @@ export class ComputerUseService {
   }
 
   private ready(): boolean {
-    return this.deps.getSettings().enabled && this.killSwitch.armed
+    return this.deps.getSettings().enabled && this.killSwitch.isHeldBy(HOLDER)
   }
 
   private screenToolsAvailable(): boolean {

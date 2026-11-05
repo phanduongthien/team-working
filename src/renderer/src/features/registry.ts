@@ -1,3 +1,4 @@
+import { agentsFeature } from './agents'
 import { chatFeature } from './chat'
 import { claudeCheckFeature } from './claude-check'
 import { computerFeature } from './computer'
@@ -32,5 +33,6 @@ export const features: FeatureDefinition[] = [
   ideasFeature,
   claudeCheckFeature,
   computerFeature,
+  agentsFeature,
   settingsFeature
 ]

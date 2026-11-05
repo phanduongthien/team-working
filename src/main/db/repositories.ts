@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto'
 import { and, asc, desc, eq, gt, inArray, or, sql } from 'drizzle-orm'
 import type { z } from 'zod'
 import type { ChatMode, ChatUsage } from '@shared/ai'
+import type { AgentExchange } from '@shared/agents'
 import type { MemoryAction, MemoryCategory } from '@shared/schemas'
 import type {
   Conversation,
@@ -15,7 +16,7 @@ import type {
   ToolEvent
 } from '@shared/types'
 import type { AppDatabase } from './client'
-import { conversations, memories, memorySuggestions, messages, settings } from './schema'
+import { agentExchanges, conversations, memories, memorySuggestions, messages, settings } from './schema'
 
 type ConversationRow = typeof conversations.$inferSelect
 type MessageRow = typeof messages.$inferSelect
@@ -426,5 +427,42 @@ export class SettingsRepository {
       .onConflictDoUpdate({ target: settings.key, set: { value, updatedAt: Date.now() } })
       .run()
     return value
+  }
+}
+
+/** Lịch sử trao đổi với agent khác (Kết nối agent). */
+export class AgentExchangeRepository {
+  constructor(private readonly db: AppDatabase) {}
+
+  insert(e: AgentExchange): void {
+    this.db.insert(agentExchanges).values(e).run()
+  }
+
+  update(id: string, patch: Partial<AgentExchange>): void {
+    const { id: _id, ...rest } = patch
+    if (Object.keys(rest).length) this.db.update(agentExchanges).set(rest).where(eq(agentExchanges.id, id)).run()
+  }
+
+  get(id: string): AgentExchange | null {
+    return (this.db.select().from(agentExchanges).where(eq(agentExchanges.id, id)).get() as AgentExchange | undefined) ?? null
+  }
+
+  list(limit: number, clientId?: string): AgentExchange[] {
+    return this.db
+      .select()
+      .from(agentExchanges)
+      .where(clientId ? eq(agentExchanges.clientId, clientId) : undefined)
+      .orderBy(desc(agentExchanges.createdAt), desc(sql`rowid`))
+      .limit(limit)
+      .all() as AgentExchange[]
+  }
+
+  /** Lỡ thoát app giữa chừng → việc đang chờ/chạy coi như lỗi. */
+  markInterrupted(): number {
+    return this.db
+      .update(agentExchanges)
+      .set({ status: 'error', error: 'interrupted' })
+      .where(inArray(agentExchanges.status, ['queued', 'running']))
+      .run().changes
   }
 }

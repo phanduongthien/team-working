@@ -470,3 +470,42 @@ export const DEFAULT_APPEARANCE: Appearance = {
   theme: 'system',
   accent: 'blue'
 }
+
+// ---- Kết nối agent / MCP ----
+
+/** Tên server dùng trong tên tool mcp__<server>__<tool> → không được chứa "__". */
+const mcpServerName = z
+  .string()
+  .regex(/^[a-z0-9][a-z0-9_-]{0,31}$/, 'invalid_name')
+  .refine((n) => !n.includes('__'), 'invalid_name')
+
+const keyValues = z.record(z.string().regex(/^[A-Za-z_][A-Za-z0-9_-]{0,63}$/), z.string().max(4000))
+
+/** MCP server người dùng thêm (Mizuki dùng như tool). Giá trị bí mật trống = giữ giá trị đã lưu. */
+export const mcpServerInputSchema = z.discriminatedUnion('type', [
+  z.object({
+    id: z.uuid().optional(),
+    name: mcpServerName,
+    type: z.literal('stdio'),
+    command: z.string().trim().min(1).max(500),
+    args: z.array(z.string().max(1000)).max(50),
+    env: keyValues,
+    headers: z.object({}).default({}),
+    enabled: z.boolean()
+  }),
+  z.object({
+    id: z.uuid().optional(),
+    name: mcpServerName,
+    type: z.literal('http'),
+    url: z.url({ protocol: /^https?$/ }),
+    env: z.object({}).default({}),
+    headers: keyValues,
+    enabled: z.boolean()
+  })
+])
+export type McpServerInput = z.input<typeof mcpServerInputSchema>
+
+export const agentLimitsSchema = z.object({ perHour: z.number().int().min(1).max(500), concurrency: z.number().int().min(1).max(4) })
+export const agentClientNameSchema = z.string().trim().min(1).max(60)
+export const agentPairingSchema = z.object({ clientId: z.uuid(), allow: z.boolean() })
+export const mcpApprovalResponseSchema = z.object({ id: z.uuid(), decision: z.enum(['once', 'always', 'deny']) })

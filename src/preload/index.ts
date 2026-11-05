@@ -2,6 +2,7 @@ import { contextBridge, ipcRenderer, type IpcRendererEvent } from 'electron'
 import { IPC } from '@shared/ipc'
 import type { ComputerStatus } from '@shared/computer'
 import type { SidecarState } from '@shared/sidecar'
+import type { AgentNotice, AgentServerStatus, McpApprovalRequest } from '@shared/agents'
 import type { ChatStreamPayload, CodeApprovalRequest, MemoryEventPayload, TeamWorkingApi } from '@shared/types'
 import type { UpdateState } from '@shared/update'
 
@@ -85,6 +86,27 @@ const api: TeamWorkingApi = {
     emergencyStop: () => ipcRenderer.invoke(IPC.computerEmergencyStop),
     preview: (display) => ipcRenderer.invoke(IPC.computerPreview, { display }),
     openLogs: () => ipcRenderer.invoke(IPC.computerOpenLogs)
+  },
+  agents: {
+    status: () => ipcRenderer.invoke(IPC.agentsStatus),
+    onStatus: (listener) => subscribe<AgentServerStatus>(IPC.agentsStatusEvent, listener),
+    onNotice: (listener) => subscribe<AgentNotice>(IPC.agentsNoticeEvent, listener),
+    setEnabled: (on) => ipcRenderer.invoke(IPC.agentsSetEnabled, on),
+    setLimits: (limits) => ipcRenderer.invoke(IPC.agentsSetLimits, limits),
+    createClient: (name) => ipcRenderer.invoke(IPC.agentsCreateClient, name),
+    revoke: (id) => ipcRenderer.invoke(IPC.agentsRevoke, id),
+    respondPairing: (clientId, allow) => ipcRenderer.invoke(IPC.agentsRespondPairing, { clientId, allow }),
+    stopAll: () => ipcRenderer.invoke(IPC.agentsStopAll),
+    exchanges: () => ipcRenderer.invoke(IPC.agentsExchanges)
+  },
+  mcp: {
+    list: () => ipcRenderer.invoke(IPC.mcpList),
+    save: (input) => ipcRenderer.invoke(IPC.mcpSave, input),
+    remove: (id) => ipcRenderer.invoke(IPC.mcpRemove, id),
+    setEnabled: (id, enabled) => ipcRenderer.invoke(IPC.mcpSetEnabled, { id, enabled }),
+    revokeAlways: (id, tool) => ipcRenderer.invoke(IPC.mcpRevokeAlways, { id, tool }),
+    onApproval: (listener) => subscribe<McpApprovalRequest>(IPC.mcpApprovalEvent, listener),
+    respond: (id, decision) => ipcRenderer.invoke(IPC.mcpRespond, { id, decision })
   },
   sidecar: {
     state: () => ipcRenderer.invoke(IPC.sidecarState),

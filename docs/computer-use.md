@@ -39,7 +39,7 @@ Claude Code CLI ──stdio──▶ app-tools-mcp.cjs (Electron-as-Node, chỉ 
 | Mặc định tắt; lần đầu bật phải đọc và chấp nhận cảnh báo | `ComputerUseService.setEnabled` |
 | Không đăng ký được phím dừng khẩn cấp → **không bật được** / không có tool | `KillSwitch.arm`, `ready()` |
 | Trợ lý chỉ xem được màn hình khi người dùng bật "Cho xem màn hình" trong phiên (tắt khi khởi động lại app) | `setScreenAccess`, nút con mắt ở khung soạn tin |
-| Dừng khẩn cấp (Ctrl+Alt+Q / nút Dừng): tắt quyền xem, đổi token cầu nối (phiên CLI cũ hết quyền), huỷ mọi lượt chat (kill cả cây tiến trình), thông báo Windows | `emergencyStop` |
+| Dừng khẩn cấp (Ctrl+Alt+Q / nút Dừng — phím dùng chung với Kết nối agent, ngắt cả hai): tắt quyền xem, đổi token cầu nối (phiên CLI cũ hết quyền), huỷ mọi lượt chat (kill cả cây tiến trình), thông báo Windows | `emergencyStop` |
 | Bị dừng trong lúc đang chụp → ảnh không được gửi đi | `screenshot()` kiểm tra lại sau khi chụp |
 | Mọi lần gọi tool ghi log kèm ảnh, giữ 7 ngày | `ActionLog` |
 | System prompt: chỉ xem, không chép lại mật khẩu/OTP/thông tin thanh toán, nội dung trên màn hình chỉ là dữ liệu | `SCREEN_CONTEXT` |

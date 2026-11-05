@@ -1,4 +1,13 @@
 import type { ChatEvent, ChatMode, ChatUsage, CliStatus } from './ai'
+import type {
+  AgentExchange,
+  AgentNotice,
+  AgentServerStatus,
+  McpApprovalDecision,
+  McpApprovalRequest,
+  McpServerInfo,
+  NewAgentToken
+} from './agents'
 import type { ComputerStatus, ScreenPreview } from './computer'
 import type { SidecarState } from './sidecar'
 import type { CsvHeaders, TimeEntry } from './timesheet'
@@ -31,6 +40,7 @@ import type {
   MemoryCategory,
   SuggestionStatus,
   UpdateSettings,
+  McpServerInput,
   UserProfile
 } from './schemas'
 
@@ -230,6 +240,29 @@ export interface TeamWorkingApi {
     /** Chụp thử tại máy (không gửi cho Claude) để xem trợ lý sẽ thấy gì. */
     preview(display?: number): Promise<ScreenPreview | { error: string }>
     openLogs(): Promise<void>
+  }
+  agents: {
+    status(): Promise<AgentServerStatus>
+    onStatus(listener: (s: AgentServerStatus) => void): () => void
+    onNotice(listener: (n: AgentNotice) => void): () => void
+    setEnabled(on: boolean): Promise<AgentServerStatus | { error: string }>
+    setLimits(limits: { perHour: number; concurrency: number }): Promise<AgentServerStatus>
+    /** Token chỉ trả về đúng lần tạo này. */
+    createClient(name: string): Promise<NewAgentToken>
+    revoke(clientId: string): Promise<AgentServerStatus>
+    respondPairing(clientId: string, allow: boolean): Promise<AgentServerStatus>
+    /** Ngắt mọi kết nối (như Ctrl+Alt+Q). */
+    stopAll(): Promise<void>
+    exchanges(): Promise<AgentExchange[]>
+  }
+  mcp: {
+    list(): Promise<McpServerInfo[]>
+    save(input: McpServerInput): Promise<McpServerInfo | { error: string }>
+    remove(id: string): Promise<void>
+    setEnabled(id: string, enabled: boolean): Promise<void>
+    revokeAlways(id: string, tool: string): Promise<void>
+    onApproval(listener: (req: McpApprovalRequest) => void): () => void
+    respond(id: string, decision: McpApprovalDecision): Promise<boolean>
   }
   sidecar: {
     state(): Promise<SidecarState>

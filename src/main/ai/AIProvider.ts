@@ -23,6 +23,8 @@ export type ChatRequest = {
   approval?: { conversationId: string }
   /** Tool của app (MCP `mmc`) cho lượt này, vd chụp màn hình. Chỉ CLI hỗ trợ; API bỏ qua. */
   appTools?: { conversationId: string; names: string[] }
+  /** Cho dùng MCP server người dùng thêm (chỉ lượt chat tương tác; tác vụ nền / agent khác thì không). */
+  externalMcp?: { conversationId: string }
   /** Lượt gọi một lần (vd trích memory) — không lưu session. */
   ephemeral?: boolean
 }

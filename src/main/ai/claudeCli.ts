@@ -98,13 +98,14 @@ type McpScript = { script: string; url: string; token: string; conversationId: s
  * Cấu hình MCP: các server là script của app chạy bằng chính Electron (ELECTRON_RUN_AS_NODE),
  * gọi về app qua HTTP 127.0.0.1 + token. `twperm` = duyệt sửa file; `mmc` = tool của app.
  */
-export function mcpConfig(opts: { electronPath: string; permission?: McpScript; appTools?: McpScript }): string {
+export function mcpConfig(opts: { electronPath: string; permission?: McpScript; appTools?: McpScript; extra?: Record<string, object> }): string {
   const server = (s: McpScript, env: Record<string, string>): object => ({
     command: opts.electronPath,
     args: [s.script],
     env: { ELECTRON_RUN_AS_NODE: '1', ...env }
   })
-  const mcpServers: Record<string, object> = {}
+  // Server người dùng thêm trước; server của app ghi sau nên không bị đè (tên mmc/twperm cũng bị cấm khi thêm).
+  const mcpServers: Record<string, object> = { ...(opts.extra ?? {}) }
   if (opts.permission) {
     const p = opts.permission
     mcpServers.twperm = server(p, { TW_PERM_URL: p.url, TW_PERM_TOKEN: p.token, TW_CONVERSATION: p.conversationId })

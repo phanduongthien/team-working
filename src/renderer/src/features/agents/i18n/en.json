@@ -1,0 +1,111 @@
+{
+  "title": "Agent connections",
+  "experimental": "Experimental",
+  "description": "Let Claude Code, Claude Desktop and other agents on this computer use your assistant as a tool (ask, assign tasks, read results), and let the assistant use other MCP servers. This computer only (127.0.0.1).",
+  "server": {
+    "heading": "Let other agents use the assistant (MCP server)",
+    "help": "Other agents do NOT inherit your permissions: when answering another agent the assistant has no tools (no screen viewing, no computer control, no email/messages) and does not use your memories. Each request counts toward your Claude plan.",
+    "enable": "Enable agent connections",
+    "enableHelp": "Off by default. Listens on 127.0.0.1 only; Ctrl+Alt+Q disconnects everything immediately.",
+    "running": "Running: {{url}}",
+    "stopped": "Off",
+    "hotkey": "Ctrl+Alt+Q to disconnect",
+    "stopAll": "Disconnect all"
+  },
+  "limits": {
+    "perHour": "Requests / hour / agent",
+    "concurrency": "Concurrent tasks",
+    "help": "When the limit is hit, the agent gets an error with the time it can retry, and you see a small notice in the app."
+  },
+  "clients": {
+    "heading": "Authorized agents",
+    "help": "Each agent gets its own token (shown once). The first time an agent connects you must click Allow. Revoke = delete the token.",
+    "name": "Agent name",
+    "namePlaceholder": "Claude Code, Claude Desktop…",
+    "add": "Create token",
+    "empty": "No agents yet.",
+    "approved": "Allowed",
+    "waiting": "Not connected yet",
+    "lastSeen": "last used {{time}}",
+    "never": "never used",
+    "requests_one": "{{count}} request",
+    "requests_other": "{{count}} requests",
+    "revoke": "Revoke access"
+  },
+  "token": {
+    "title": "Token for {{name}}",
+    "once": "This token is shown ONCE. The app only stores a hash — if you lose it, create a new one. Do not share it.",
+    "token": "Token",
+    "claudeCode": "Claude Code — run this in a terminal",
+    "claudeDesktop": "Claude Desktop — add to claude_desktop_config.json (Settings → Developer → Edit Config)",
+    "next": "The first time the agent connects, MMC studio will ask whether to allow it. Full guide: docs/agents.md."
+  },
+  "history": {
+    "heading": "Exchange history",
+    "help": "Every request from other agents and the assistant's reply (click for details).",
+    "empty": "No exchanges yet.",
+    "request": "Request",
+    "response": "Reply",
+    "status": {
+      "queued": "queued",
+      "running": "running",
+      "done": "done",
+      "error": "error",
+      "rejected": "rejected"
+    },
+    "errors": {
+      "rate_limited": "Hourly request limit reached.",
+      "stopped": "Disconnected (Ctrl+Alt+Q or Disconnect all).",
+      "interrupted": "The app was closed while running.",
+      "queue_full": "Too many tasks waiting."
+    }
+  },
+  "pairing": {
+    "title": "A new agent wants to connect",
+    "body": "\"{{name}}\" wants to use your assistant.",
+    "hint": "Only allow it if you just configured this agent yourself. It can ask questions and assign tasks (no screen, computer control or access to your data). You can revoke it at any time.",
+    "allow": "Allow",
+    "deny": "Deny and delete token"
+  },
+  "mcpApproval": {
+    "title": "The assistant wants to use a tool",
+    "body": "Call \"{{tool}}\" on MCP server \"{{server}}\" with arguments:",
+    "hint": "\"Always allow\" applies to this exact tool only and can be revoked on the Agent connections page.",
+    "once": "Allow once",
+    "always": "Always allow this tool",
+    "deny": "Deny"
+  },
+  "notice": {
+    "rateLimited": "Agent \"{{name}}\" hit the limit at {{time}} — blocked for about {{minutes}} minutes.",
+    "queueFull": "Agent \"{{name}}\" sent too many tasks at {{time}} — rejected.",
+    "stopped": "All agent connections were disconnected at {{time}}.",
+    "close": "Close"
+  },
+  "mcp": {
+    "heading": "Assistant uses other MCP servers",
+    "help": "Add MCP servers (Notion, GitHub, filesystem…) for the assistant to use in chat. Every tool call needs your approval (except tools marked \"always allow\").",
+    "add": "Add server",
+    "empty": "No MCP servers yet.",
+    "name": "Name (lowercase, digits, - _)",
+    "type": "Type",
+    "types": { "stdio": "Command (stdio)", "http": "URL (HTTP)" },
+    "command": "Command",
+    "args": "Arguments (one per line)",
+    "env": "Secret environment variables (KEY=VALUE, one per line)",
+    "headers": "Secret headers (Name: value, one per line)",
+    "secretsHelp": "Secret values are encrypted with Windows (DPAPI) and not shown again after saving.",
+    "secretKeys": "secrets: {{keys}}",
+    "alwaysAllowed": "Always allowed:",
+    "revokeTool": "Revoke {{tool}}",
+    "remove": "Remove",
+    "errors": {
+      "reserved_name": "This name is reserved by the app — pick another.",
+      "duplicate_name": "A server with this name already exists.",
+      "secure_storage_unavailable": "Secure storage is unavailable — secret values cannot be saved."
+    }
+  },
+  "errors": {
+    "hotkey_unavailable": "Could not register the emergency stop hotkey Ctrl+Alt+Q (another app may be using it). This can only be enabled when the stop hotkey works.",
+    "port_in_use": "Port {{port}} is used by another program."
+  }
+}
