@@ -1,6 +1,6 @@
 ---
 name: add-feature-module
-description: Cách thêm một tính năng mới vào Team Assistant theo kiến trúc module (UI, store, IPC, migration, test, đăng ký registry). Dùng khi người dùng hoặc thành viên team muốn thêm/phát triển tính năng mới.
+description: Cách thêm một tính năng mới vào MMC studio theo kiến trúc module (UI, store, IPC, migration, test, đăng ký registry). Dùng khi người dùng hoặc thành viên team muốn thêm/phát triển tính năng mới.
 ---
 
 # Thêm feature module

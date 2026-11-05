@@ -1,6 +1,6 @@
 ---
 name: release-update
-description: Quy trình phát hành phiên bản mới của Team Assistant lên GitHub Releases để app của các thành viên tự cập nhật (electron-builder + electron-updater + GitHub Actions). Dùng khi cần release, bump version, hoặc sửa pipeline CI/CD.
+description: Quy trình phát hành phiên bản mới của MMC studio lên GitHub Releases để app của các thành viên tự cập nhật (electron-builder + electron-updater + GitHub Actions). Dùng khi cần release, bump version, hoặc sửa pipeline CI/CD.
 ---
 
 # Release & auto-update

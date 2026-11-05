@@ -1,4 +1,4 @@
-# Thiết lập Supabase cho Team Working
+# Thiết lập Supabase cho MMC studio
 
 ## Môi trường dev / prod
 

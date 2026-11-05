@@ -4,6 +4,9 @@
 
 ## [Unreleased]
 
+### Thay đổi
+- Đổi tên app thành **MMC studio**. Bản cập nhật cài đè lên bản cũ như bình thường; lịch sử chat, trí nhớ, tài khoản đã lưu và phiên đăng nhập giữ nguyên (thư mục dữ liệu vẫn là `%APPDATA%\Team Working\`). Shortcut cũ được thay bằng shortcut tên mới — nếu đã ghim app lên taskbar, có thể cần ghim lại.
+
 ## [0.2.0] - 2026-11-05
 
 Thêm đổi team, rời team, nhường quyền Owner và đổi nhanh tài khoản GitHub. Chưa ký số: Windows SmartScreen có thể cảnh báo khi cài — chọn *More info → Run anyway*.

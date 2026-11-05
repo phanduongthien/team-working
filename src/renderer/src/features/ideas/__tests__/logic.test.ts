@@ -15,7 +15,7 @@ describe('ideas logic', () => {
 
   it('composeIssueBody thêm môi trường và log trong khối code', () => {
     const out = composeIssueBody('Steps', { version: '0.1.0', os: 'Windows 10.0 (x64)', logTail: 'line1\nline2' }, headings)
-    expect(out).toContain('### Environment\n- Team Working 0.1.0\n- Windows 10.0 (x64)')
+    expect(out).toContain('### Environment\n- MMC studio 0.1.0\n- Windows 10.0 (x64)')
     expect(out).toContain('### Recent log\n```\nline1\nline2\n```')
   })
 

@@ -1,6 +1,7 @@
 import { randomBytes, randomUUID, timingSafeEqual } from 'node:crypto'
 import { createServer, type Server } from 'node:http'
 import type { AddressInfo } from 'node:net'
+import { APP_NAME } from '@shared/appConfig'
 import type { CodeApprovalRequest } from '@shared/types'
 import { describeChange } from './change'
 
@@ -77,7 +78,7 @@ export class CodeApprovals {
       this.deps.log.warn(`Từ chối tự động ${toolName}: ${change.error}`)
       const reasons = {
         outside_project: 'Chỉ được sửa file trong thư mục dự án đã chọn.',
-        unsupported_tool: 'Tool này không được phép trong Team Working.',
+        unsupported_tool: `Tool này không được phép trong ${APP_NAME}.`,
         old_string_not_found: 'Không tìm thấy đoạn cần sửa trong file.',
         invalid_input: 'Yêu cầu sửa file không hợp lệ.'
       }

@@ -1,4 +1,4 @@
-# Team Working — hướng dẫn cho Claude Code
+# MMC studio — hướng dẫn cho Claude Code
 
 App desktop Windows (Electron + React + TypeScript) — trợ lý AI cho học tập, quản lý team, giao việc, feedback, hỗ trợ code & thời gian. AI chạy qua Claude Code CLI đã đăng nhập bằng subscription của từng người dùng.
 
@@ -19,7 +19,7 @@ App desktop Windows (Electron + React + TypeScript) — trợ lý AI cho học t
 - `src/shared/` — types, zod schemas, tên kênh IPC dùng chung main/renderer.
 - `supabase/migrations/` — schema dữ liệu team, **mọi bảng phải bật RLS**.
 - `assistant-skills/` — skill dành cho con trợ lý lúc chạy; app đọc `SKILL.md` theo chế độ hội thoại và chèn vào system prompt (đóng gói qua `extraResources`).
-- Dữ liệu người dùng: `%APPDATA%/Team Working/` (`team-working.db`, `logs/main.log`, `workspace/`).
+- Dữ liệu người dùng: `%APPDATA%/Team Working/` (`team-working.db`, `logs/main.log`, `workspace/`). Thư mục giữ tên cũ dù app đã đổi tên thành MMC studio (`LEGACY_USER_DATA_DIR` trong `src/shared/appConfig.ts`); đổi nó là người dùng mất dữ liệu. Tên hiển thị lấy từ `APP_NAME`.
 
 ## Quy tắc
 - Mọi IPC input validate bằng zod. Không bật `nodeIntegration`.

@@ -33,7 +33,7 @@ Renderer chỉ thấy `ChatEvent` qua IPC `chat:event` — không bao giờ th�
 - Parser `StreamJsonParser` (fixture thật trong `src/main/ai/__fixtures__/`): `system/init` → session; `stream_event` text_delta → text; `assistant` tool_use → tool (text của assistant chỉ dùng khi message đó không có delta); `result` → done/error (`errors[]`). Bỏ qua thinking, `rate_limit_event`, message subagent (`parent_tool_use_id` ≠ null), dòng hỏng.
 - CLI còn chạy một lúc sau `result`: `ChatService` chỉ phát done/error **sau khi tiến trình thoát** và đã nhả khóa hội thoại.
 - Session mất (`No conversation found`) → xóa `cli_session_id`, thử lại 1 lần kèm 12 tin gần nhất.
-- `cwd`: thường = `%APPDATA%/Team Working/workspace`; chế độ Code = thư mục dự án người dùng chọn.
+- `cwd`: thường = `<userData>/workspace` (`%APPDATA%/Team Working/workspace`, giữ tên thư mục cũ); chế độ Code = thư mục dự án người dùng chọn.
 - Quyền tool: chat thường → `--tools ""`. Code chỉ đọc → `Read,Grep,Glob`. Cho sửa file chỉ khi người dùng bật rõ ràng.
 - `isAvailable`/`checkClaudeCli`: `claude --version` + `claude auth status` (JSON; chỉ giữ `loggedIn`, `subscriptionType`). Không đọc, sao chép hay truyền đi file credential của Claude Code.
 - Kiểm tra lại format khi nâng cấp CLI: chạy thử, cập nhật fixture (xóa đường dẫn/thông tin cá nhân).

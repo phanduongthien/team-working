@@ -11,7 +11,7 @@
 7. Feedback có 2 loại: **công khai** (hiện người gửi) và **ẩn danh** (Member khác không thấy người gửi; **Manager/Owner vẫn thấy** để quản lý). Bỏ cột `teams.feedback_anonymity`.
 9. Feedback có thêm chế độ **công khai** (cả team thấy kèm tên); công khai về một người chỉ để khen (2026-10-29).
 10. Tên/avatar/tính cách trợ lý đi theo tài khoản GitHub qua bảng `user_settings` (chỉ chính chủ đọc) (2026-10-29).
-8. Tên app: **Team Working**. Chưa có code signing → ghi chú cảnh báo SmartScreen trong release.
+8. Tên app: **Team Working** (đổi thành **MMC studio** từ sau v0.2.0; giữ `appId` và thư mục dữ liệu cũ). Chưa có code signing → ghi chú cảnh báo SmartScreen trong release.
 
 ## 1. Môi trường (kiểm tra 2026-10-28)
 

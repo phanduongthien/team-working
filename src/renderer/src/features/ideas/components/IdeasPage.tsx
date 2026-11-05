@@ -2,6 +2,7 @@ import { Bug, Copy, ExternalLink, Lightbulb, LoaderCircle, PenLine, Sparkles } f
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useSearchParams } from 'react-router'
+import { APP_NAME } from '@shared/appConfig'
 import { newIssueUrl, parseGithubRepo } from '@shared/release'
 import { Button } from '@renderer/components/ui/button'
 import { Input, Label, Textarea } from '@renderer/components/ui/input'
@@ -148,7 +149,7 @@ export function IdeasPage() {
                 </label>
                 {attach && info && (
                   <pre className="max-h-48 overflow-auto rounded-md bg-muted p-3 text-xs whitespace-pre-wrap" data-testid="bug-info">
-                    {`Team Working ${info.version} · ${info.os}\n\n${info.logTail || t('draft.noLog')}`}
+                    {`${APP_NAME} ${info.version} · ${info.os}\n\n${info.logTail || t('draft.noLog')}`}
                   </pre>
                 )}
                 <p className="text-xs text-muted-foreground">{t('draft.privacy')}</p>

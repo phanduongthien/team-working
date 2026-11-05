@@ -1,4 +1,4 @@
-# Team Working
+# MMC studio
 
 Trợ lý AI trên máy tính (Windows) cho học tập, làm việc nhóm, giao việc, feedback và quản lý thời gian. Trợ lý chạy bằng **Claude Code trên tài khoản Claude của chính bạn**; dữ liệu team được đồng bộ qua máy chủ chung của nhóm.
 
@@ -39,7 +39,7 @@ irm https://claude.ai/install.ps1 | iex
 
 > Mỗi người dùng **tài khoản Claude của chính mình** — đừng chia sẻ hay mượn tài khoản. App không đọc, không lưu và không gửi thông tin đăng nhập Claude của bạn đi đâu; mức sử dụng AI tính vào gói của bạn. Hướng dẫn chính thức: <https://code.claude.com/docs/en/setup>.
 
-### 2. Tải và cài Team Working
+### 2. Tải và cài MMC studio
 
 1. Vào [**Releases → bản mới nhất**](https://github.com/phanduongthien/team-working/releases/latest), tải file `team-working-x.y.z-setup.exe` (trong mục *Assets*).
 2. Mở file vừa tải. Vì app **chưa được ký số**, Windows SmartScreen sẽ hiện *"Windows protected your PC"*: bấm **More info → Run anyway** (Thông tin thêm → Vẫn chạy).
@@ -59,7 +59,7 @@ Trưởng nhóm tạo team ở cùng màn hình (**Tạo team mới**), rồi t�
 
 - **Báo "Chưa cài Claude Code" / "Chưa đăng nhập"** dù đã cài: đóng hẳn app rồi mở lại, bấm **Kiểm tra lại**. Vẫn lỗi thì chạy `claude` trong PowerShell để chắc đã đăng nhập.
 - **Báo lỗi hoặc đề xuất tính năng**: trong app vào **Cài đặt → Gửi báo lỗi** (tự đính kèm phiên bản và log, đã che thông tin cá nhân), hoặc mở [issue mới](https://github.com/phanduongthien/team-working/issues/new/choose).
-- Dữ liệu trên máy nằm ở `%APPDATA%\Team Working\` (log ở thư mục `logs`).
+- Dữ liệu trên máy nằm ở `%APPDATA%\Team Working\` (log ở thư mục `logs`). Tên thư mục giữ từ khi app còn tên "Team Working" để không mất dữ liệu cũ.
 
 ## Đóng góp code
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { appEnvironment, parseSupabaseConfig } from '../appConfig'
+import { APP_NAME, LEGACY_USER_DATA_DIR, appEnvironment, parseSupabaseConfig } from '../appConfig'
 
 const jwt = (payload: object): string =>
   ['eyJhbGciOiJIUzI1NiJ9', Buffer.from(JSON.stringify(payload)).toString('base64url'), 'sig'].join('.')
@@ -37,5 +37,12 @@ describe('appEnvironment', () => {
     expect(appEnvironment('production', 'development')).toBe('development')
     expect(appEnvironment('development', 'production')).toBe('production')
     expect(appEnvironment('production', 'lạ')).toBe('production')
+  })
+})
+
+describe('LEGACY_USER_DATA_DIR', () => {
+  it('giữ thư mục dữ liệu cũ dù đổi tên app — đổi là người dùng hiện tại mất DB, secrets, phiên đăng nhập', () => {
+    expect(LEGACY_USER_DATA_DIR).toBe('Team Working')
+    expect(APP_NAME).toBe('MMC studio')
   })
 })

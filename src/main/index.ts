@@ -2,6 +2,7 @@ import { mkdirSync } from 'node:fs'
 import { join } from 'node:path'
 import { app, BrowserWindow, dialog, safeStorage, shell, type IpcMainInvokeEvent } from 'electron'
 import { is } from '@electron-toolkit/utils'
+import { APP_NAME, LEGACY_USER_DATA_DIR } from '@shared/appConfig'
 import { IPC } from '@shared/ipc'
 import {
   DEFAULT_AI_SETTINGS,
@@ -38,13 +39,19 @@ import { createLogger } from './services/logger'
 import { SavedAccountStore } from './services/savedAccounts'
 import { SecretStore } from './services/secrets'
 
+// Phải chạy trước mọi thứ dùng userData (single-instance lock, log, safeStorage, DB). Không module nào
+// được đọc app.getPath('userData') lúc import, vì import chạy trước dòng này.
+// Test e2e dùng thư mục dữ liệu riêng để không đụng dữ liệu thật của người dùng; còn lại giữ thư mục
+// cũ sau khi đổi productName (mặc định Electron sẽ chuyển sang %APPDATA%/<productName>).
+app.setPath(
+  'userData',
+  process.env.TEAM_WORKING_USER_DATA || join(app.getPath('appData'), LEGACY_USER_DATA_DIR)
+)
+
 /** Tài nguyên đóng gói (extraResources) khi đã build, thư mục nguồn khi dev. */
 function resourcePath(packaged: string, dev: string): string {
   return app.isPackaged ? join(process.resourcesPath, packaged) : join(app.getAppPath(), dev)
 }
-
-// Test e2e dùng thư mục dữ liệu riêng để không đụng dữ liệu thật của người dùng.
-if (process.env.TEAM_WORKING_USER_DATA) app.setPath('userData', process.env.TEAM_WORKING_USER_DATA)
 
 const log = createLogger(join(app.getPath('userData'), 'logs'))
 let mainWindow: BrowserWindow | null = null
@@ -60,7 +67,7 @@ function createWindow(): BrowserWindow {
     minHeight: 600,
     show: false,
     autoHideMenuBar: true,
-    title: 'Team Working',
+    title: APP_NAME,
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       contextIsolation: true,
@@ -230,7 +237,7 @@ async function bootstrap(): Promise<void> {
   })
 
   mainWindow = createWindow()
-  log.info(`Khởi động Team Working ${app.getVersion()}`)
+  log.info(`Khởi động ${APP_NAME} ${app.getVersion()}`)
 }
 
 if (!app.requestSingleInstanceLock()) {
@@ -247,7 +254,7 @@ if (!app.requestSingleInstanceLock()) {
     } catch (err) {
       const message = (err as Error).stack ?? String(err)
       log.error(`Khởi động thất bại: ${message}`)
-      dialog.showErrorBox('Team Working', `${(err as Error).message}\n\nLog: ${log.file}`)
+      dialog.showErrorBox(APP_NAME, `${(err as Error).message}\n\nLog: ${log.file}`)
       app.quit()
     }
   })

@@ -1,7 +1,7 @@
 {
   "title": "Claude Code",
   "heading": "Connect Claude Code",
-  "intro": "Team Working uses the Claude Code CLI installed on your computer, signed in with your own Claude (Pro/Max) account. The app never reads or stores your Claude credentials.",
+  "intro": "MMC studio uses the Claude Code CLI installed on your computer, signed in with your own Claude (Pro/Max) account. The app never reads or stores your Claude credentials.",
   "checking": "Checking…",
   "recheck": "Check again",
   "continue": "Go to chat",
@@ -20,7 +20,7 @@
   "install": {
     "step1": "Open PowerShell (no Administrator rights needed).",
     "step2": "Run the official installer:",
-    "step3": "Close and reopen Team Working, then click “Check again”."
+    "step3": "Close and reopen MMC studio, then click “Check again”."
   },
   "login": {
     "step1": "Open PowerShell or Terminal.",

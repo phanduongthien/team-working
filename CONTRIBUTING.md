@@ -1,4 +1,4 @@
-# Đóng góp cho Team Working
+# Đóng góp cho MMC studio
 
 Cảm ơn bạn muốn cùng làm app! Tài liệu này giúp bạn chạy dự án, thêm tính năng và gửi PR.
 
