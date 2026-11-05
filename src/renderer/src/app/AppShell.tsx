@@ -5,7 +5,7 @@ import { AccountSwitcher } from '@renderer/components/AccountSwitcher'
 import { AssistantAvatar } from '@renderer/components/AssistantAvatar'
 import { RecoveryCodeDialog, TeamSwitcher } from '@renderer/components/TeamSwitcher'
 import { ThemeToggle } from '@renderer/components/ThemeToggle'
-import { UpdateBanner } from '@renderer/components/UpdateBanner'
+import { CriticalUpdateBanner, UpdateDialog } from '@renderer/components/UpdateCenter'
 import { canSeeFeature } from '@renderer/features/access'
 import { useMyRole } from '@renderer/stores/team'
 import { appEnv, supabaseConfig } from '@renderer/lib/supabase'
@@ -41,7 +41,12 @@ function NavItem({ feature }: { feature: FeatureDefinition }) {
           {badge > 9 ? '9+' : badge}
         </span>
       )}
-      {dot && badge === 0 && <span className="absolute top-1 right-1 size-2 animate-pulse rounded-full bg-red-500" data-testid={`dot-${feature.id}`} />}
+      {dot && badge === 0 && (
+        <span
+          className="absolute top-1 right-1 size-2 animate-pulse rounded-full bg-red-500"
+          data-testid={`dot-${feature.id}`}
+        />
+      )}
     </NavLink>
   )
 }
@@ -54,37 +59,40 @@ export function AppShell({ features }: { features: FeatureDefinition[] }) {
   const bottom = visible.filter((f) => f.nav === 'bottom')
 
   return (
-    <div className="flex h-full">
-      <nav className="flex w-14 shrink-0 flex-col items-center gap-1 border-r bg-sidebar py-3">
-        <div title={assistant.name} className="mb-3">
-          <AssistantAvatar avatar={assistant.avatar} className="size-9" />
-        </div>
-        <TeamSwitcher />
-        {top.map((f) => (
-          <NavItem key={f.id} feature={f} />
-        ))}
-        <div className="flex-1" />
-        <ThemeToggle />
-        {bottom.map((f) => (
-          <NavItem key={f.id} feature={f} />
-        ))}
-        <AccountSwitcher />
-        {appEnv !== 'production' && (
-          <span
-            className="mt-1 rounded bg-orange-500/20 px-1 text-[10px] font-bold text-orange-700 dark:text-orange-300"
-            title={supabaseConfig?.url ?? ''}
-            data-testid="env-badge"
-          >
-            DEV
-          </span>
-        )}
-      </nav>
-      <main className="min-w-0 flex-1">
-        <Outlet />
-      </main>
-      {features.map((f) => (f.overlay ? <f.overlay key={f.id} /> : null))}
-      <RecoveryCodeDialog />
-      <UpdateBanner />
+    <div className="flex h-full flex-col">
+      <CriticalUpdateBanner />
+      <div className="flex min-h-0 flex-1">
+        <nav className="flex w-14 shrink-0 flex-col items-center gap-1 border-r bg-sidebar py-3">
+          <div title={assistant.name} className="mb-3">
+            <AssistantAvatar avatar={assistant.avatar} className="size-9" />
+          </div>
+          <TeamSwitcher />
+          {top.map((f) => (
+            <NavItem key={f.id} feature={f} />
+          ))}
+          <div className="flex-1" />
+          <ThemeToggle />
+          {bottom.map((f) => (
+            <NavItem key={f.id} feature={f} />
+          ))}
+          <AccountSwitcher />
+          {appEnv !== 'production' && (
+            <span
+              className="mt-1 rounded bg-orange-500/20 px-1 text-[10px] font-bold text-orange-700 dark:text-orange-300"
+              title={supabaseConfig?.url ?? ''}
+              data-testid="env-badge"
+            >
+              DEV
+            </span>
+          )}
+        </nav>
+        <main className="min-w-0 flex-1">
+          <Outlet />
+        </main>
+        {features.map((f) => (f.overlay ? <f.overlay key={f.id} /> : null))}
+        <RecoveryCodeDialog />
+        <UpdateDialog />
+      </div>
     </div>
   )
 }

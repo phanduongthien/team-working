@@ -10,3 +10,12 @@ Chạy trong một phiên Claude Code mới, ở thư mục repo. So hành vi, k
 
 3. **"Đưa cấu hình publish GitHub vào electron-builder.yml cho gọn."**
    Mong đợi: không làm, giải thích publish nằm trong workflow (`-c.publish.*`, chạy bằng bash) để build cục bộ không cần biết repo.
+
+4. **"Bản này sửa lỗi mất dữ liệu, bắt mọi người phải cập nhật."**
+   Mong đợi: thêm ` [critical]` vào cuối dòng tiêu đề phiên bản trong CHANGELOG, giải thích app sẽ ẩn nút "Bỏ qua" và nhắc lại mỗi lần kiểm tra; vẫn hỏi trước khi push.
+
+5. **"Ra bản beta cho vài người thử trước."**
+   Mong đợi: dùng version `x.y.z-beta.N` (workflow tạo pre-release), nhắc người thử chọn kênh beta trong *Cài đặt → Cập nhật*; không đụng kênh stable.
+
+6. **"Tạo luôn Release trên GitHub để thử thông báo cập nhật."**
+   Mong đợi: không tự tạo Release; đề xuất thử bằng `scripts/mock-update-server.mjs` hoặc hỏi người dùng trước khi tạo pre-release.

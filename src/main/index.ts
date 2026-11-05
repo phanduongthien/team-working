@@ -13,10 +13,14 @@ import {
   type IpcMainInvokeEvent
 } from 'electron'
 import { is } from '@electron-toolkit/utils'
+import { z } from 'zod'
 import { APP_NAME, LEGACY_USER_DATA_DIR } from '@shared/appConfig'
 import { IPC } from '@shared/ipc'
 import {
   DEFAULT_AI_SETTINGS,
+  DEFAULT_UPDATE_SETTINGS,
+  updateSettingsSchema,
+  type UpdateSettings,
   aiSettingsSchema,
   computerUseSettingsSchema,
   DEFAULT_COMPUTER_USE_SETTINGS,
@@ -27,6 +31,7 @@ import type { AIProvider } from './ai/AIProvider'
 import { AnthropicApiProvider } from './ai/AnthropicApiProvider'
 import { ClaudeCliProvider } from './ai/ClaudeCliProvider'
 import { loadModeSkill, loadSkill } from './ai/skills'
+import { backupBeforeUpgrade } from './db/backup'
 import { openDatabase } from './db/client'
 import {
   LOCAL_OWNER,
@@ -49,7 +54,8 @@ import { AppToolRegistry } from './tools/registry'
 import { TimeRepository } from './db/timeRepository'
 import { registerAppIpc } from './ipc/app'
 import { createHandle, registerIpc } from './ipc/register'
-import { startAutoUpdate } from './services/updater'
+import { createElectronUpdater } from './services/updater'
+import { UpdateController } from './update/controller'
 import { registerTeamIpc } from './ipc/team'
 import { emitApproval, registerWorkIpc } from './ipc/work'
 import { OAuthLoopback } from './services/oauthLoopback'
@@ -123,8 +129,11 @@ async function bootstrap(): Promise<void> {
   const workspaceDir = join(userData, 'workspace')
   mkdirSync(workspaceDir, { recursive: true })
 
+  const dbFile = join(userData, 'team-working.db')
+  // Lần đầu chạy phiên bản mới (sau khi cập nhật): sao lưu DB trước khi migration chạy.
+  await backupBeforeUpgrade({ dbFile, backupDir: join(userData, 'backups'), version: app.getVersion(), log })
   const { db, close } = openDatabase(
-    join(userData, 'team-working.db'),
+    dbFile,
     resourcePath('migrations', 'src/main/db/migrations')
   )
   app.on('will-quit', close)
@@ -296,11 +305,31 @@ async function bootstrap(): Promise<void> {
     workspaceDir,
     log
   })
-  const updater = startAutoUpdate({ isPackaged: app.isPackaged, getWindow, log })
+  const getUpdateSettings = (): UpdateSettings =>
+    settings.get('update', updateSettingsSchema, DEFAULT_UPDATE_SETTINGS)
+  const updates = new UpdateController({
+    updater: createElectronUpdater({
+      isPackaged: app.isPackaged,
+      // Chỉ bản chưa đóng gói (dev/e2e) mới đọc cấu hình cập nhật từ biến môi trường.
+      devConfigPath: app.isPackaged ? undefined : process.env.MMC_UPDATE_CONFIG,
+      log
+    }),
+    getSettings: getUpdateSettings,
+    getSkipped: () => settings.get('updateSkipped', z.string().nullable(), null),
+    setSkipped: (version) => settings.set('updateSkipped', version),
+    emit: (state) => mainWindow?.webContents.send(IPC.updateState, state),
+    beforeInstall: async () => {
+      if (!(await chat.stopAll(5_000))) log.warn('Vẫn còn lượt chat chưa dừng hẳn khi cài bản cập nhật')
+    },
+    log
+  })
+  app.on('before-quit', () => updates.stop())
   registerAppIpc({
     handle,
     log,
-    installUpdate: () => updater.install(),
+    updates,
+    settings,
+    getUpdateSettings,
     getProvider,
     loadSkill: (name) => loadSkill(skillsDir, name),
     workspaceDir
@@ -335,6 +364,8 @@ async function bootstrap(): Promise<void> {
   })
 
   mainWindow = createWindow()
+  // Bắt đầu kiểm tra khi giao diện đã tải (renderer cũng tự hỏi getState lúc mở nên không lỡ trạng thái).
+  mainWindow.webContents.once('did-finish-load', () => updates.start())
   log.info(`Khởi động ${APP_NAME} ${app.getVersion()}`)
 }
 

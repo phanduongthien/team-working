@@ -11,9 +11,25 @@
     "copied": "Đã chép"
   },
   "update": {
-    "ready": "Có bản mới {{version}} — khởi động lại để cập nhật.",
+    "version": "Phiên bản {{version}}",
+    "criticalTag": "Bắt buộc",
+    "criticalHint": "Đây là bản cập nhật bắt buộc (sửa lỗi quan trọng). Bạn có thể để sau, nhưng app sẽ nhắc lại ở lần kiểm tra kế tiếp.",
+    "noNotes": "Bản phát hành này không có ghi chú thay đổi.",
+    "availableTitle": "Có phiên bản mới",
+    "skip": "Bỏ qua phiên bản này",
+    "later": "Để sau",
+    "now": "Cập nhật ngay",
+    "downloadingTitle": "Đang tải bản {{version}}…",
+    "downloadingHint": "Bạn có thể đóng hộp thoại và tiếp tục làm việc — app sẽ tải ở chế độ nền.",
+    "readyTitle": "Đã tải xong bản {{version}}",
+    "readyHint": "Khởi động lại để cập nhật? Lịch sử chat và cài đặt được giữ nguyên; phản hồi đang chạy (nếu có) sẽ được dừng và lưu lại.",
+    "laterInstall": "Để sau (cài khi thoát app)",
     "restart": "Khởi động lại",
-    "later": "Để sau"
+    "errorTitle": "Không tải được bản cập nhật",
+    "errorHint": "Lỗi: {{message}}. Kiểm tra kết nối mạng rồi thử lại.",
+    "bannerAvailable": "Có bản cập nhật bắt buộc {{version}} — bấm để cập nhật ngay",
+    "bannerDownloading": "Đang tải bản cập nhật bắt buộc {{version}} ({{percent}}%)…",
+    "bannerReady": "Bản cập nhật bắt buộc {{version}} đã sẵn sàng — bấm để khởi động lại"
   },
   "errors": {
     "generic": "Có lỗi xảy ra: {{message}}",

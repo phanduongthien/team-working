@@ -60,6 +60,35 @@
     "autoSuggest": "Tự đề xuất ghi nhớ",
     "autoSuggestHelp": "Khi bạn rời một cuộc trò chuyện có từ 2 tin nhắn mới, trợ lý đề xuất điều nên nhớ (dùng thêm một lượt gọi AI). Bạn vẫn duyệt trước khi lưu."
   },
+  "update": {
+    "heading": "Cập nhật",
+    "description": "App tự tải bản mới từ GitHub Releases của team. Lịch sử chat và cài đặt luôn được giữ khi cập nhật.",
+    "current": "Đang dùng phiên bản {{version}}",
+    "checkNow": "Kiểm tra ngay",
+    "view": "Xem bản mới",
+    "autoCheck": "Tự động kiểm tra bản mới",
+    "autoCheckHelp": "Khi mở app và mỗi 2 giờ. Tắt thì chỉ kiểm tra khi bạn bấm \"Kiểm tra ngay\".",
+    "channel": "Kênh cập nhật",
+    "channels": {
+      "stable": {
+        "name": "Ổn định (stable)",
+        "description": "Chỉ nhận bản phát hành chính thức."
+      },
+      "beta": {
+        "name": "Thử nghiệm (beta)",
+        "description": "Nhận cả bản pre-release để dùng thử tính năng mới — có thể còn lỗi."
+      }
+    },
+    "status": {
+      "unsupported": "Bản này không hỗ trợ tự cập nhật (bản dev hoặc build cục bộ).",
+      "checking": "Đang kiểm tra…",
+      "none": "Bạn đang dùng phiên bản mới nhất.",
+      "available": "Có bản mới {{version}}.",
+      "downloading": "Đang tải bản {{version}} ({{percent}}%)…",
+      "downloaded": "Đã tải bản {{version}} — sẽ cài khi khởi động lại.",
+      "error": "Không kiểm tra được: {{message}}"
+    }
+  },
   "experimental": {
     "heading": "Tính năng thử nghiệm",
     "description": "Các tính năng mới, mặc định tắt. Chỉ bật khi bạn đã đọc kỹ hướng dẫn.",

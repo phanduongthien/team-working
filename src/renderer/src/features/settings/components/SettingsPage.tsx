@@ -17,6 +17,7 @@ import { cn } from '@renderer/lib/utils'
 import { usePreferences } from '@renderer/stores/preferences'
 import { PRESET_AVATARS, imageFileToAvatar } from '../avatar'
 import { AiSection } from './AiSection'
+import { UpdateSection } from './UpdateSection'
 
 function Section({ title, description, children }: { title: string; description?: string; children: ReactNode }) {
   return (
@@ -211,6 +212,9 @@ export function SettingsPage() {
         <AssistantSection />
         <Section title={t('claude.heading')} description={t('claude.description')}>
           <AiSection />
+        </Section>
+        <Section title={t('update.heading')} description={t('update.description')}>
+          <UpdateSection />
         </Section>
         <Section title={t('experimental.heading')} description={t('experimental.description')}>
           <Button variant="outline" asChild>
