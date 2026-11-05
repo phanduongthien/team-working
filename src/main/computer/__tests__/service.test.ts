@@ -96,8 +96,8 @@ describe('ComputerUseService — an toàn', () => {
     expect(t.hotkeyRegistered()).toBe(true)
     expect(t.registry.available(ctx)).toEqual([])
     t.service.setScreenAccess(true)
-    expect(t.registry.available(ctx)).toEqual(['list_displays', 'screenshot'])
-    expect(t.service.toolsFor()).toMatchObject({ names: ['list_displays', 'screenshot'], context: expect.stringContaining('CHỈ XEM') })
+    expect(t.registry.available(ctx)).toEqual(['list_displays', 'screenshot', 'list_app_logs', 'read_app_log'])
+    expect(t.service.toolsFor()).toMatchObject({ names: ['list_displays', 'screenshot', 'list_app_logs', 'read_app_log'], context: expect.stringContaining('CHỈ XEM') })
   })
 
   it('phím tắt khẩn cấp: tắt quyền xem, huỷ chat, vô hiệu phiên tool, báo renderer', async () => {

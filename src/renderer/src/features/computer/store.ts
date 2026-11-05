@@ -1,9 +1,11 @@
 import { create } from 'zustand'
 import type { ComputerStatus } from '@shared/computer'
+import type { SidecarState } from '@shared/sidecar'
 import { api } from '@renderer/lib/api'
 
 type ComputerStore = {
   status: ComputerStatus | null
+  sidecar: SidecarState | null
   error: string | null
   setEnabled(enabled: boolean, acceptWarning?: boolean): Promise<boolean>
   setScreenAccess(on: boolean): Promise<boolean>
@@ -15,6 +17,7 @@ const isError = (r: unknown): r is { error: string } => typeof r === 'object' &&
 
 export const useComputer = create<ComputerStore>((set) => ({
   status: null,
+  sidecar: null,
   error: null,
   async setEnabled(enabled, acceptWarning) {
     const r = await api.computer.setEnabled(enabled, acceptWarning)
@@ -42,10 +45,17 @@ export const useComputer = create<ComputerStore>((set) => ({
 
 /** Nghe trạng thái từ main (dừng khẩn cấp bằng phím tắt có thể xảy ra bất cứ lúc nào). */
 export function setupComputer(): () => void {
-  const stop = api.computer.onStatus((status) => useComputer.setState({ status }))
+  const stopStatus = api.computer.onStatus((status) => useComputer.setState({ status }))
+  const stopSidecar = api.sidecar.onState((sidecar) => useComputer.setState({ sidecar }))
   void api.computer.status().then((status) => useComputer.setState({ status }))
-  return stop
+  void api.sidecar.state().then((sidecar) => useComputer.setState({ sidecar }))
+  return () => {
+    stopStatus()
+    stopSidecar()
+  }
 }
+
+export const toMb = (bytes: number): string => (bytes / 1024 / 1024).toFixed(1)
 
 /** Ghép phím tắt để hiển thị: Control+Alt+Q → Ctrl + Alt + Q. */
 export function formatHotkey(accelerator: string): string {

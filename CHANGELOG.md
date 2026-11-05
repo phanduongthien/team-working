@@ -12,6 +12,8 @@
 - **Điều khiển máy tính — chế độ chỉ xem** (thử nghiệm, mặc định tắt): bật ở *Cài đặt → Tính năng thử nghiệm*, lần đầu phải đọc cảnh báo. Bấm biểu tượng con mắt ở khung soạn tin để cho trợ lý xem màn hình trong phiên này — trợ lý chụp màn hình (chọn màn hình, phóng to một vùng) rồi hướng dẫn bạn, không tự click hay gõ phím.
 - Phím dừng khẩn cấp **Ctrl+Alt+Q** (dùng được cả khi đang ở app khác) và nút *Dừng*: tắt quyền xem màn hình và dừng ngay mọi phản hồi đang chạy. Không đăng ký được phím này thì tính năng không bật.
 - Nhật ký mọi lần chụp kèm ảnh trong `%APPDATA%\Team Working\logs\computer-use\` (giữ 7 ngày); nút *Chụp thử* để xem trợ lý sẽ thấy gì mà không gửi đi.
+- Trợ lý đọc được **log Unity** (Editor.log, phiên trước, Package Manager, crash) và **crash Blender** khi được cho xem màn hình — chẩn đoán lỗi chính xác hơn đọc ảnh.
+- **Đọc cửa sổ & cây giao diện** (tuỳ chọn): bấm *Tải và cài* Python sidecar (~50 MB tải, ~110 MB ổ đĩa, có thanh tiến trình và nút Huỷ) để trợ lý liệt kê cửa sổ đang mở và đọc tên nút/ô nhập/thông báo lỗi. Không bao giờ đọc ô mật khẩu. Gỡ sạch bằng nút *Gỡ Python sidecar*.
 
 ### Thay đổi
 - App không còn tự tải bản cập nhật khi chưa được đồng ý; kiểm tra mỗi 2 giờ thay vì 6 giờ. Trước khi khởi động lại để cài, app dừng và lưu các phản hồi đang chạy.

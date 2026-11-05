@@ -1,5 +1,6 @@
 import type { ChatEvent, ChatMode, ChatUsage, CliStatus } from './ai'
 import type { ComputerStatus, ScreenPreview } from './computer'
+import type { SidecarState } from './sidecar'
 import type { CsvHeaders, TimeEntry } from './timesheet'
 import type { UpdateState } from './update'
 import type {
@@ -216,6 +217,17 @@ export interface TeamWorkingApi {
     /** Chụp thử tại máy (không gửi cho Claude) để xem trợ lý sẽ thấy gì. */
     preview(display?: number): Promise<ScreenPreview | { error: string }>
     openLogs(): Promise<void>
+  }
+  sidecar: {
+    state(): Promise<SidecarState>
+    onState(listener: (state: SidecarState) => void): () => void
+    /** Bắt đầu tải + cài (chạy nền); theo dõi qua onState. */
+    install(): Promise<SidecarState | { error: string }>
+    cancel(): Promise<void>
+    /** Gỡ sạch uv, Python, thư viện. */
+    uninstall(): Promise<SidecarState | { error: string }>
+    /** Thử đọc danh sách cửa sổ tại máy (không gửi cho Claude). */
+    check(): Promise<{ windows: number; python: string } | { error: string }>
   }
   ideas: {
     /** Trợ lý chuẩn hóa ý tưởng/báo lỗi thành GitHub issue (bản nháp để người dùng sửa). */

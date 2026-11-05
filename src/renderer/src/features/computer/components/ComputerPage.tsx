@@ -6,11 +6,13 @@ import { Button } from '@renderer/components/ui/button'
 import { Dialog, DialogClose, DialogContent } from '@renderer/components/ui/dialog'
 import { api } from '@renderer/lib/api'
 import { formatHotkey, useComputer } from '../store'
+import { SidecarSection } from './SidecarSection'
 
 /** Hộp thoại cảnh báo bắt buộc trước lần bật đầu tiên. */
 function WarningDialog({ open, onOpenChange, hotkey }: { open: boolean; onOpenChange(open: boolean): void; hotkey: string }) {
   const { t } = useTranslation('computer')
   const setEnabled = useComputer((s) => s.setEnabled)
+  const error = useComputer((s) => s.error)
   const [read, setRead] = useState(false)
   const points = t('warning.points', { returnObjects: true, hotkey }) as string[]
   return (
@@ -30,6 +32,12 @@ function WarningDialog({ open, onOpenChange, hotkey }: { open: boolean; onOpenCh
             <input type="checkbox" className="mt-1" checked={read} onChange={(e) => setRead(e.target.checked)} />
             <span>{t('warning.confirm')}</span>
           </label>
+          {/* Lỗi phải hiện NGAY trong hộp thoại — trang phía sau bị lớp phủ che. */}
+          {error && (
+            <p className="rounded-md bg-destructive/10 px-3 py-2 text-destructive" role="alert" data-testid="computer-warning-error">
+              {t(`errors.${error}`, { defaultValue: error, hotkey })}
+            </p>
+          )}
         </div>
         <div className="mt-5 flex justify-end gap-2">
           <DialogClose asChild>
@@ -170,6 +178,8 @@ export function ComputerPage() {
             )}
           </section>
         )}
+
+        {status.enabled && <SidecarSection />}
       </div>
       <WarningDialog open={warning} onOpenChange={setWarning} hotkey={hotkey} />
     </div>

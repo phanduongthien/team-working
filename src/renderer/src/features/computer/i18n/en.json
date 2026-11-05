@@ -13,7 +13,7 @@
   },
   "screen": {
     "heading": "Allow the assistant to see the screen",
-    "help": "This session only: turns off when the app restarts or on emergency stop. Screenshots are sent to Claude for analysis.",
+    "help": "This session only: turns off when the app restarts or on emergency stop. The assistant can take screenshots, read Unity/Blender logs and (with the sidecar) list windows and read UI trees; images and content are sent to Claude for analysis.",
     "on": "Viewing allowed",
     "off": "Off",
     "toggleOn": "Allow the assistant to see the screen",
@@ -48,6 +48,36 @@
     "warning_required": "Please read and accept the warning before enabling.",
     "hotkey_unavailable": "Could not register the emergency stop hotkey {{hotkey}} (another app may be using it). The feature can only be enabled when the stop hotkey works.",
     "not_enabled": "Enable computer control (and check the emergency stop hotkey) first.",
-    "display_not_found": "Display not found."
+    "display_not_found": "Display not found.",
+    "sidecar_not_installed": "The Python sidecar is not installed."
+  },
+  "sidecar": {
+    "heading": "Read windows & UI tree (Python sidecar)",
+    "help": "Lets the assistant list open windows and read the UI tree (button names, inputs, error messages) — more accurate than reading text from screenshots. Read-only, no actions. Reading Unity/Blender logs does not need this.",
+    "size": "Downloads about {{downloadMb}} MB (uv, Python 3.12, pywinauto) and uses about {{diskMb}} MB in the app data folder. Your existing Python is not touched.",
+    "install": "Download and install",
+    "retry": "Try again",
+    "cancel": "Cancel",
+    "stepOf": "Step {{index}}/{{count}}:",
+    "steps": {
+      "uv": "Download uv (Python installer)",
+      "python": "Download Python 3.12",
+      "packages": "Install UI reading library (pywinauto)"
+    },
+    "installingHint": "This may take a few minutes depending on your connection. You can keep using the app meanwhile.",
+    "installed": "Installed: Python {{python}}, uv {{uv}} — uses {{sizeMb}} MB.",
+    "check": "Check",
+    "checkOk": "Working: read {{windows}} windows (Python {{python}}). The result is only shown here, not sent to Claude.",
+    "checkFailed": "Could not read windows: {{message}}",
+    "remove": "Remove Python sidecar",
+    "removeTitle": "Remove the Python sidecar?",
+    "removeHint": "Deletes uv, Python and the downloaded libraries from the app data folder. The assistant can still take screenshots and read logs; reinstall to read the UI tree.",
+    "removing": "Removing…",
+    "errors": {
+      "network": "Download failed — check your connection and click Try again. ({{message}})",
+      "checksum": "The downloaded file did not match its checksum and was discarded for safety. Try again later; if it keeps failing, tell the team.",
+      "failed": "Installation failed: {{message}}",
+      "busy": "Installing or removing — please wait."
+    }
   }
 }
