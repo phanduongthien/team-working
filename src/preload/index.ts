@@ -31,7 +31,10 @@ const api: TeamWorkingApi = {
       ipcRenderer.invoke(IPC.chatSend, { conversationId, text, attachmentIds }),
     abort: (requestId) => ipcRenderer.invoke(IPC.chatAbort, { requestId }),
     onEvent: (listener) => subscribe<ChatStreamPayload>(IPC.chatEvent, listener),
-    pickAttachments: () => ipcRenderer.invoke(IPC.chatPickAttachments)
+    pickAttachments: () => ipcRenderer.invoke(IPC.chatPickAttachments),
+    addFile: (name, data) => ipcRenderer.invoke(IPC.chatAddFile, { name, data }),
+    pasteClipboard: () => ipcRenderer.invoke(IPC.chatPasteClipboard),
+    attachmentPreview: (id, size) => ipcRenderer.invoke(IPC.chatAttachmentPreview, { id, size })
   },
   memory: {
     getProfile: () => ipcRenderer.invoke(IPC.memoryGetProfile),

@@ -103,6 +103,18 @@ export class ConversationRepository {
     return row ? { ...toConversation(row), cliSessionId: row.cliSessionId, memoryExtractedAt: row.memoryExtractedAt } : null
   }
 
+  /** File đính kèm (theo ID) nằm trong một tin nhắn thuộc hội thoại của tài khoản hiện tại. */
+  hasAttachment(attachmentId: string): boolean {
+    // attachmentId đã được zod kiểm tra là UUID nên không có ký tự đặc biệt của LIKE.
+    const row = this.db
+      .select({ id: messages.id })
+      .from(messages)
+      .innerJoin(conversations, eq(conversations.id, messages.conversationId))
+      .where(and(this.mine(), sql`${messages.attachments} LIKE ${`%"id":"${attachmentId}"%`}`))
+      .get()
+    return !!row
+  }
+
   /** Chọn thư mục dự án mới → tắt quyền sửa (phải bật lại cho thư mục mới). */
   setCwd(id: string, cwd: string): Conversation | null {
     const row = this.db.update(conversations).set({ cwd, codeWrite: false }).where(this.mine(id)).returning().get()

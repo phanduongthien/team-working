@@ -20,14 +20,26 @@ export const conversationUpdateSchema = z.object({
   mode: chatModeSchema.optional()
 })
 
-export const MAX_ATTACHMENTS = 5
+export const MAX_ATTACHMENTS = 10
+/** Ảnh gốc tối đa (bản gửi Claude được thu nhỏ riêng). Khớp MAX_IMAGE_BYTES ở main. */
+export const MAX_ATTACHMENT_UPLOAD_BYTES = 30 * 1024 * 1024
 
-export const chatSendSchema = z.object({
-  conversationId: idSchema,
-  text: z.string().trim().min(1).max(100_000),
-  /** ID file đã chọn qua hộp thoại của main — renderer không bao giờ gửi đường dẫn. */
-  attachmentIds: z.array(idSchema).max(MAX_ATTACHMENTS).default([])
+/** Một file từ renderer (kéo thả / dán) — gửi nội dung, không bao giờ gửi đường dẫn. */
+export const chatAddFileSchema = z.object({
+  name: z.string().trim().min(1).max(260),
+  data: z.instanceof(Uint8Array).refine((d) => d.byteLength > 0 && d.byteLength <= MAX_ATTACHMENT_UPLOAD_BYTES, 'file_size')
 })
+export const chatAttachmentPreviewSchema = z.object({ id: z.uuid(), size: z.enum(['thumb', 'large']) })
+
+export const chatSendSchema = z
+  .object({
+    conversationId: idSchema,
+    text: z.string().trim().max(100_000),
+    /** ID file đã đính kèm (chọn / dán / kéo thả) qua main — renderer không bao giờ gửi đường dẫn. */
+    attachmentIds: z.array(idSchema).max(MAX_ATTACHMENTS).default([])
+  })
+  // Gửi được chỉ ảnh (không chữ), nhưng không được gửi tin rỗng hoàn toàn.
+  .refine((v) => v.text.length > 0 || v.attachmentIds.length > 0, 'empty_message')
 
 export const chatAbortSchema = z.object({
   requestId: idSchema

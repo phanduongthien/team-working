@@ -76,7 +76,8 @@ export class ClaudeCliProvider implements AIProvider {
     const systemPromptFile = join(dir, `system-${randomUUID()}.md`)
     await writeFile(systemPromptFile, req.systemPrompt, 'utf8')
 
-    const attachmentPaths = (req.attachments ?? []).map((a) => a.path)
+    // Ảnh vượt giới hạn của Claude: đưa bản thu nhỏ (modelPath) — bản gốc chỉ để xem lại trong lịch sử.
+    const attachmentPaths = (req.attachments ?? []).map((a) => a.modelPath ?? a.path)
     const withRead = (list: string[]): string[] => [...new Set([...list, ...(attachmentPaths.length ? ['Read'] : [])])]
     const tools = withRead(req.tools ?? [])
 

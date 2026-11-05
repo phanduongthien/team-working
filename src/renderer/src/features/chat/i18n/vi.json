@@ -33,15 +33,19 @@
     "project": "Quản lý dự án"
   },
   "attach": {
-    "button": "Đính kèm file (ảnh, PDF, file chữ/code — tối đa 10 MB)",
+    "button": "Đính kèm file (ảnh tới 30 MB; PDF, file chữ/code tới 10 MB). Có thể dán (Ctrl+V) hoặc kéo thả.",
     "remove": "Bỏ {{name}}",
     "rejected": "Không đính kèm được {{name}}: {{reason}}",
     "tooMany": "Tối đa {{max}} file mỗi tin nhắn.",
     "reasons": {
       "unsupported_type": "loại file chưa hỗ trợ",
-      "too_large": "file lớn hơn 10 MB",
+      "too_large": "file quá lớn (ảnh tối đa 30 MB, file khác 10 MB)",
       "not_found": "không đọc được file"
-    }
+    },
+    "view": "Xem ảnh {{name}}",
+    "drop": "Thả ảnh hoặc file vào đây để đính kèm",
+    "adding": "Đang thêm file…",
+    "previewFailed": "Không mở được ảnh này."
   },
   "code": {
     "chooseFolder": "Chọn thư mục dự án",

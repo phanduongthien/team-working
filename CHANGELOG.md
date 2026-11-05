@@ -5,6 +5,16 @@
 ## [Unreleased]
 
 ### Thêm mới
+- **Dán ảnh trực tiếp vào khung chat (Ctrl+V)**: ảnh chụp bằng Win+Shift+S / Snipping Tool / Print Screen, ảnh copy từ trình duyệt hoặc Photoshop, và file copy từ File Explorer (nhiều file một lần). Dán chữ vẫn như cũ.
+- **Kéo thả** ảnh và file vào bất kỳ đâu trong khung chat.
+- Ảnh hiện thành thumbnail phía trên ô nhập (có nút X để bỏ, bấm để xem to) và trong lịch sử chat. Gửi được chỉ ảnh, hoặc ảnh kèm chữ; tối đa 10 file mỗi tin (trước là 5).
+- Ảnh vượt giới hạn của Claude (cạnh dài > 2.576 px hoặc > 5 MB, hoặc BMP) được tự thu nhỏ/nén thành bản riêng để gửi; bản gốc (tối đa 30 MB) vẫn lưu trong lịch sử.
+
+### Thay đổi
+- Khi chưa kết nối Claude Code CLI vẫn soạn được tin và đính kèm sẵn — chỉ nút Gửi bị tắt.
+- File đính kèm được nhận dạng theo nội dung (không tin đuôi file): file đổi đuôi thành .png mà không phải ảnh sẽ bị từ chối.
+
+### Thêm mới
 - Thông báo cập nhật: khi có bản mới, app hiện số phiên bản, ngày phát hành và danh sách thay đổi, kèm 3 lựa chọn *Cập nhật ngay* (tải nền có thanh tiến trình, xong thì hỏi khởi động lại), *Để sau* (nhắc lại lần mở app sau) và *Bỏ qua phiên bản này*.
 - Bản cập nhật bắt buộc (`[critical]`): không bỏ qua được, nhắc lại mỗi lần kiểm tra và hiện dải cam trên đầu app — bấm vào là cập nhật.
 - *Cài đặt → Cập nhật*: bật/tắt tự kiểm tra, nút *Kiểm tra ngay*, chọn kênh **stable** hoặc **beta** (nhận cả bản pre-release).

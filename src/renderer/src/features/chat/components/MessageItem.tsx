@@ -5,6 +5,7 @@ import type { Message } from '@shared/types'
 import { AssistantAvatar } from '@renderer/components/AssistantAvatar'
 import { usePreferences } from '@renderer/stores/preferences'
 import { AttachmentChip } from './AttachmentChip'
+import { ImageThumb } from './ImageThumb'
 import { Markdown } from './Markdown'
 
 export const MessageItem = memo(function MessageItem({ message }: { message: Message }) {
@@ -16,14 +17,20 @@ export const MessageItem = memo(function MessageItem({ message }: { message: Mes
       <div className="flex flex-col items-end gap-1.5">
         {message.attachments.length > 0 && (
           <div className="flex max-w-[80%] flex-wrap justify-end gap-1.5">
-            {message.attachments.map((a) => (
-              <AttachmentChip key={a.id} attachment={a} />
-            ))}
+            {message.attachments.map((a) =>
+              a.mimeType.startsWith('image/') ? (
+                <ImageThumb key={a.id} attachment={a} className="size-28" />
+              ) : (
+                <AttachmentChip key={a.id} attachment={a} />
+              )
+            )}
           </div>
         )}
-        <div className="max-w-[80%] rounded-2xl rounded-br-sm bg-primary px-4 py-2.5 text-sm whitespace-pre-wrap text-primary-foreground">
-          {message.content}
-        </div>
+        {message.content && (
+          <div className="max-w-[80%] rounded-2xl rounded-br-sm bg-primary px-4 py-2.5 text-sm whitespace-pre-wrap text-primary-foreground">
+            {message.content}
+          </div>
+        )}
       </div>
     )
   }

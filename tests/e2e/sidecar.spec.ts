@@ -2,6 +2,7 @@ import { existsSync, mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { _electron as electron, expect, test, type ElectronApplication, type Page } from '@playwright/test'
+import { waitForStartup } from './helpers'
 
 // Cài Python sidecar THẬT (tải ~50 MB từ GitHub/PyPI) — chỉ chạy khi đặt E2E_SIDECAR=1.
 // Dùng thư mục dữ liệu tạm, không đụng dữ liệu thật của người dùng.
@@ -18,8 +19,7 @@ test.beforeAll(async () => {
   app = await electron.launch({ args: [ROOT], env: { ...process.env, TEAM_WORKING_USER_DATA: userData } })
   page = await app.firstWindow()
   // Máy không có Claude CLI bị chuyển tới /claude sau lần kiểm tra lúc mở app — chờ xong rồi mới điều hướng.
-  await page.evaluate(() => (window.location.hash = '#/claude'))
-  await expect(page.getByTestId('cli-status')).not.toContainText(/Đang kiểm tra/, { timeout: 30_000 })
+  await waitForStartup(page)
   await page.evaluate(() => (window.location.hash = '#/computer'))
   await page.getByTestId('computer-enable').click()
   await page.getByLabel('Tôi đã đọc và hiểu các điểm trên.').check()

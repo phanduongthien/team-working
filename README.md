@@ -8,7 +8,7 @@ Trợ lý AI trên máy tính (Windows) cho học tập, làm việc nhóm, giao
 
 ## Có gì trong app
 
-- **Trò chuyện với trợ lý**: chế độ Tự do, Học tập, Code, Quản lý dự án; đính kèm ảnh, PDF, file code. Bạn tự đặt tên, avatar, tính cách cho trợ lý.
+- **Trò chuyện với trợ lý**: chế độ Tự do, Học tập, Code, Quản lý dự án; đính kèm ảnh, PDF, file code — **dán ảnh bằng Ctrl+V** (Win+Shift+S, Print Screen, ảnh copy từ trình duyệt/Photoshop, file copy từ Explorer) hoặc **kéo thả** vào khung chat, tối đa 10 file mỗi tin. Ảnh lớn được tự thu nhỏ trước khi gửi cho Claude, bản gốc vẫn giữ trong lịch sử. Bạn tự đặt tên, avatar, tính cách cho trợ lý.
 - **Trí nhớ riêng**: hồ sơ, mục tiêu, sở thích của bạn — đi theo tài khoản GitHub, người khác (kể cả quản lý) không xem được. Trợ lý chỉ *đề xuất* điều nên nhớ, bạn duyệt thì mới lưu.
 - **Dự án & task**: Kanban, lịch, bình luận, file đính kèm; trợ lý gợi ý chia việc và phân công, quản lý duyệt trước khi tạo. Dashboard tiến độ, thông báo Windows.
 - **Feedback**: góp ý công khai hoặc ẩn danh, feedback cho từng người, đánh giá định kỳ; trợ lý giúp viết cho mang tính xây dựng.

@@ -55,6 +55,9 @@ export function promptWithHistory(history: Message[], text: string): string {
   return `Đoạn hội thoại trước đó (để nắm ngữ cảnh):\n${lines.join('\n\n')}\n\n---\n\n${text}`
 }
 
+/** Prompt khi người dùng chỉ gửi file/ảnh, không gõ chữ. */
+export const EMPTY_TEXT_PROMPT = 'Người dùng gửi file đính kèm (không kèm lời nhắn). Hãy xem và phản hồi phù hợp.'
+
 const isLostSession = (message: string): boolean => /no conversation found/i.test(message)
 
 export const READ_TOOLS = ['Read', 'Grep', 'Glob']
@@ -152,7 +155,7 @@ export class ChatService {
       content: '',
       status: 'streaming'
     })
-    if (!conversation.title) conversations.update({ id: conversationId, title: titleFromText(text) })
+    if (!conversation.title) conversations.update({ id: conversationId, title: titleFromText(text || attachments.map((a) => a.name).join(', ')) })
     conversations.touch(conversationId)
 
     const requestId = randomUUID()
@@ -176,7 +179,8 @@ export class ChatService {
       messageId: assistantMessage.id,
       mode: conversation.mode,
       sessionId: conversation.cliSessionId ?? undefined,
-      text,
+      // Chỉ gửi ảnh/file không kèm chữ → vẫn cần một câu nhắc cho Claude.
+      text: text || EMPTY_TEXT_PROMPT,
       history,
       attachments,
       options,

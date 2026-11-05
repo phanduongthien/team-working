@@ -9,6 +9,7 @@ import {
   type ElectronApplication,
   type Page
 } from '@playwright/test'
+import { goTo, waitForStartup } from './helpers'
 
 // Luồng cập nhật chạy với server giả lập cục bộ (không đụng GitHub Releases thật).
 // Không bấm "Khởi động lại" — bước cài thật chỉ thử thủ công (docs/release.md).
@@ -64,10 +65,8 @@ async function launch(): Promise<void> {
  * (máy dev có CLI không bao giờ bị chuyển trang nên không thấy lỗi này).
  */
 async function openSettings(): Promise<void> {
-  await page.evaluate(() => (window.location.hash = '#/claude'))
-  await expect(page.getByTestId('cli-status')).not.toContainText(/Đang kiểm tra/, { timeout: 30_000 })
-  await page.evaluate(() => (window.location.hash = '#/settings'))
-  await expect(page.getByRole('heading', { name: 'Cập nhật', exact: true })).toBeVisible()
+  await waitForStartup(page)
+  await goTo(page, '#/settings', page.getByRole('heading', { name: 'Cập nhật', exact: true }))
 }
 
 async function stopAll(): Promise<void> {
