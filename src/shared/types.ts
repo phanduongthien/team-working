@@ -1,4 +1,5 @@
 import type { ChatEvent, ChatMode, ChatUsage, CliStatus } from './ai'
+import type { ComputerStatus, ScreenPreview } from './computer'
 import type { CsvHeaders, TimeEntry } from './timesheet'
 import type { UpdateState } from './update'
 import type {
@@ -203,6 +204,18 @@ export interface TeamWorkingApi {
     logError(message: string): Promise<void>
     /** Phiên bản, hệ điều hành, đoạn cuối log (đã che đường dẫn/email) cho báo lỗi. */
     bugInfo(): Promise<{ version: string; os: string; logTail: string }>
+  }
+  computer: {
+    status(): Promise<ComputerStatus>
+    onStatus(listener: (status: ComputerStatus) => void): () => void
+    /** Bật lần đầu phải kèm acceptWarning (người dùng đã đọc cảnh báo). */
+    setEnabled(enabled: boolean, acceptWarning?: boolean): Promise<ComputerStatus | { error: string }>
+    /** Cho trợ lý xem màn hình trong phiên này (tắt khi khởi động lại app hoặc dừng khẩn cấp). */
+    setScreenAccess(on: boolean): Promise<ComputerStatus | { error: string }>
+    emergencyStop(): Promise<void>
+    /** Chụp thử tại máy (không gửi cho Claude) để xem trợ lý sẽ thấy gì. */
+    preview(display?: number): Promise<ScreenPreview | { error: string }>
+    openLogs(): Promise<void>
   }
   ideas: {
     /** Trợ lý chuẩn hóa ý tưởng/báo lỗi thành GitHub issue (bản nháp để người dùng sửa). */

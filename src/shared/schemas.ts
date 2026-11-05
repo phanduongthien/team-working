@@ -401,6 +401,19 @@ export type UpdateSettings = z.infer<typeof updateSettingsSchema>
 export type UpdateChannel = (typeof UPDATE_CHANNELS)[number]
 export const DEFAULT_UPDATE_SETTINGS: UpdateSettings = { autoCheck: true, channel: 'stable' }
 
+// ---- Điều khiển máy tính (thử nghiệm) ----
+
+export const computerUseSettingsSchema = z.object({
+  enabled: z.boolean(),
+  /** Thời điểm người dùng chấp nhận cảnh báo lần đầu (epoch ms). */
+  warningAcceptedAt: z.number().int().nullable()
+})
+export type ComputerUseSettings = z.infer<typeof computerUseSettingsSchema>
+export const DEFAULT_COMPUTER_USE_SETTINGS: ComputerUseSettings = { enabled: false, warningAcceptedAt: null }
+
+export const computerSetEnabledSchema = z.object({ enabled: z.boolean(), acceptWarning: z.boolean().optional() })
+export const computerPreviewSchema = z.object({ display: z.number().int().min(1).max(16).optional() })
+
 // ---- Cấu hình AI ----
 
 export const AI_PROVIDERS = ['claude-cli', 'anthropic-api'] as const

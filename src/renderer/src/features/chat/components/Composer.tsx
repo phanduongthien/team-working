@@ -7,6 +7,7 @@ import type { Attachment } from '@shared/types'
 import { Button } from '@renderer/components/ui/button'
 import { Select, Textarea } from '@renderer/components/ui/input'
 import { api } from '@renderer/lib/api'
+import { ScreenAccessToggle } from '@renderer/features/computer/components/ScreenAccessToggle'
 import { usePreferences } from '@renderer/stores/preferences'
 import { AttachmentChip } from './AttachmentChip'
 
@@ -107,6 +108,8 @@ export function Composer({ mode, onModeChange, streaming, disabled, onSend, onSt
           >
             <Paperclip />
           </Button>
+          {/* Quyền xem màn hình không phụ thuộc việc gửi tin được hay không — luôn phải tắt được. */}
+          <ScreenAccessToggle />
         </div>
         {streaming ? (
           <Button size="sm" variant="outline" onClick={onStop}>

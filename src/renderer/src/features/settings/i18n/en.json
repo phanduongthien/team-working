@@ -88,5 +88,10 @@
       "downloaded": "Version {{version}} downloaded — installs on restart.",
       "error": "Could not check: {{message}}"
     }
+  },
+  "experimental": {
+    "heading": "Experimental features",
+    "description": "New features, off by default. Only enable them after reading the instructions.",
+    "computer": "Computer control (screen viewing)"
   }
 }

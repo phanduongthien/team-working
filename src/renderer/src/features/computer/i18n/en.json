@@ -1,0 +1,53 @@
+{
+  "title": "Computer control",
+  "experimental": "Experimental",
+  "description": "Let the assistant see your screen to help you fix problems and work in Unity, Blender, After Effects, DaVinci Resolve, VS Code… This version is VIEW-ONLY: the assistant takes screenshots and guides you; it never clicks or types.",
+  "enable": "Enable computer control",
+  "enableHelp": "Off by default. When on, the emergency stop hotkey is registered with Windows; the assistant can only see your screen after you also turn on \"Allow screen viewing\" in each session.",
+  "modeView": "Current mode: VIEW-ONLY — screenshots and advice. Mouse/keyboard actions are not enabled in this version.",
+  "hotkey": {
+    "label": "Emergency stop",
+    "armed": "Ready",
+    "failed": "Could not register — another app is using this hotkey",
+    "off": "Off"
+  },
+  "screen": {
+    "heading": "Allow the assistant to see the screen",
+    "help": "This session only: turns off when the app restarts or on emergency stop. Screenshots are sent to Claude for analysis.",
+    "on": "Viewing allowed",
+    "off": "Off",
+    "toggleOn": "Allow the assistant to see the screen",
+    "toggleOff": "Turn off screen viewing"
+  },
+  "preview": {
+    "button": "Test capture",
+    "help": "The test capture is only shown here on your computer, not sent to Claude — so you can see what the assistant would see.",
+    "alt": "Test screenshot"
+  },
+  "logs": "Open log folder",
+  "stop": {
+    "button": "Emergency stop",
+    "short": "Stop",
+    "done": "Emergency stop: the assistant stopped viewing the screen and all running replies were stopped."
+  },
+  "indicator": "The assistant can see your screen · {{hotkey}} to stop",
+  "warning": {
+    "title": "Before enabling computer control",
+    "lead": "This is an experimental feature. Please read carefully before enabling it.",
+    "points": [
+      "When you allow it, the assistant takes screenshots and sends them to Claude (counts toward your Claude plan). Screenshots may contain anything on screen — close windows with sensitive information (passwords, banking, private messages) first.",
+      "Every capture is logged with its image on your computer for 7 days so you can review it.",
+      "Press {{hotkey}} at any time (even in another app) to stop immediately: screen viewing is turned off and all running replies are stopped.",
+      "This version is view-only: the assistant does not click, type or open apps. Actions will only be enabled with a separate confirmation.",
+      "The assistant must never enter passwords or payment details for you."
+    ],
+    "confirm": "I have read and understand the points above.",
+    "accept": "Enable"
+  },
+  "errors": {
+    "warning_required": "Please read and accept the warning before enabling.",
+    "hotkey_unavailable": "Could not register the emergency stop hotkey {{hotkey}} (another app may be using it). The feature can only be enabled when the stop hotkey works.",
+    "not_enabled": "Enable computer control (and check the emergency stop hotkey) first.",
+    "display_not_found": "Display not found."
+  }
+}

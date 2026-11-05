@@ -79,9 +79,8 @@ export function buildCliArgs(opts: CliRunOptions): string[] {
   ]
   const allowed = opts.allowedTools ?? opts.tools
   if (allowed.length > 0) args.push('--allowedTools', allowed.join(','))
-  if (opts.mcpConfigFile && opts.permissionTool) {
-    args.push('--mcp-config', opts.mcpConfigFile, '--permission-prompt-tool', opts.permissionTool)
-  }
+  if (opts.mcpConfigFile) args.push('--mcp-config', opts.mcpConfigFile)
+  if (opts.mcpConfigFile && opts.permissionTool) args.push('--permission-prompt-tool', opts.permissionTool)
   for (const dir of opts.addDirs ?? []) args.push('--add-dir', dir)
   if (opts.sessionId) args.push('--resume', opts.sessionId)
   if (opts.ephemeral) args.push('--no-session-persistence')
@@ -89,18 +88,32 @@ export function buildCliArgs(opts: CliRunOptions): string[] {
 }
 
 export const PERMISSION_TOOL = 'mcp__twperm__approve'
+/** Tên MCP server chứa tool của app (chụp màn hình…) — tool hiện với CLI là `mcp__mmc__<tên>`. */
+export const APP_TOOLS_SERVER = 'mmc'
+export const appToolName = (name: string): string => `mcp__${APP_TOOLS_SERVER}__${name}`
 
-/** Cấu hình MCP cho server duyệt quyền, chạy bằng chính Electron (ELECTRON_RUN_AS_NODE). */
-export function permissionMcpConfig(opts: { electronPath: string; script: string; url: string; token: string; conversationId: string }): string {
-  return JSON.stringify({
-    mcpServers: {
-      twperm: {
-        command: opts.electronPath,
-        args: [opts.script],
-        env: { ELECTRON_RUN_AS_NODE: '1', TW_PERM_URL: opts.url, TW_PERM_TOKEN: opts.token, TW_CONVERSATION: opts.conversationId }
-      }
-    }
+type McpScript = { script: string; url: string; token: string; conversationId: string }
+
+/**
+ * Cấu hình MCP: các server là script của app chạy bằng chính Electron (ELECTRON_RUN_AS_NODE),
+ * gọi về app qua HTTP 127.0.0.1 + token. `twperm` = duyệt sửa file; `mmc` = tool của app.
+ */
+export function mcpConfig(opts: { electronPath: string; permission?: McpScript; appTools?: McpScript }): string {
+  const server = (s: McpScript, env: Record<string, string>): object => ({
+    command: opts.electronPath,
+    args: [s.script],
+    env: { ELECTRON_RUN_AS_NODE: '1', ...env }
   })
+  const mcpServers: Record<string, object> = {}
+  if (opts.permission) {
+    const p = opts.permission
+    mcpServers.twperm = server(p, { TW_PERM_URL: p.url, TW_PERM_TOKEN: p.token, TW_CONVERSATION: p.conversationId })
+  }
+  if (opts.appTools) {
+    const t = opts.appTools
+    mcpServers[APP_TOOLS_SERVER] = server(t, { MMC_TOOLS_URL: t.url, MMC_TOOLS_TOKEN: t.token, MMC_CONVERSATION: t.conversationId })
+  }
+  return JSON.stringify({ mcpServers })
 }
 
 /**

@@ -12,12 +12,15 @@ import {
   checkClaudeCli,
   findClaudeExecutable,
   isCmdShim,
+  appToolName,
+  mcpConfig,
   PERMISSION_TOOL,
-  permissionMcpConfig,
   promptWithAttachments
 } from './claudeCli'
 
 export type ApprovalBridge = { electronPath: string; script: string; url: string; token: string }
+/** Cầu nối tool của app (script MCP `mmc`); cùng dạng với ApprovalBridge. */
+export type ToolBridgeInfo = ApprovalBridge
 
 const isInside = (root: string, dir: string): boolean => {
   const rel = relative(resolve(root), resolve(dir))
@@ -49,7 +52,9 @@ export class ClaudeCliProvider implements AIProvider {
   constructor(
     private readonly log: Logger,
     /** Cầu nối duyệt quyền (chế độ Code có sửa file); null nếu chưa sẵn sàng. */
-    private readonly getApprovalBridge: () => ApprovalBridge | null = () => null
+    private readonly getApprovalBridge: () => ApprovalBridge | null = () => null,
+    /** Cầu nối tool của app (chụp màn hình…); null nếu chưa sẵn sàng. */
+    private readonly getToolBridge: () => ToolBridgeInfo | null = () => null
   ) {}
 
   async isAvailable(): Promise<{ ok: boolean; reason?: string }> {
@@ -83,9 +88,19 @@ export class ClaudeCliProvider implements AIProvider {
       yield { type: 'error', message: 'approval_unavailable' }
       return
     }
-    if (bridge && req.approval) {
+    // Tool của app (vd chụp màn hình): thiếu cầu nối thì chạy tiếp không có tool, không chặn chat.
+    const toolBridge = req.appTools?.names.length ? this.getToolBridge() : null
+    if (req.appTools?.names.length && !toolBridge) this.log.warn('Cầu nối tool của app chưa sẵn sàng — bỏ qua tool')
+    const appToolNames = toolBridge && req.appTools ? req.appTools.names.map(appToolName) : []
+    if ((bridge && req.approval) || (toolBridge && req.appTools)) {
       mcpConfigFile = join(dir, `mcp-${randomUUID()}.json`)
-      await writeFile(mcpConfigFile, permissionMcpConfig({ ...bridge, conversationId: req.approval.conversationId }), 'utf8')
+      const electronPath = (bridge ?? toolBridge)!.electronPath
+      const config = mcpConfig({
+        electronPath,
+        permission: bridge && req.approval ? { ...bridge, conversationId: req.approval.conversationId } : undefined,
+        appTools: toolBridge && req.appTools ? { ...toolBridge, conversationId: req.appTools.conversationId } : undefined
+      })
+      await writeFile(mcpConfigFile, config, 'utf8')
     }
 
     const args = buildCliArgs({
@@ -93,9 +108,10 @@ export class ClaudeCliProvider implements AIProvider {
       systemPromptFile,
       sessionId: req.sessionId,
       tools,
-      allowedTools: req.allowedTools ? withRead(req.allowedTools) : undefined,
+      // Tool của app được tự duyệt ở CLI: app tự kiểm tra quyền/xác nhận ở mỗi lần gọi.
+      allowedTools: [...(req.allowedTools ? withRead(req.allowedTools) : tools), ...appToolNames],
       mcpConfigFile,
-      permissionTool: mcpConfigFile ? PERMISSION_TOOL : undefined,
+      permissionTool: bridge && req.approval ? PERMISSION_TOOL : undefined,
       // File đính kèm nằm ở workspace; ở chế độ Code (cwd = dự án) phải cho phép đọc thêm thư mục đó.
       addDirs: [...new Set(attachmentPaths.map((p) => dirname(p)))].filter((d) => !isInside(req.cwd, d)),
       ephemeral: req.ephemeral

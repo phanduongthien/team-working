@@ -1,6 +1,6 @@
 import { mkdirSync } from 'node:fs'
 import { join } from 'node:path'
-import { app, BrowserWindow, dialog, safeStorage, shell, type IpcMainInvokeEvent } from 'electron'
+import { app, BrowserWindow, dialog, globalShortcut, Notification, safeStorage, shell, type IpcMainInvokeEvent } from 'electron'
 import { is } from '@electron-toolkit/utils'
 import { z } from 'zod'
 import { APP_NAME, LEGACY_USER_DATA_DIR } from '@shared/appConfig'
@@ -11,6 +11,8 @@ import {
   updateSettingsSchema,
   type UpdateSettings,
   aiSettingsSchema,
+  computerUseSettingsSchema,
+  DEFAULT_COMPUTER_USE_SETTINGS,
   idSchema,
   type AiProviderId
 } from '@shared/schemas'
@@ -29,6 +31,12 @@ import {
   SuggestionRepository
 } from './db/repositories'
 import { CodeApprovals } from './code/approvals'
+import { ActionLog } from './computer/actionLog'
+import { electronCapture, fakeCapture } from './computer/electronCapture'
+import { ComputerUseService } from './computer/service'
+import { registerComputerIpc } from './ipc/computer'
+import { ToolBridge } from './tools/bridge'
+import { AppToolRegistry } from './tools/registry'
 import { TimeRepository } from './db/timeRepository'
 import { registerAppIpc } from './ipc/app'
 import { createHandle, registerIpc } from './ipc/register'
@@ -144,13 +152,48 @@ async function bootstrap(): Promise<void> {
   app.on('before-quit', () => approvals.stop())
   const permissionScript = resourcePath('permission-mcp.cjs', 'resources/permission-mcp.cjs')
 
+  // Tool của app cho Claude (MCP `mmc`): hiện có chụp màn hình (điều khiển máy tính — chỉ xem).
+  const tools = new AppToolRegistry()
+  const toolBridge = new ToolBridge(tools)
+  await toolBridge.start()
+  app.on('before-quit', () => toolBridge.stop())
+  const appToolsScript = resourcePath('app-tools-mcp.cjs', 'resources/app-tools-mcp.cjs')
+
+  const actionsDir = join(userData, 'logs', 'computer-use')
+  const actions = new ActionLog(actionsDir)
+  void actions.prune().catch((err: Error) => log.warn(`Không dọn được log điều khiển máy tính: ${err.message}`))
+  // Màn hình giả chỉ cho bản chưa đóng gói (test e2e) — không bao giờ có trong bản phát hành.
+  const fakeScreen = app.isPackaged ? undefined : process.env.MMC_FAKE_SCREEN
+  let lastStopAt = 0
+  const computer = new ComputerUseService({
+    getSettings: () => settings.get('computerUse', computerUseSettingsSchema, DEFAULT_COMPUTER_USE_SETTINGS),
+    setSettings: (value) => settings.set('computerUse', value),
+    shortcuts: globalShortcut,
+    capture: fakeScreen ? fakeCapture(fakeScreen) : electronCapture,
+    actions,
+    abortChats: () => chat.abortAll(),
+    revokeToolSessions: () => toolBridge.rotateToken(),
+    emit: (status) => {
+      mainWindow?.webContents.send(IPC.computerStatusEvent, status)
+      // Người dùng thường đang ở app khác (Blender, Unity…) khi bấm phím dừng → báo bằng thông báo Windows.
+      if (status.lastStop && status.lastStop.at !== lastStopAt) {
+        lastStopAt = status.lastStop.at
+        if (Notification.isSupported()) {
+          new Notification({ title: APP_NAME, body: 'Đã dừng khẩn cấp: trợ lý ngừng xem màn hình, mọi phản hồi đang chạy đã dừng.' }).show()
+        }
+      }
+    },
+    log
+  })
+  computer.registerTools(tools)
+  app.on('will-quit', () => globalShortcut.unregisterAll())
+
   const providers: Record<AiProviderId, AIProvider> = {
-    'claude-cli': new ClaudeCliProvider(log, () => ({
-      electronPath: process.execPath,
-      script: permissionScript,
-      url: approvals.url,
-      token: approvals.token
-    })),
+    'claude-cli': new ClaudeCliProvider(
+      log,
+      () => ({ electronPath: process.execPath, script: permissionScript, url: approvals.url, token: approvals.token }),
+      () => ({ electronPath: process.execPath, script: appToolsScript, url: toolBridge.url, token: toolBridge.token })
+    ),
     'anthropic-api': new AnthropicApiProvider(() => secrets.get())
   }
   const getProvider = (): AIProvider =>
@@ -180,7 +223,8 @@ async function bootstrap(): Promise<void> {
     workspaceDir,
     emit: (payload) => mainWindow?.webContents.send(IPC.chatEvent, payload),
     log,
-    onRunEnd: (conversationId) => approvals.cancelConversation(conversationId)
+    onRunEnd: (conversationId) => approvals.cancelConversation(conversationId),
+    appToolsFor: () => computer.toolsFor()
   })
   app.on('before-quit', () => chat.abortAll())
 
@@ -251,6 +295,7 @@ async function bootstrap(): Promise<void> {
     memory.emitCount()
     return result
   })
+  registerComputerIpc({ handle, computer, logsDir: actionsDir })
   registerWorkIpc({
     handle,
     conversations,

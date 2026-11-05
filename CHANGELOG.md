@@ -9,6 +9,9 @@
 - Bản cập nhật bắt buộc (`[critical]`): không bỏ qua được, nhắc lại mỗi lần kiểm tra và hiện dải cam trên đầu app — bấm vào là cập nhật.
 - *Cài đặt → Cập nhật*: bật/tắt tự kiểm tra, nút *Kiểm tra ngay*, chọn kênh **stable** hoặc **beta** (nhận cả bản pre-release).
 - Tự sao lưu dữ liệu (`%APPDATA%\Team Working\backups\`, giữ 3 bản) lần đầu mở phiên bản mới, trước khi nâng cấp cơ sở dữ liệu.
+- **Điều khiển máy tính — chế độ chỉ xem** (thử nghiệm, mặc định tắt): bật ở *Cài đặt → Tính năng thử nghiệm*, lần đầu phải đọc cảnh báo. Bấm biểu tượng con mắt ở khung soạn tin để cho trợ lý xem màn hình trong phiên này — trợ lý chụp màn hình (chọn màn hình, phóng to một vùng) rồi hướng dẫn bạn, không tự click hay gõ phím.
+- Phím dừng khẩn cấp **Ctrl+Alt+Q** (dùng được cả khi đang ở app khác) và nút *Dừng*: tắt quyền xem màn hình và dừng ngay mọi phản hồi đang chạy. Không đăng ký được phím này thì tính năng không bật.
+- Nhật ký mọi lần chụp kèm ảnh trong `%APPDATA%\Team Working\logs\computer-use\` (giữ 7 ngày); nút *Chụp thử* để xem trợ lý sẽ thấy gì mà không gửi đi.
 
 ### Thay đổi
 - App không còn tự tải bản cập nhật khi chưa được đồng ý; kiểm tra mỗi 2 giờ thay vì 6 giờ. Trước khi khởi động lại để cài, app dừng và lưu các phản hồi đang chạy.

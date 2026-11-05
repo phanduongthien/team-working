@@ -77,5 +77,12 @@ export const IPC = {
   settingsSetUpdate: 'settings:setUpdate',
   appLogError: 'app:logError',
   appBugInfo: 'app:bugInfo',
-  ideasFormat: 'ideas:format'
+  ideasFormat: 'ideas:format',
+  computerStatus: 'computer:status',
+  computerStatusEvent: 'computer:statusEvent',
+  computerSetEnabled: 'computer:setEnabled',
+  computerSetScreenAccess: 'computer:setScreenAccess',
+  computerEmergencyStop: 'computer:emergencyStop',
+  computerPreview: 'computer:preview',
+  computerOpenLogs: 'computer:openLogs'
 } as const

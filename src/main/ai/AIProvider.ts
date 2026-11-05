@@ -21,6 +21,8 @@ export type ChatRequest = {
   allowedTools?: string[]
   /** Bật duyệt từng thay đổi file qua app (chế độ Code có quyền sửa). */
   approval?: { conversationId: string }
+  /** Tool của app (MCP `mmc`) cho lượt này, vd chụp màn hình. Chỉ CLI hỗ trợ; API bỏ qua. */
+  appTools?: { conversationId: string; names: string[] }
   /** Lượt gọi một lần (vd trích memory) — không lưu session. */
   ephemeral?: boolean
 }

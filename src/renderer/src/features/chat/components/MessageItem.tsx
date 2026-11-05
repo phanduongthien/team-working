@@ -37,7 +37,7 @@ export const MessageItem = memo(function MessageItem({ message }: { message: Mes
         {message.toolEvents.map((tool, i) => (
           <div key={i} className="flex items-center gap-1.5 text-xs text-muted-foreground">
             <Wrench className="size-3.5" />
-            {t('toolUsed', { name: tool.name })}
+            {t('toolUsed', { name: t(`tools.${tool.name.replace(/^mcp__mmc__/, '')}`, { defaultValue: tool.name }) })}
           </div>
         ))}
         {waiting ? (
