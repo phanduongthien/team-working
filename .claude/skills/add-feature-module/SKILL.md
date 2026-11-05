@@ -10,7 +10,7 @@ description: Cách thêm một tính năng mới vào MMC studio theo kiến tr�
    - `index.ts` — export `FeatureDefinition` `{ id, titleKey, icon, route, roles, component, i18n, nav, setup? }` (`id` cũng là namespace i18n; `setup` chạy một lần lúc app khởi động, ví dụ đăng ký listener IPC)
    - `components/`, `store.ts` (Zustand), `api.ts` (gọi preload/Supabase), `i18n/vi.json`, `i18n/en.json`
    - `__tests__/`
-3. Nếu cần main process: `src/main/features/<ten>/ipc.ts`, schema zod trong `src/shared/`, expose qua preload với tên có namespace (`window.api.<ten>.*`).
+3. Nếu cần main process: logic thuần trong `src/main/<ten>/` (kèm `__tests__/`), handler IPC trong `src/main/ipc/<khu-vực>.ts` (thêm vào file sẵn có như `work.ts`/`team.ts`/`app.ts` hoặc tạo `register<Ten>Ipc` mới và gọi trong `bootstrap()` của `src/main/index.ts`). Tên kênh trong `src/shared/ipc.ts`, schema zod trong `src/shared/schemas.ts`, kiểu trong `TeamWorkingApi` (`src/shared/types.ts`), expose qua `src/preload/index.ts` dưới namespace `window.api.<ten>.*`.
 4. Dữ liệu local → bảng Drizzle mới + `npm run db:generate`. Dữ liệu team → skill `supabase-migration`.
 5. Cần AI → dùng `AIProvider` (skill `claude-bridge`); nếu cần hành vi riêng, thêm skill vào `assistant-skills/<ten>/SKILL.md`.
 6. Đăng ký trong `src/renderer/src/features/registry.ts` — **đây là chỗ duy nhất** chạm vào lõi. Test `features/__tests__/i18n-keys.test.ts` bắt buộc `vi.json`/`en.json` có cùng bộ khóa.
