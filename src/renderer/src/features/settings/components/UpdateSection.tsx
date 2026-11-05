@@ -22,8 +22,9 @@ export function UpdateSection() {
 
   const save = async (patch: Partial<UpdateSettings>): Promise<void> => {
     const next = { autoCheck: settings.autoCheck, channel: settings.channel, ...patch }
-    await api.update.setSettings(next)
+    // Cập nhật giao diện ngay khi bấm (không đợi IPC) — ô tick không bị "giật" về giá trị cũ trên máy chậm.
     setSettings({ ...settings, ...next })
+    await api.update.setSettings(next)
   }
 
   const status = (() => {
