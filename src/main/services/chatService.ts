@@ -10,6 +10,7 @@ import type {
 } from '@shared/types'
 import { stripExpressTags, type MessageMedia, type Reaction } from '@shared/expressive'
 import type { MessageVoice } from '@shared/voice'
+import { hideArtifactBlocks, type MessageArtifact } from '@shared/artifacts'
 import type { AIProvider, HistoryMessage } from '../ai/AIProvider'
 import type { TurnPlan } from '../expressive/affinity'
 import type { FinalizedReply } from '../expressive/service'
@@ -35,6 +36,12 @@ export type ChatServiceDeps = {
   /** Chat biểu cảm (emoji / reaction / GIF / sticker). Không có → chỉ bỏ thẻ khỏi câu trả lời. */
   /** Hướng dẫn cho tin nhắn giọng nói (skill `voice`); tease = được trêu nhẹ lỗi chép lời. */
   voicePrompt?(tease: boolean): Promise<string>
+  /** Artifact: hướng dẫn (skill `artifacts`), ngữ cảnh hội thoại, tách khối trong câu trả lời. */
+  artifacts?: {
+    prompt(): Promise<string>
+    contextFor(conversationId: string): string
+    applyReply(conversationId: string, raw: string): { text: string; artifacts: MessageArtifact[] }
+  }
   expressive?: {
     onUserMessage(input: { text: string; media: boolean; mode: string }): TurnPlan
     onUserReaction(): void
@@ -352,7 +359,9 @@ export class ChatService {
         // Chỉ trêu lỗi chép lời khi đang chat vui (biểu cảm bật, không nghiêm túc / buồn).
         args.voice && deps.voicePrompt
           ? await deps.voicePrompt(!!args.plan && args.plan.level !== 'off' && args.plan.mood === 'normal')
-          : ''
+          : '',
+        deps.artifacts ? await deps.artifacts.prompt() : '',
+        deps.artifacts?.contextFor(conversationId) ?? ''
       ]
         .filter(Boolean)
         .join('\n\n')
@@ -425,6 +434,13 @@ export class ChatService {
     const status = signal.aborted ? 'aborted' : error ? 'error' : 'done'
     // Thẻ biểu cảm không bao giờ còn trong nội dung lưu lại; chỉ câu trả lời xong mới được reaction / GIF / sticker.
     let media: MessageMedia | null = null
+    // Khối artifact → panel (chỉ khi trả lời xong); chat chỉ giữ phần lời nói.
+    let artifactRefs: MessageArtifact[] = []
+    if (status === 'done' && deps.artifacts) {
+      const r = deps.artifacts.applyReply(conversationId, content)
+      content = r.text
+      artifactRefs = r.artifacts
+    } else content = hideArtifactBlocks(content).text
     if (status === 'done' && args.plan && deps.expressive) {
       const reply = await deps.expressive.finalize(content, args.plan)
       content = reply.text
@@ -441,8 +457,8 @@ export class ChatService {
         }
       }
     } else content = stripExpressTags(content)
-    deps.messages.update(messageId, { content, status, error, toolEvents, usage, media })
-    emit({ type: 'final', content, media })
+    deps.messages.update(messageId, { content, status, error, toolEvents, usage, media, artifacts: artifactRefs })
+    emit({ type: 'final', content, media, artifacts: artifactRefs })
     deps.conversations.touch(conversationId)
     this.active.delete(requestId)
     if (signal.aborted) terminal = { type: 'error', message: 'aborted' }

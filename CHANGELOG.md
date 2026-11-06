@@ -5,6 +5,13 @@
 ## [Unreleased]
 
 ### Thêm mới
+- **Artifacts**: panel cạnh khung chat hiển thị tài liệu (Markdown + biểu đồ + sơ đồ Mermaid), slide, bảng cân bằng chỉ số, biểu đồ, sơ đồ, trang HTML tương tác. Có lịch sử phiên bản (xem / khôi phục), trợ lý sửa tại chỗ bằng find/replace (không khớp thì báo lỗi, không sửa bừa).
+- Xuất file: tài liệu → docx / pdf / md; slide → pptx (sửa được trong PowerPoint) / pdf; bảng → xlsx (giữ công thức, tô ô bất thường) / csv / json (nhập vào Unity); sơ đồ → svg / pdf.
+- Bảng cân bằng: cột công thức tự tính (bộ phân tích an toàn, không eval), ô lệch nhiều so với trung bình được tô vàng / đỏ, sửa số ngay trong panel — trợ lý thấy bản mới ở lần hỏi tiếp.
+- Mẫu cho làm game: Game Design Document, bảng cân bằng chỉ số, roadmap, pitch deck. Theme slide: Sáng, Tối, Pixel + theme JSON tự thêm.
+- An toàn: artifact chạy trong iframe chỉ `allow-scripts` ở origin riêng `mmc-artifact://`, CSP chặn mạng, thư viện (Chart.js, Mermaid) đóng gói sẵn; không đọc được dữ liệu / API của app, không mở cửa sổ hay điều hướng; artifact treo không làm đơ app.
+
+### Thêm mới
 - **Giọng nói** (mặc định tắt): nút micro trong khung chat — nhận giọng nói bằng faster-whisper chạy trên máy (GPU NVIDIA: large-v3-turbo; không có GPU hoặc GPU lỗi: small trên CPU), không khoá ngôn ngữ (nói lẫn Việt / Anh / Nhật), có từ vựng riêng. Nói xong điền vào ô nhập để sửa hoặc gửi luôn (tuỳ chọn). Tin gửi bằng giọng có nhãn "🎤 nói" và nghe lại được ghi âm gốc (chỉ trên máy, tự xoá sau 7 ngày).
 - **Đọc to câu trả lời**: nút loa trên mỗi câu trả lời; tự đọc khi bạn hỏi bằng giọng. Đọc dần từng câu, bỏ qua code / đường dẫn / log / emoji. Dừng bằng Esc, Ctrl+Alt+Q, hoặc khi bạn bắt đầu nói. Giọng Edge (tự nhiên, cần mạng), lỗi thì tự chuyển sang Piper (offline).
 - Thư viện và model chỉ tải khi bạn bấm, báo dung lượng trước (gói giọng nói ~120 MB, CUDA ~1,2 GB nếu có GPU, model 148 MB–1,5 GB, giọng Piper 64 MB); mọi file khoá phiên bản / mã kiểm tra.

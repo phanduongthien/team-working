@@ -1,4 +1,4 @@
-import { mkdirSync } from 'node:fs'
+import { existsSync, mkdirSync, readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import {
   app,
@@ -6,6 +6,7 @@ import {
   dialog,
   globalShortcut,
   net,
+  protocol,
   Notification,
   safeStorage,
   screen,
@@ -84,6 +85,10 @@ import { createLogger } from './services/logger'
 import { SavedAccountStore } from './services/savedAccounts'
 import { SecretStore } from './services/secrets'
 import { FakeChatProvider } from './ai/FakeChatProvider'
+import { ARTIFACT_SCHEME, handleArtifactRequest } from './artifacts/protocol'
+import { ArtifactService } from './artifacts/service'
+import { registerArtifactsIpc } from './ipc/artifacts'
+import { BUILTIN_THEMES, parseArtifactBlocks, themeSchema, type Theme } from '@shared/artifacts'
 import { registerVoiceIpc } from './ipc/voice'
 import { VoiceInstaller } from './voice/installer'
 import { VoiceService, voiceSkillPrompt } from './voice/service'
@@ -104,6 +109,9 @@ import {
 // được đọc app.getPath('userData') lúc import, vì import chạy trước dòng này.
 // Test e2e dùng thư mục dữ liệu riêng để không đụng dữ liệu thật của người dùng; còn lại giữ thư mục
 // cũ sau khi đổi productName (mặc định Electron sẽ chuyển sang %APPDATA%/<productName>).
+// Artifact chạy ở origin riêng (mmc-artifact://) — tách khỏi app, iframe sandbox không same-origin.
+protocol.registerSchemesAsPrivileged([{ scheme: 'mmc-artifact', privileges: { standard: true, secure: true } }])
+
 app.setPath(
   'userData',
   process.env.TEAM_WORKING_USER_DATA || join(app.getPath('appData'), LEGACY_USER_DATA_DIR)
@@ -428,6 +436,24 @@ async function bootstrap(): Promise<void> {
   })
   killSwitch.onStop(() => mainWindow?.webContents.send(IPC.voiceStopEvent))
 
+  // Artifact: lưu theo hội thoại; theme slide = có sẵn + file JSON người dùng thêm (sau này skill cũng cung cấp được).
+  const artifacts = new ArtifactService({ db, ownsConversation: (id) => !!conversations.get(id) })
+  const themesDir = join(userData, 'artifact-themes')
+  const artifactThemes = (): Theme[] => {
+    const extra: Theme[] = []
+    for (const f of existsSync(themesDir) ? readdirSync(themesDir) : []) {
+      if (!f.endsWith('.json')) continue
+      try {
+        extra.push(themeSchema.parse(JSON.parse(readFileSync(join(themesDir, f), 'utf8'))))
+      } catch (err) {
+        log.warn(`Theme artifact ${f} không hợp lệ: ${(err as Error).message}`)
+      }
+    }
+    return [...extra.filter((t) => !BUILTIN_THEMES.some((b) => b.id === t.id)), ...BUILTIN_THEMES]
+  }
+  const artifactLibDir = resourcePath('artifact-runtime', 'out/artifact-runtime')
+  protocol.handle(ARTIFACT_SCHEME, (req) => handleArtifactRequest(req.url, { service: artifacts, libDir: artifactLibDir, themes: artifactThemes }))
+
   // Claude giả chỉ cho test e2e ở bản chưa đóng gói.
   const fakeChat =
     !app.isPackaged && process.env.MMC_FAKE_CHAT === '1' ? new FakeChatProvider() : null
@@ -487,6 +513,14 @@ async function bootstrap(): Promise<void> {
     voicePrompt: async (tease) => {
       const skill = await loadSkill(skillsDir, 'voice')
       return skill ? voiceSkillPrompt(skill, tease) : ''
+    },
+    artifacts: {
+      prompt: async () => {
+        const skill = await loadSkill(skillsDir, 'artifacts')
+        return skill ? `## Artifact\n${skill}\nTheme slide có sẵn: ${artifactThemes().map((t) => t.id).join(', ')}.` : ''
+      },
+      contextFor: (id) => artifacts.contextFor(id),
+      applyReply: (id, raw) => artifacts.applyReply(id, raw)
     }
   })
   app.on('before-quit', () => chat.abortAll())
@@ -599,7 +633,7 @@ async function bootstrap(): Promise<void> {
       )
       if ('error' in result) throw new Error(result.error)
       // Agent khác chỉ nhận chữ thường: không bao giờ có thẻ biểu cảm.
-      return stripExpressTags(result.text)
+      return stripExpressTags(parseArtifactBlocks(result.text).text)
     },
     emitStatus: (status) => mainWindow?.webContents.send(IPC.agentsStatusEvent, status),
     emitNotice: (notice) => {
@@ -625,6 +659,7 @@ async function bootstrap(): Promise<void> {
     }
   })
   registerExpressiveIpc({ handle, expressive, giphyKey: giphyUserKey })
+  registerArtifactsIpc({ handle, service: artifacts, themes: artifactThemes, getWindow, log, templatesDir: join(skillsDir, 'artifacts', 'templates') })
   registerVoiceIpc({
     handle,
     voice,

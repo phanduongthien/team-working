@@ -1,3 +1,4 @@
+import type { MessageArtifact } from '@shared/artifacts'
 import type { MessageVoice } from '@shared/voice'
 import type { MessageMedia, Reaction } from '@shared/expressive'
 import { randomUUID } from 'node:crypto'
@@ -48,6 +49,7 @@ const toMessage = (r: MessageRow): Message => ({
   reactions: r.reactions ?? [],
   media: r.media ?? null,
   voice: r.voice ?? null,
+  artifacts: r.artifacts ?? [],
   createdAt: r.createdAt
 })
 
@@ -200,6 +202,7 @@ export type MessagePatch = {
   usage?: ChatUsage | null
   reactions?: Reaction[]
   media?: MessageMedia | null
+  artifacts?: MessageArtifact[]
 }
 
 export class MessageRepository {

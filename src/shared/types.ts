@@ -1,3 +1,4 @@
+import type { Artifact, ArtifactVersion, MessageArtifact } from './artifacts'
 import type { MessageVoice, SpeakChunk, TranscribeResult, VoiceComponent, VoicePackState, VoiceSettings, VoiceStatus } from './voice'
 import type {
   ExpressiveSettings,
@@ -107,6 +108,8 @@ export type Message = {
   media: MessageMedia | null
   /** Tin gửi bằng giọng nói (chữ do máy chép lại) + ghi âm gốc. */
   voice: MessageVoice | null
+  /** Artifact tạo / sửa trong câu trả lời này. */
+  artifacts: MessageArtifact[]
   createdAt: number
 }
 
@@ -223,6 +226,17 @@ export interface TeamWorkingApi {
     onPack(listener: (state: VoicePackState) => void): () => void
     /** Ctrl+Alt+Q → dừng đọc. */
     onStop(listener: () => void): () => void
+  }
+  artifacts: {
+    list(conversationId: string): Promise<Artifact[]>
+    versions(id: string): Promise<Omit<ArtifactVersion, 'content'>[]>
+    content(id: string, version?: number): Promise<{ artifact: Artifact; version: ArtifactVersion } | null>
+    /** Người dùng sửa (vd ô trong bảng) → phiên bản mới. */
+    saveVersion(id: string, content: string): Promise<Artifact | null>
+    restore(id: string, version: number): Promise<Artifact | null>
+    /** Xuất ra file — hộp thoại Lưu của Windows. */
+    export(id: string, version: number, format: string): Promise<{ path: string } | { canceled: true } | { error: string }>
+    templates(): Promise<{ id: string; name: string; prompt: string }[]>
   }
   expressive: {
     status(): Promise<ExpressiveStatus>

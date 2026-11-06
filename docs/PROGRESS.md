@@ -9,17 +9,19 @@
 | #7 | Dán ảnh (Ctrl+V), kéo thả, thumbnail, tự thu nhỏ ảnh cho Claude |
 | #8 | Kết nối agent: Mizuki làm MCP server cho Claude Code / Claude Desktop (kèm cầu nối stdio), Mizuki dùng MCP server khác, Ctrl+Alt+Q dùng chung. Gồm cả bản sửa: trả `not_approved` ngay khi chờ duyệt lần đầu; lịch sử trao đổi tự làm mới (5 giây/lần và khi quay lại cửa sổ app) |
 | #10 | Chat biểu cảm (GĐ 3): emoji, GIF/sticker GIPHY, sticker trên máy, thả cảm xúc, trợ lý biểu cảm theo mức |
+| #11 | Giọng nói (GĐ 2): faster-whisper (GPU/CPU), edge-tts + Piper, đọc to từng câu, ngắt lời; sửa lỗi PyAV, CI chép lời thật |
 
 ## PR đang mở
-- **GĐ 2 `feat/voice`** — Giọng nói: faster-whisper (GPU/CPU), edge-tts + Piper, đọc dần từng câu, ngắt lời, ghi âm gốc 7 ngày; kèm góp ý GĐ 3 (hỏi lỗi kỹ thuật → tối đa 2 emoji). Chờ CI xanh và test tay.
+- **GĐ 5 `feat/artifacts`** — Artifacts: panel + iframe sandbox (mmc-artifact://), doc / slides / sheet / chart / mermaid / html, phiên bản, xuất docx/pdf/pptx/xlsx/csv/json/svg, mẫu làm game. Chờ CI xanh và test tay.
 
 ## Lưu ý còn treo
 - ⚠️ Token "Claude Code" cũ đã lộ trong ảnh chụp màn hình: thu hồi trong trang Kết nối agent và tạo token mới (nếu chưa làm).
 - Test tay #8 với Claude Desktop, Ctrl+Alt+Q ngắt kết nối, MCP client: chưa ghi nhận kết quả. Nếu thấy lỗi thì sửa trên nhánh mới từ `main`.
 
 ## Bước tiếp theo (chờ người dùng chọn — chưa bắt đầu)
+0. **Sau GĐ 5 — PR riêng: Cài skill cho Mizuki.** Thư mục skill người dùng trong %APPDATA% (định dạng SKILL.md như Claude: frontmatter name + description); trang Skills trong Cài đặt (cài từ thư mục / .zip, bật/tắt, xoá, xem nội dung; skill có sẵn của app giữ nguyên); tự chọn vài skill liên quan theo description (không nhồi hết), gọi đích danh được ("dùng skill slide-pixel"); học dần phong cách → đề xuất lưu ghi chú vào skill cá nhân "my-style", chỉ lưu khi người dùng đồng ý; skill chỉ là chữ — KHÔNG chạy script kèm skill, cài thì hiện nguồn + nội dung để duyệt. Theme slide của GĐ 5 có thể đến từ skill.
 1. Thao tác chuột/bàn phím (GĐ 1, phần điều khiển): chỉ làm khi người dùng đồng ý riêng.
-2. Gmail/Telegram (GĐ 4), Artifacts (GĐ 5).
+2. Gmail/Telegram (GĐ 4).
 3. A2A và mở kết nối ra LAN: chỉ có đề xuất (`docs/agents.md`), chưa code, chờ duyệt.
 
 ## Quyết định đã duyệt
@@ -51,3 +53,9 @@
   - Đọc to: nút loa + tự đọc khi hỏi bằng giọng; đọc dần từng câu; bỏ code/đường dẫn/log/emoji/thẻ; dừng bằng Esc, Ctrl+Alt+Q (giữ phím chỉ lúc đang đọc), hoặc khi người dùng bắt đầu nói (ngắt lời, tắt được).
   - Sửa sau test tay #11: faster-whisper 1.2.1 gọi av.open(metadata_errors=…) đã bị bỏ từ PyAV 15 → app tự giải mã WAV thành numpy (không qua av.open), khoá av==14.2.0 (14.3+ không có wheel Windows), cài với --no-build. Chỉ lùi về CPU khi lỗi thật sự do GPU/CUDA. Marker thư viện lưu SHA-256 file khoá → đổi file khoá thì hiện "Cập nhật" (chỉ tải gói thay đổi, giữ model + CUDA). CI có job chép lời thật (model base, WAV mẫu).
   - TTS: Edge (gửi chữ cho Microsoft, có ghi chú trong Cài đặt), lỗi thì Piper (vi_VN-vais1000-medium, offline).
+- **Artifacts (GĐ 5)**
+  - Trợ lý tạo / viết lại bằng `<artifact type title>`, sửa nhỏ bằng `<artifact-edit>` nhiều cặp `<find>/<replace>`; find phải khớp đúng một chỗ, không thì không sửa và báo lỗi (chat có nút "Nhờ trợ lý sửa lại", trợ lý thấy lỗi ở lượt sau — không tự gửi thêm lượt). Trả lời agent khác qua MCP: bỏ khối artifact.
+  - Slide: Markdown có bố cục → pptx sửa được (pptxgenjs). Theme = màu + font + kiểu bố cục; có sẵn + file JSON trong %APPDATA%/Team Working/artifact-themes; skill sẽ cung cấp theme ở PR "Cài skill".
+  - Sandbox: iframe CHỈ `allow-scripts`; origin riêng `mmc-artifact://` (custom protocol, tiến trình riêng); CSP `default-src 'none'; connect-src 'none'`, ảnh data:/blob:; thư viện đóng gói sẵn; app chỉ nhận postMessage lệnh cố định (ready / edit / svg) đã kiểm tra nguồn + zod. E2E chứng minh không fetch / localStorage / cookie / API app / điều hướng / mở cửa sổ.
+  - Bảng: công thức bằng bộ phân tích riêng (không eval / new Function); xuất xlsx (công thức Excel), csv, json `{ items: [...] }` cho Unity; tô ô |z| ≥ 1,5 vàng, ≥ 2,5 đỏ; người dùng sửa → phiên bản mới, gửi kèm cho trợ lý ở lượt sau.
+  - Thư viện: marked, docx, pptxgenjs, exceljs, chart.js, mermaid — đều MIT.

@@ -18,7 +18,12 @@ export function applyChatEvent(
       case 'tool':
         return { ...m, toolEvents: [...m.toolEvents, { name: event.name, input: event.input }] }
       case 'final':
-        return { ...m, content: event.content, media: event.media }
+        return {
+          ...m,
+          content: event.content,
+          media: event.media,
+          artifacts: event.artifacts ?? m.artifacts
+        }
       case 'done':
         return { ...m, status: 'done', usage: event.usage ?? null }
       case 'error':

@@ -12,6 +12,9 @@ import { useChat } from '../store'
 import { ChatHeader } from './ChatHeader'
 import { CodeBar } from './CodeBar'
 import { Composer } from './Composer'
+import { PanelRight } from 'lucide-react'
+import { ArtifactPanel } from '../artifacts/ArtifactPanel'
+import { useArtifacts } from '../artifacts/store'
 import { ConversationSidebar } from './ConversationSidebar'
 import { MessageItem } from './MessageItem'
 
@@ -19,6 +22,8 @@ const EMPTY: never[] = []
 
 export function ChatPage() {
   const { t } = useTranslation('chat')
+  const artifactsOpen = useArtifacts((s) => s.open)
+  const setArtifactsOpen = useArtifacts((s) => s.setOpen)
   const assistant = usePreferences((s) => s.assistant)
   const cliOk = useCliStatus((s) => s.status?.state === 'ok')
   const {
@@ -136,7 +141,9 @@ export function ChatPage() {
             onModeChange={onModeChange}
             streaming={isStreaming}
             disabled={!cliOk}
-            onSend={(text, attachmentIds, voice) => void send(text, mode, attachmentIds, undefined, voice)}
+            onSend={(text, attachmentIds, voice) =>
+              void send(text, mode, attachmentIds, undefined, voice)
+            }
             onSendMedia={(m) =>
               void send('', mode, [], { kind: m.kind, source: m.source, id: m.id })
             }
@@ -144,7 +151,18 @@ export function ChatPage() {
           />
           <p className="text-center text-[11px] text-muted-foreground">{t('usageNote')}</p>
         </div>
+        <Button
+          size="sm"
+          variant={artifactsOpen ? 'outline' : 'ghost'}
+          className="absolute top-2 right-3 z-20 h-7 text-xs"
+          onClick={() => setArtifactsOpen(!artifactsOpen)}
+          data-testid="artifacts-toggle"
+        >
+          <PanelRight />
+          {t('artifacts.toggle')}
+        </Button>
       </section>
+      <ArtifactPanel conversationId={active?.id ?? null} />
     </div>
   )
 }

@@ -36,7 +36,13 @@ type ChatState = {
   chooseFolder(): Promise<void>
   setCodeWrite(id: string, enabled: boolean): Promise<void>
   remove(id: string): Promise<void>
-  send(text: string, mode: ChatMode, attachmentIds?: string[], media?: MediaRef, voice?: MessageVoice): Promise<boolean>
+  send(
+    text: string,
+    mode: ChatMode,
+    attachmentIds?: string[],
+    media?: MediaRef,
+    voice?: MessageVoice
+  ): Promise<boolean>
   /** Thả / bỏ cảm xúc của người dùng cho một tin. */
   react(message: Message, emoji: string): Promise<void>
   stop(): Promise<void>

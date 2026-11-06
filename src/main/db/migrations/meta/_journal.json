@@ -64,6 +64,13 @@
       "when": 1793941700822,
       "tag": "0008_message_voice",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "6",
+      "when": 1793947005990,
+      "tag": "0009_artifacts",
+      "breakpoints": true
     }
   ]
 }

@@ -15,6 +15,7 @@ const msg = (id: string, patch: Partial<Message> = {}): Message => ({
   reactions: [],
   media: null,
   voice: null,
+  artifacts: [],
   createdAt: 0,
   ...patch
 })

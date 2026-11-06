@@ -268,5 +268,27 @@
       "privacy": "Nhận giọng nói chạy trên máy bạn. Ghi âm gốc chỉ lưu trên máy, tự xoá sau 7 ngày.",
       "update": "Cập nhật (chỉ tải gói thay đổi, giữ model)"
     }
+  },
+  "artifacts": {
+    "toggle": "Artifacts",
+    "pick": "Chọn artifact",
+    "version": "Phiên bản",
+    "byUser": "bạn sửa",
+    "restore": "Khôi phục bản này",
+    "reload": "Dừng / tải lại artifact",
+    "close": "Đóng panel",
+    "empty": "Chưa có artifact trong hội thoại này. Nhờ trợ lý tạo tài liệu, slide, bảng, biểu đồ hoặc sơ đồ — hoặc bắt đầu từ mẫu:",
+    "templates": "Tạo từ mẫu (cho làm game)",
+    "writing": "✍️ Đang viết artifact…",
+    "savedVersion": "Đã lưu thành v{{version}} — trợ lý sẽ thấy bản này ở lần hỏi tiếp theo.",
+    "exported": "Đã xuất: {{path}}",
+    "exportFailed": "Xuất file lỗi ({{code}}).",
+    "retry": "Nhờ trợ lý sửa lại",
+    "retryMessage": "Lần sửa artifact \"{{title}}\" vừa rồi bị lỗi, bạn thử sửa lại giúp mình nhé.",
+    "errors": {
+      "not_found": "Không sửa được \"{{title}}\": đoạn cần sửa không còn khớp.",
+      "ambiguous": "Không sửa được \"{{title}}\": đoạn cần sửa khớp nhiều chỗ.",
+      "no_artifact": "Không có artifact \"{{title}}\" để sửa."
+    }
   }
 }

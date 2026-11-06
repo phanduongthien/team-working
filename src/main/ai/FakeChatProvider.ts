@@ -1,5 +1,6 @@
 import type { ChatEvent } from '@shared/ai'
 import type { AIProvider, ChatRequest } from './AIProvider'
+import { FAKE_ARTIFACTS } from './fakeArtifacts'
 
 /**
  * CHỈ cho test e2e ở bản chưa đóng gói (MMC_FAKE_CHAT=1): trả lời giả lập, không gọi Claude.
@@ -21,7 +22,8 @@ export class FakeChatProvider implements AIProvider {
       : / sticker\b/i.test(` ${first}`)
         ? ' [[react:🥰]] [[sticker:local/vui]]'
         : ' [[react:❤️]] [[gif:happy cat]]'
-    const reply = `Mizuki (giả lập) đã nhận: "${first.slice(0, 80)}"${tags}`
+    const artifact = FAKE_ARTIFACTS[/FAKE_ARTIFACT:([\w-]+)/.exec(req.prompt)?.[1] ?? ''] ?? ''
+    const reply = `Mizuki (giả lập) đã nhận: "${first.slice(0, 80)}"${tags}${artifact}`
     for (const part of reply.match(/.{1,12}/gsu) ?? []) {
       if (signal.aborted) return
       yield { type: 'text', delta: part }
