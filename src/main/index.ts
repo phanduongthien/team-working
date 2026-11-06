@@ -98,6 +98,10 @@ import { GiphyClient, readEnvKey } from './expressive/giphy'
 import { ExpressiveService } from './expressive/service'
 import { StickerLibrary } from './expressive/stickers'
 import { registerExpressiveIpc } from './ipc/expressive'
+import { registerSkillsIpc } from './ipc/skills'
+import { SkillStore } from './skills/store'
+import { learnStyle } from './skills/style'
+import { DEFAULT_SKILLS_SETTINGS, skillsSettingsSchema } from '@shared/skills'
 import {
   DEFAULT_EXPRESSIVE_SETTINGS,
   expressiveSettingsSchema,
@@ -436,7 +440,7 @@ async function bootstrap(): Promise<void> {
   })
   killSwitch.onStop(() => mainWindow?.webContents.send(IPC.voiceStopEvent))
 
-  // Artifact: lưu theo hội thoại; theme slide = có sẵn + file JSON người dùng thêm (sau này skill cũng cung cấp được).
+  // Artifact: lưu theo hội thoại; theme slide = có sẵn + file JSON người dùng thêm + theme của skill đang bật.
   const artifacts = new ArtifactService({ db, ownsConversation: (id) => !!conversations.get(id) })
   const themesDir = join(userData, 'artifact-themes')
   const artifactThemes = (): Theme[] => {
@@ -449,6 +453,8 @@ async function bootstrap(): Promise<void> {
         log.warn(`Theme artifact ${f} không hợp lệ: ${(err as Error).message}`)
       }
     }
+    // Theme từ skill người dùng đang bật (themes/*.json trong thư mục skill).
+    extra.push(...skillStore.themesSync())
     return [...extra.filter((t) => !BUILTIN_THEMES.some((b) => b.id === t.id)), ...BUILTIN_THEMES]
   }
   const artifactLibDir = resourcePath('artifact-runtime', 'out/artifact-runtime')
@@ -481,6 +487,13 @@ async function bootstrap(): Promise<void> {
     fakeChat ?? providers[settings.get('ai', aiSettingsSchema, DEFAULT_AI_SETTINGS).provider]
 
   const skillsDir = resourcePath('assistant-skills', 'assistant-skills')
+  const skillStore = new SkillStore({
+    builtinDir: skillsDir,
+    userDir: join(app.getPath('userData'), 'skills'),
+    getSettings: () => settings.get('skills', skillsSettingsSchema, DEFAULT_SKILLS_SETTINGS),
+    setSettings: (value) => settings.set('skills', value),
+    log
+  })
   const memory = new MemoryService({
     conversations,
     messages,
@@ -501,6 +514,7 @@ async function bootstrap(): Promise<void> {
     getAssistant: () => accountScope.getAssistant(),
     getMemoryContext: (query) => memory.contextFor(query),
     loadModeSkill: (mode) => loadModeSkill(skillsDir, mode),
+    userSkillsFor: (text) => skillStore.promptFor(text),
     workspaceDir,
     emit: (payload) => mainWindow?.webContents.send(IPC.chatEvent, payload),
     log,
@@ -657,6 +671,28 @@ async function bootstrap(): Promise<void> {
       exe: process.execPath,
       script: resourcePath('mizuki-mcp-bridge.cjs', 'resources/mizuki-mcp-bridge.cjs')
     }
+  })
+  registerSkillsIpc({
+    handle,
+    store: skillStore,
+    userDir: join(app.getPath('userData'), 'skills'),
+    getWindow,
+    learnStyle: () =>
+      learnStyle({
+        conversations,
+        messages,
+        getProvider,
+        loadSkill: (name) => loadSkill(skillsDir, name),
+        existingNotes: () => skillStore.styleNotes(),
+        workspaceDir,
+        log
+      }),
+    // Chọn gói skill không qua hộp thoại — chỉ cho e2e ở bản chưa đóng gói.
+    // MMC_FAKE_SKILL_PICK = file chứa đường dẫn gói (test ghi lại trước mỗi lần chọn).
+    fakePick:
+      !app.isPackaged && process.env.MMC_FAKE_SKILL_PICK
+        ? () => readFileSync(process.env.MMC_FAKE_SKILL_PICK!, 'utf8').trim()
+        : undefined
   })
   registerExpressiveIpc({ handle, expressive, giphyKey: giphyUserKey })
   registerArtifactsIpc({ handle, service: artifacts, themes: artifactThemes, getWindow, log, templatesDir: join(skillsDir, 'artifacts', 'templates') })

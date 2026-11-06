@@ -18,15 +18,28 @@
       "concise": "Ngắn gọn",
       "custom": "Tự mô tả"
     },
-    "languages": { "vi": "Tiếng Việt", "en": "English" }
+    "languages": {
+      "vi": "Tiếng Việt",
+      "en": "English"
+    }
   },
   "appearance": {
     "heading": "Giao diện",
     "theme": "Chế độ sáng / tối",
-    "themes": { "system": "Theo hệ thống", "light": "Sáng", "dark": "Tối" },
+    "themes": {
+      "system": "Theo hệ thống",
+      "light": "Sáng",
+      "dark": "Tối"
+    },
     "toggle": "Chuyển sang chế độ {{mode}}",
     "accent": "Màu nhấn",
-    "accents": { "blue": "Xanh dương", "violet": "Tím", "green": "Xanh lá", "orange": "Cam", "rose": "Hồng" }
+    "accents": {
+      "blue": "Xanh dương",
+      "violet": "Tím",
+      "green": "Xanh lá",
+      "orange": "Cam",
+      "rose": "Hồng"
+    }
   },
   "claude": {
     "heading": "Kết nối AI",
@@ -94,5 +107,52 @@
     "description": "Các tính năng mới, mặc định tắt. Chỉ bật khi bạn đã đọc kỹ hướng dẫn.",
     "computer": "Điều khiển máy tính (xem màn hình)",
     "agents": "Kết nối agent (Claude Code, Claude Desktop, MCP)"
+  },
+  "skills": {
+    "heading": "Skill",
+    "description": "Dạy {{name}} cách làm việc riêng của bạn bằng skill (thư mục có SKILL.md, giống skill của Claude). {{name}} tự chọn vài skill hợp với câu hỏi, không dùng hết cùng lúc. Skill chỉ là chữ — app không chạy script kèm theo.",
+    "installFolder": "Cài từ thư mục",
+    "installZip": "Cài từ file .zip",
+    "openFolder": "Mở thư mục skill",
+    "howToCall": "Gọi đích danh khi chat: \"dùng skill <tên>\" hoặc \"/<tên>\".",
+    "empty": "Chưa cài skill nào.",
+    "enable": "Bật skill {{name}}",
+    "view": "Xem skill {{name}}",
+    "remove": "Xoá skill {{name}}",
+    "removeConfirm": "Xoá hẳn?",
+    "builtin": "Skill có sẵn của app ({{count}}) — chỉ xem",
+    "preview": {
+      "title": "Cài skill \"{{name}}\"?",
+      "origin": "Nguồn",
+      "replaces": "Đã có skill cùng tên — cài sẽ thay thế bản cũ.",
+      "files": "File sẽ cài",
+      "skipped": "Bỏ qua (script, file nhị phân hoặc quá lớn — không cài, không chạy)",
+      "textOnly": "Đọc kỹ nội dung trước khi cài: skill được chèn vào hướng dẫn của trợ lý mỗi khi được chọn.",
+      "install": "Cài"
+    },
+    "style": {
+      "heading": "Phong cách của bạn (my-style)",
+      "description": "Ghi chú về cách bạn thích được trả lời, trình bày slide, tài liệu, code. Luôn được dùng khi có. Chỉ lưu những gì bạn duyệt.",
+      "learn": "Học từ các cuộc chat gần đây",
+      "proposed": "Đề xuất — bỏ chọn hoặc sửa trước khi lưu",
+      "save": "Lưu ghi chú đã chọn",
+      "discard": "Bỏ qua",
+      "nothing": "Chưa thấy điều gì mới về phong cách của bạn.",
+      "error": "Không học được lúc này. Thử lại sau.",
+      "removeNote": "Xoá ghi chú",
+      "add": "Thêm",
+      "addPlaceholder": "Tự thêm ghi chú, vd: Slide nền tối, chữ to"
+    },
+    "errors": {
+      "no_skill_md": "Không tìm thấy SKILL.md trong gói.",
+      "many_skill_md": "Gói có nhiều SKILL.md — mỗi lần chỉ cài một skill.",
+      "bad_frontmatter": "SKILL.md phải có phần đầu (frontmatter) với name và description.",
+      "bad_name": "Tên skill chỉ gồm chữ thường, số và dấu gạch nối.",
+      "builtin_name": "Trùng tên skill có sẵn của app — đổi tên skill.",
+      "too_large": "Gói quá lớn (tối đa 100 file, 2 MB).",
+      "bad_zip": "File .zip bị lỗi hoặc không đọc được.",
+      "unreadable": "Không đọc được thư mục / file đã chọn.",
+      "install": "Cài không được. Thử chọn lại gói."
+    }
   }
 }

@@ -61,6 +61,10 @@ describe('ChatService', () => {
         memories: query.includes('React') ? ['Đang học React'] : []
       }),
       loadModeSkill: async (mode) => (mode === 'study' ? '# Gia sư' : undefined),
+      userSkillsFor: async (text) =>
+        text.includes('slide')
+          ? { section: '## Skill của người dùng\n### Skill: slide-pixel\nNền tối', used: ['slide-pixel'] }
+          : { section: '', used: [] },
       workspaceDir: 'C:\\ws',
       emit: (p) => emitted.push(p),
       log: { info: vi.fn(), error: vi.fn() }
@@ -178,6 +182,19 @@ describe('ChatService', () => {
     await waitForStatus(conv.id, 'done')
     expect(provider.calls[0].systemPrompt).toContain('- Tên: An')
     expect(provider.calls[0].systemPrompt).toContain('- Đang học React')
+  })
+
+  it('chèn skill người dùng được chọn theo câu hỏi sau skill của chế độ', async () => {
+    const provider = new FakeProvider(() => events({ type: 'done' }))
+    const conv = convs.create('study')
+    const service = makeService(provider)
+    service.send(conv.id, 'Làm slide ôn tập')
+    await waitForStatus(conv.id, 'done')
+    const prompt = provider.calls[0].systemPrompt
+    expect(prompt.indexOf('# Gia sư')).toBeLessThan(prompt.indexOf('### Skill: slide-pixel'))
+    service.send(conv.id, 'Câu khác')
+    await vi.waitFor(() => expect(provider.calls).toHaveLength(2))
+    expect(provider.calls[1].systemPrompt).not.toContain('slide-pixel')
   })
 
   it('provider không session (API): gửi lịch sử, không dùng --resume', async () => {

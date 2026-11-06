@@ -17,6 +17,7 @@ import { cn } from '@renderer/lib/utils'
 import { usePreferences } from '@renderer/stores/preferences'
 import { PRESET_AVATARS, imageFileToAvatar } from '../avatar'
 import { AiSection } from './AiSection'
+import { SkillsSection } from './SkillsSection'
 import { UpdateSection } from './UpdateSection'
 import { ExpressiveSettings } from '@renderer/features/chat/expressive/ExpressiveSettings'
 import { VoiceSettings } from '@renderer/features/chat/voice/VoiceSettings'
@@ -239,8 +240,21 @@ function VoiceSection() {
   const { t } = useTranslation('chat')
   const name = usePreferences((s) => s.assistant.name)
   return (
-    <Section title={t('voice.settings.heading')} description={t('voice.settings.description', { name })}>
+    <Section
+      title={t('voice.settings.heading')}
+      description={t('voice.settings.description', { name })}
+    >
       <VoiceSettings />
+    </Section>
+  )
+}
+
+function SkillsSettings() {
+  const { t } = useTranslation('settings')
+  const name = usePreferences((s) => s.assistant.name)
+  return (
+    <Section title={t('skills.heading')} description={t('skills.description', { name })}>
+      <SkillsSection />
     </Section>
   )
 }
@@ -255,6 +269,7 @@ export function SettingsPage() {
         <AssistantSection />
         <ExpressiveSection />
         <VoiceSection />
+        <SkillsSettings />
         <Section title={t('claude.heading')} description={t('claude.description')}>
           <AiSection />
         </Section>

@@ -32,6 +32,19 @@ const api: TeamWorkingApi = {
   messages: {
     list: (conversationId) => ipcRenderer.invoke(IPC.messagesList, conversationId)
   },
+  skills: {
+    list: () => ipcRenderer.invoke(IPC.skillsList),
+    get: (source, name) => ipcRenderer.invoke(IPC.skillsGet, { source, name }),
+    pick: (kind) => ipcRenderer.invoke(IPC.skillsPick, kind),
+    install: (token) => ipcRenderer.invoke(IPC.skillsInstall, token),
+    cancelPreview: (token) => ipcRenderer.invoke(IPC.skillsCancelPreview, token),
+    remove: (name) => ipcRenderer.invoke(IPC.skillsRemove, name),
+    setEnabled: (name, enabled) => ipcRenderer.invoke(IPC.skillsSetEnabled, { name, enabled }),
+    openFolder: () => ipcRenderer.invoke(IPC.skillsOpenFolder),
+    styleNotes: () => ipcRenderer.invoke(IPC.skillsStyleNotes),
+    setStyleNotes: (notes) => ipcRenderer.invoke(IPC.skillsSetStyleNotes, notes),
+    learnStyle: () => ipcRenderer.invoke(IPC.skillsLearnStyle)
+  },
   voice: {
     status: () => ipcRenderer.invoke(IPC.voiceStatus),
     setSettings: (value) => ipcRenderer.invoke(IPC.voiceSetSettings, value),

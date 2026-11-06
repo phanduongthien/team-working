@@ -5,6 +5,10 @@
 ## [Unreleased]
 
 ### Thêm mới
+- **Cài skill cho trợ lý** (Cài đặt → Skill): cài từ thư mục hoặc file .zip có `SKILL.md` (định dạng skill của Claude: frontmatter `name` + `description`). Trước khi cài hiện nguồn, toàn bộ nội dung và danh sách file để bạn duyệt; script / file nhị phân bị bỏ qua — skill chỉ là chữ, app không chạy gì kèm theo. Bật/tắt, xem, xoá từng skill; skill có sẵn của app giữ nguyên (chỉ xem). Lưu ở `%APPDATA%/Team Working/skills`.
+- Trợ lý tự chọn tối đa 2 skill hợp với câu hỏi theo `description` (không nhồi hết vào prompt); gọi đích danh bằng "dùng skill <tên>" hoặc "/<tên>".
+- **Phong cách của bạn (my-style)**: bấm "Học từ các cuộc chat gần đây" → trợ lý đề xuất ghi chú (văn phong, cách trình bày slide/tài liệu/code), bạn chọn / sửa rồi mới lưu; tự thêm hoặc xoá ghi chú được. Ghi chú luôn được dùng khi chat.
+- Skill có thể kèm theme slide (`themes/*.json`, cùng định dạng theme artifact) — hiện mẫu màu khi xem trước, dùng được ngay trong slide / xuất pptx, trợ lý biết id theme khi dùng skill.
 - **Artifacts**: panel cạnh khung chat hiển thị tài liệu (Markdown + biểu đồ + sơ đồ Mermaid), slide, bảng cân bằng chỉ số, biểu đồ, sơ đồ, trang HTML tương tác. Có lịch sử phiên bản (xem / khôi phục), trợ lý sửa tại chỗ bằng find/replace (không khớp thì báo lỗi, không sửa bừa).
 - Xuất file: tài liệu → docx / pdf / md; slide → pptx (sửa được trong PowerPoint) / pdf; bảng → xlsx (giữ công thức, tô ô bất thường) / csv / json (nhập vào Unity); sơ đồ → svg / pdf.
 - Bảng cân bằng: cột công thức tự tính (bộ phân tích an toàn, không eval), ô lệch nhiều so với trung bình được tô vàng / đỏ, sửa số ngay trong panel — trợ lý thấy bản mới ở lần hỏi tiếp.

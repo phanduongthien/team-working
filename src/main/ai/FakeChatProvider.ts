@@ -15,6 +15,16 @@ export class FakeChatProvider implements AIProvider {
   }
 
   async *chat(req: ChatRequest, signal: AbortSignal): AsyncIterable<ChatEvent> {
+    // Học phong cách: trả JSON giả để e2e kiểm tra được luồng đề xuất → duyệt.
+    if (req.systemPrompt.includes('"type":"style_notes"')) {
+      yield {
+        type: 'text',
+        delta: '{"type":"style_notes","notes":["Trả lời ngắn gọn, có gạch đầu dòng"]}'
+      }
+      yield { type: 'done' }
+      return
+    }
+    const skills = [...req.systemPrompt.matchAll(/^### Skill: ([\w-]+)/gm)].map((m) => m[1])
     const first = req.prompt.split('\n').find((l) => l.trim() && !l.startsWith('(')) ?? ''
     const expressive = req.systemPrompt.includes('## Biểu cảm')
     const tags = !expressive
@@ -23,7 +33,8 @@ export class FakeChatProvider implements AIProvider {
         ? ' [[react:🥰]] [[sticker:local/vui]]'
         : ' [[react:❤️]] [[gif:happy cat]]'
     const artifact = FAKE_ARTIFACTS[/FAKE_ARTIFACT:([\w-]+)/.exec(req.prompt)?.[1] ?? ''] ?? ''
-    const reply = `Mizuki (giả lập) đã nhận: "${first.slice(0, 80)}"${tags}${artifact}`
+    const used = skills.length ? ` [skill: ${skills.join(', ')}]` : ''
+    const reply = `Mizuki (giả lập) đã nhận: "${first.slice(0, 80)}"${used}${tags}${artifact}`
     for (const part of reply.match(/.{1,12}/gsu) ?? []) {
       if (signal.aborted) return
       yield { type: 'text', delta: part }
