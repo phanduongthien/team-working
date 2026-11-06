@@ -43,6 +43,13 @@
       "when": 1793416841357,
       "tag": "0005_conversation_owner",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1793885819788,
+      "tag": "0006_agent_exchanges",
+      "breakpoints": true
     }
   ]
 }

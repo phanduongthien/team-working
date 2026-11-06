@@ -17,6 +17,7 @@ Trợ lý AI trên máy tính (Windows) cho học tập, làm việc nhóm, giao
 - **Chế độ Code**: trợ lý đọc thư mục dự án; mỗi thay đổi file đều hiện diff để bạn đồng ý hoặc từ chối.
 - **Góp ý & báo lỗi** ngay trong app, tự cập nhật khi có bản mới, chế độ sáng/tối.
 - **Điều khiển máy tính (thử nghiệm, mặc định tắt)**: cho trợ lý xem màn hình để giúp bạn sửa lỗi trong Unity, Blender, After Effects, VS Code… Bản hiện tại *chỉ xem* (chụp màn hình và hướng dẫn, không tự click/gõ). Bật ở *Cài đặt → Tính năng thử nghiệm*; phím **Ctrl+Alt+Q** dừng ngay lập tức. Chi tiết: [docs/computer-use.md](docs/computer-use.md).
+- **Kết nối agent (thử nghiệm, mặc định tắt)**: cho Claude Code, Claude Desktop và agent khác trên máy dùng trợ lý của bạn qua MCP (hỏi, giao việc, đọc kết quả) — mỗi agent một token, lần đầu phải bấm Cho phép, giới hạn 20 yêu cầu/giờ, Ctrl+Alt+Q ngắt tất cả; và cho trợ lý dùng MCP server khác (mỗi lần gọi công cụ phải duyệt). Chi tiết: [docs/agents.md](docs/agents.md).
 
 | Thời gian & chấm công | Trí nhớ riêng |
 |---|---|

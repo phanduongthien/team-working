@@ -14,7 +14,7 @@ export default tseslint.config(
   },
   {
     // Script CommonJS chạy bằng Electron-as-Node (MCP server duyệt quyền).
-    files: ['resources/**/*.cjs'],
+    files: ['resources/**/*.cjs', 'tests/**/*.cjs'],
     languageOptions: { sourceType: 'commonjs', globals: globals.node },
     rules: { '@typescript-eslint/no-require-imports': 'off' }
   },

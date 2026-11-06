@@ -19,6 +19,8 @@ extraResources:
     to: permission-mcp.cjs
   - from: resources/app-tools-mcp.cjs
     to: app-tools-mcp.cjs
+  - from: resources/mizuki-mcp-bridge.cjs
+    to: mizuki-mcp-bridge.cjs
   - from: resources/sidecar
     to: sidecar
     filter: ['desktop_server.py', 'requirements.txt']

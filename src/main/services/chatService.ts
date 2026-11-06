@@ -69,6 +69,7 @@ export type RunOptions = {
   allowedTools?: string[]
   approval?: { conversationId: string }
   appTools?: { conversationId: string; names: string[] }
+  externalMcp?: { conversationId: string }
   context?: string
 }
 
@@ -172,6 +173,8 @@ export class ChatService {
       conversationId,
       this.deps.appToolsFor?.(conversationId) ?? null
     )
+    // MCP server người dùng thêm: chỉ cho lượt chat tương tác (mỗi lần gọi tool vẫn phải duyệt).
+    options.externalMcp = { conversationId }
 
     void this.run({
       requestId,
@@ -262,7 +265,8 @@ export class ChatService {
           tools: args.options.tools,
           allowedTools: args.options.allowedTools,
           approval: args.options.approval,
-          appTools: args.options.appTools
+          appTools: args.options.appTools,
+          externalMcp: args.options.externalMcp
         },
         signal
       )

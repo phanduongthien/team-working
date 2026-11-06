@@ -54,7 +54,9 @@ export class ClaudeCliProvider implements AIProvider {
     /** Cầu nối duyệt quyền (chế độ Code có sửa file); null nếu chưa sẵn sàng. */
     private readonly getApprovalBridge: () => ApprovalBridge | null = () => null,
     /** Cầu nối tool của app (chụp màn hình…); null nếu chưa sẵn sàng. */
-    private readonly getToolBridge: () => ToolBridgeInfo | null = () => null
+    private readonly getToolBridge: () => ToolBridgeInfo | null = () => null,
+    /** MCP server người dùng thêm (đang bật) + tool được "luôn cho phép"; null nếu không có. */
+    private readonly getExternalMcp: () => { servers: Record<string, object>; allowedTools: string[] } | null = () => null
   ) {}
 
   async isAvailable(): Promise<{ ok: boolean; reason?: string }> {
@@ -81,25 +83,34 @@ export class ClaudeCliProvider implements AIProvider {
     const withRead = (list: string[]): string[] => [...new Set([...list, ...(attachmentPaths.length ? ['Read'] : [])])]
     const tools = withRead(req.tools ?? [])
 
-    // Duyệt từng lần sửa file qua app: MCP server chạy bằng chính Electron.
+    // MCP server người dùng thêm: tool chưa "luôn cho phép" phải qua bước duyệt của app.
+    let external = req.externalMcp ? this.getExternalMcp() : null
+    // Duyệt quyền (MCP twperm chạy bằng chính Electron): sửa file ở chế độ Code, hoặc tool MCP ngoài.
     let mcpConfigFile: string | undefined
-    const bridge = req.approval ? this.getApprovalBridge() : null
+    const bridge = req.approval || external ? this.getApprovalBridge() : null
     if (req.approval && !bridge) {
       await rm(systemPromptFile, { force: true })
       yield { type: 'error', message: 'approval_unavailable' }
       return
     }
+    if (external && !bridge) {
+      // Không có bước duyệt thì không nạp server ngoài (thà thiếu tool còn hơn tool tự chạy).
+      this.log.warn('Cầu nối duyệt quyền chưa sẵn sàng — bỏ qua MCP server người dùng thêm')
+      external = null
+    }
+    const permissionConversation = req.approval?.conversationId ?? req.externalMcp?.conversationId ?? ''
     // Tool của app (vd chụp màn hình): thiếu cầu nối thì chạy tiếp không có tool, không chặn chat.
     const toolBridge = req.appTools?.names.length ? this.getToolBridge() : null
     if (req.appTools?.names.length && !toolBridge) this.log.warn('Cầu nối tool của app chưa sẵn sàng — bỏ qua tool')
     const appToolNames = toolBridge && req.appTools ? req.appTools.names.map(appToolName) : []
-    if ((bridge && req.approval) || (toolBridge && req.appTools)) {
+    if (bridge || (toolBridge && req.appTools)) {
       mcpConfigFile = join(dir, `mcp-${randomUUID()}.json`)
       const electronPath = (bridge ?? toolBridge)!.electronPath
       const config = mcpConfig({
         electronPath,
-        permission: bridge && req.approval ? { ...bridge, conversationId: req.approval.conversationId } : undefined,
-        appTools: toolBridge && req.appTools ? { ...toolBridge, conversationId: req.appTools.conversationId } : undefined
+        permission: bridge ? { ...bridge, conversationId: permissionConversation } : undefined,
+        appTools: toolBridge && req.appTools ? { ...toolBridge, conversationId: req.appTools.conversationId } : undefined,
+        extra: external?.servers
       })
       await writeFile(mcpConfigFile, config, 'utf8')
     }
@@ -110,9 +121,9 @@ export class ClaudeCliProvider implements AIProvider {
       sessionId: req.sessionId,
       tools,
       // Tool của app được tự duyệt ở CLI: app tự kiểm tra quyền/xác nhận ở mỗi lần gọi.
-      allowedTools: [...(req.allowedTools ? withRead(req.allowedTools) : tools), ...appToolNames],
+      allowedTools: [...(req.allowedTools ? withRead(req.allowedTools) : tools), ...appToolNames, ...(external?.allowedTools ?? [])],
       mcpConfigFile,
-      permissionTool: bridge && req.approval ? PERMISSION_TOOL : undefined,
+      permissionTool: bridge ? PERMISSION_TOOL : undefined,
       // File đính kèm nằm ở workspace; ở chế độ Code (cwd = dự án) phải cho phép đọc thêm thư mục đó.
       addDirs: [...new Set(attachmentPaths.map((p) => dirname(p)))].filter((d) => !isInside(req.cwd, d)),
       ephemeral: req.ephemeral

@@ -34,6 +34,7 @@ import { loadModeSkill, loadSkill } from './ai/skills'
 import { backupBeforeUpgrade } from './db/backup'
 import { openDatabase } from './db/client'
 import {
+  AgentExchangeRepository,
   LOCAL_OWNER,
   ConversationRepository,
   MemoryRepository,
@@ -42,6 +43,14 @@ import {
   SuggestionRepository
 } from './db/repositories'
 import { CodeApprovals } from './code/approvals'
+import { completeText } from './ai/AIProvider'
+import { agentHttpServer } from './agents/httpServer'
+import { AgentHub, agentSettingsSchema, DEFAULT_AGENT_SETTINGS, storedClientSchema } from './agents/hub'
+import { agentPrompt, agentSystemPrompt } from './agents/prompt'
+import { KillSwitch } from './computer/killSwitch'
+import { registerAgentsIpc } from './ipc/agents'
+import { McpApprovals } from './mcpClient/approvals'
+import { McpServerStore } from './mcpClient/store'
 import { ActionLog } from './computer/actionLog'
 import { electronCapture, fakeCapture } from './computer/electronCapture'
 import { ComputerUseService } from './computer/service'
@@ -155,6 +164,21 @@ async function bootstrap(): Promise<void> {
 
   const secrets = new SecretStore(join(userData, 'secrets'), safeStorage)
 
+  // MCP server người dùng thêm (Mizuki dùng như tool) — mỗi lần gọi tool phải được duyệt.
+  const mcpStore = new McpServerStore(
+    {
+      get: () => settings.get('mcpServers', z.array(z.any()), []),
+      set: (list) => settings.set('mcpServers', list)
+    },
+    join(userData, 'secrets'),
+    safeStorage
+  )
+  const mcpApprovals = new McpApprovals({
+    store: mcpStore,
+    emit: (req) => mainWindow?.webContents.send(IPC.mcpApprovalEvent, req),
+    log
+  })
+
   // Chế độ Code: mỗi lần Claude muốn sửa file, app hiện diff để người dùng duyệt.
   const approvals = new CodeApprovals({
     writableRoot: (id) => {
@@ -162,6 +186,7 @@ async function bootstrap(): Promise<void> {
       return conv && conv.mode === 'code' && conv.codeWrite && conv.cwd ? conv.cwd : null
     },
     emit: (request) => emitApproval(mainWindow, request),
+    mcpApproval: (conversationId, toolName, input) => mcpApprovals.request(conversationId, toolName, input),
     log
   })
   await approvals.start()
@@ -206,7 +231,9 @@ async function bootstrap(): Promise<void> {
   })
   const appLogRoot = devOverride('MMC_APP_LOG_ROOT')
   let lastStopAt = 0
+  const killSwitch = new KillSwitch(globalShortcut)
   const computer = new ComputerUseService({
+    killSwitch,
     getSettings: () => settings.get('computerUse', computerUseSettingsSchema, DEFAULT_COMPUTER_USE_SETTINGS),
     setSettings: (value) => settings.set('computerUse', value),
     shortcuts: globalShortcut,
@@ -241,7 +268,8 @@ async function bootstrap(): Promise<void> {
     'claude-cli': new ClaudeCliProvider(
       log,
       () => ({ electronPath: process.execPath, script: permissionScript, url: approvals.url, token: approvals.token }),
-      () => ({ electronPath: process.execPath, script: appToolsScript, url: toolBridge.url, token: toolBridge.token })
+      () => ({ electronPath: process.execPath, script: appToolsScript, url: toolBridge.url, token: toolBridge.token }),
+      () => mcpStore.forCli()
     ),
     'anthropic-api': new AnthropicApiProvider(() => secrets.get())
   }
@@ -272,7 +300,10 @@ async function bootstrap(): Promise<void> {
     workspaceDir,
     emit: (payload) => mainWindow?.webContents.send(IPC.chatEvent, payload),
     log,
-    onRunEnd: (conversationId) => approvals.cancelConversation(conversationId),
+    onRunEnd: (conversationId) => {
+      approvals.cancelConversation(conversationId)
+      mcpApprovals.cancelConversation(conversationId)
+    },
     appToolsFor: () => computer.toolsFor()
   })
   app.on('before-quit', () => chat.abortAll())
@@ -349,6 +380,55 @@ async function bootstrap(): Promise<void> {
     memory.emitCount()
     return result
   })
+  const agentExchanges = new AgentExchangeRepository(db)
+  const stale = agentExchanges.markInterrupted()
+  if (stale) log.info(`Kết nối agent: đánh dấu ${stale} việc bị gián đoạn`)
+  const agentHub = new AgentHub({
+    getSettings: () => settings.get('agents', agentSettingsSchema, DEFAULT_AGENT_SETTINGS),
+    setSettings: (value) => settings.set('agents', value),
+    getClients: () => settings.get('agentClients', z.array(storedClientSchema), []),
+    setClients: (list) => settings.set('agentClients', list),
+    exchanges: agentExchanges,
+    killSwitch,
+    serverFactory: (hub) => agentHttpServer(hub, () => accountScope.getAssistant().name, log),
+    // Trả lời agent khác: KHÔNG tool, KHÔNG trí nhớ/hồ sơ người dùng, không lưu session CLI.
+    answer: async ({ agentName, request, kind, title }, signal) => {
+      // Chỉ bản chưa đóng gói + MMC_FAKE_AGENT_ANSWER (test e2e): không gọi Claude thật.
+      if (!app.isPackaged && process.env.MMC_FAKE_AGENT_ANSWER) return `Mizuki (giả lập) đã nhận: ${request.slice(0, 200)}`
+      const result = await completeText(
+        getProvider(),
+        {
+          prompt: agentPrompt(agentName, request, kind, title),
+          systemPrompt: agentSystemPrompt(accountScope.getAssistant().name),
+          mode: 'free',
+          cwd: workspaceDir,
+          ephemeral: true
+        },
+        signal
+      )
+      if ('error' in result) throw new Error(result.error)
+      return result.text
+    },
+    emitStatus: (status) => mainWindow?.webContents.send(IPC.agentsStatusEvent, status),
+    emitNotice: (notice) => {
+      mainWindow?.webContents.send(IPC.agentsNoticeEvent, notice)
+      if (notice.kind === 'stopped' && Notification.isSupported()) {
+        new Notification({ title: APP_NAME, body: 'Đã ngắt mọi kết nối agent.' }).show()
+      }
+    },
+    log
+  })
+  app.on('before-quit', () => {
+    mcpApprovals.cancelAll()
+    void agentHub.shutdown()
+  })
+  registerAgentsIpc({
+    handle,
+    hub: agentHub,
+    mcp: mcpStore,
+    mcpApprovals,
+    bridge: { exe: process.execPath, script: resourcePath('mizuki-mcp-bridge.cjs', 'resources/mizuki-mcp-bridge.cjs') }
+  })
   registerComputerIpc({
     handle,
     computer,
@@ -372,7 +452,10 @@ async function bootstrap(): Promise<void> {
 
   mainWindow = createWindow()
   // Bắt đầu kiểm tra khi giao diện đã tải (renderer cũng tự hỏi getState lúc mở nên không lỡ trạng thái).
-  mainWindow.webContents.once('did-finish-load', () => updates.start())
+  mainWindow.webContents.once('did-finish-load', () => {
+    updates.start()
+    void agentHub.restore()
+  })
   log.info(`Khởi động ${APP_NAME} ${app.getVersion()}`)
 }
 
