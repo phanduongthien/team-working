@@ -35,7 +35,7 @@ export function initialPrompt(name: string, custom: string[]): string {
 
 /** Lỗi do GPU / CUDA (thiếu DLL, hết VRAM, driver…) — chỉ những lỗi này mới lùi về CPU. */
 export function isGpuError(message: string): boolean {
-  return /(?:cuda|cublas|cudnn|nvrtc|cudart|gpu)|out of memory|CUDA_ERROR|cuBLAS|cuDNN/i.test(
+  return /\b(?:cuda|cublas|cudnn|nvrtc|cudart|gpu)|out of memory|CUDA_ERROR|cuBLAS|cuDNN/i.test(
     message
   )
 }
