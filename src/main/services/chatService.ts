@@ -26,6 +26,8 @@ export type ChatServiceDeps = {
   /** Hồ sơ + memory liên quan tới câu hỏi để chèn vào system prompt. */
   getMemoryContext(query: string): { user: UserProfileContext; memories: string[] }
   loadModeSkill(mode: ChatMode): Promise<string | undefined>
+  /** Skill người dùng cài, chọn theo câu hỏi (my-style + gọi đích danh + vài skill liên quan). */
+  userSkillsFor?(text: string): Promise<{ section: string; used: string[] }>
   workspaceDir: string
   emit(payload: ChatStreamPayload): void
   log: { info(msg: string): void; error(msg: string): void }
@@ -347,10 +349,18 @@ export class ChatService {
 
     const provider = deps.getProvider()
     const memory = deps.getMemoryContext(args.text)
+    const userSkills = deps.userSkillsFor
+      ? await deps.userSkillsFor(args.text).catch((e: unknown) => {
+          deps.log.error(`Chọn skill lỗi: ${String(e)}`)
+          return { section: '', used: [] }
+        })
+      : { section: '', used: [] }
+    if (userSkills.used.length) deps.log.info(`Skill dùng cho lượt này: ${userSkills.used.join(', ')}`)
     const systemPrompt = buildSystemPrompt({
       assistant: deps.getAssistant(),
       mode: args.mode,
       modeSkill: await deps.loadModeSkill(args.mode),
+      userSkills: userSkills.section,
       user: memory.user,
       memories: memory.memories,
       extraContext: [

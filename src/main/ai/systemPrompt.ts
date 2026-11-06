@@ -16,6 +16,8 @@ export type SystemPromptInput = {
   mode: ChatMode
   /** Nội dung SKILL.md của chế độ (đã bỏ frontmatter). */
   modeSkill?: string
+  /** Skill người dùng cài đã chọn cho câu hỏi (đã ghép sẵn thành một phần). */
+  userSkills?: string
   user?: UserProfileContext
   memories?: string[]
   /** Dữ liệu ngữ cảnh thêm (task đang được giao…). */
@@ -77,7 +79,11 @@ export function buildSystemPrompt(input: SystemPromptInput): string {
   const userSection = userLines.length ? `## Người dùng\n${userLines.join('\n')}` : ''
 
   const memories = (input.memories ?? []).slice(0, MAX_MEMORIES)
-  const modeSection = [`## Chế độ: ${MODE_TEXT[input.mode]}`, input.modeSkill?.trim() ?? '']
+  const modeSection = [
+    `## Chế độ: ${MODE_TEXT[input.mode]}`,
+    input.modeSkill?.trim() ?? '',
+    input.userSkills?.trim() ?? ''
+  ]
     .filter(Boolean)
     .join('\n\n')
   const extra = input.extraContext?.trim() ? `## Ngữ cảnh\n${input.extraContext.trim()}` : ''

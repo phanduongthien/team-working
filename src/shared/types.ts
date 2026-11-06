@@ -1,5 +1,6 @@
 import type { Artifact, ArtifactVersion, MessageArtifact } from './artifacts'
 import type { MessageVoice, SpeakChunk, TranscribeResult, VoiceComponent, VoicePackState, VoiceSettings, VoiceStatus } from './voice'
+import type { SkillDetail, SkillInfo, SkillPreviewResult, SkillSource, StyleLearnResult } from './skills'
 import type {
   ExpressiveSettings,
   ExpressiveStatus,
@@ -208,6 +209,25 @@ export interface TeamWorkingApi {
     sendVoice(conversationId: string, text: string, voice: MessageVoice): Promise<ChatSendResult>
     /** Thả cảm xúc (null = bỏ). Mỗi người tối đa 1 cảm xúc mỗi tin. */
     react(messageId: string, emoji: string | null): Promise<Message>
+  }
+  skills: {
+    /** Skill người dùng cài + skill có sẵn của app (chỉ xem). */
+    list(): Promise<SkillInfo[]>
+    get(source: SkillSource, name: string): Promise<SkillDetail | null>
+    /** Chọn thư mục / file .zip → bản xem trước (chưa cài). null = huỷ chọn. */
+    pick(kind: 'folder' | 'zip'): Promise<SkillPreviewResult>
+    /** Cài đúng gói đã xem trước. */
+    install(token: string): Promise<SkillInfo>
+    cancelPreview(token: string): Promise<void>
+    remove(name: string): Promise<void>
+    setEnabled(name: string, enabled: boolean): Promise<void>
+    openFolder(): Promise<void>
+    /** Ghi chú trong skill my-style. */
+    styleNotes(): Promise<string[]>
+    /** Ghi lại toàn bộ ghi chú my-style (đã được người dùng duyệt). Rỗng = xoá skill. */
+    setStyleNotes(notes: string[]): Promise<void>
+    /** Nhờ trợ lý đọc hội thoại gần đây và ĐỀ XUẤT ghi chú phong cách — không tự lưu. */
+    learnStyle(): Promise<StyleLearnResult>
   }
   voice: {
     status(): Promise<VoiceStatus>

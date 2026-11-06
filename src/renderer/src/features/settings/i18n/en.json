@@ -18,15 +18,28 @@
       "concise": "Concise",
       "custom": "Custom"
     },
-    "languages": { "vi": "Tiếng Việt", "en": "English" }
+    "languages": {
+      "vi": "Tiếng Việt",
+      "en": "English"
+    }
   },
   "appearance": {
     "heading": "Appearance",
     "theme": "Light / dark mode",
-    "themes": { "system": "System", "light": "Light", "dark": "Dark" },
+    "themes": {
+      "system": "System",
+      "light": "Light",
+      "dark": "Dark"
+    },
     "toggle": "Switch to {{mode}} mode",
     "accent": "Accent color",
-    "accents": { "blue": "Blue", "violet": "Violet", "green": "Green", "orange": "Orange", "rose": "Rose" }
+    "accents": {
+      "blue": "Blue",
+      "violet": "Violet",
+      "green": "Green",
+      "orange": "Orange",
+      "rose": "Rose"
+    }
   },
   "claude": {
     "heading": "AI connection",
@@ -94,5 +107,52 @@
     "description": "New features, off by default. Only enable them after reading the instructions.",
     "computer": "Computer control (screen viewing)",
     "agents": "Agent connections (Claude Code, Claude Desktop, MCP)"
+  },
+  "skills": {
+    "heading": "Skills",
+    "description": "Teach {{name}} your own way of working with skills (a folder with SKILL.md, like Claude skills). {{name}} picks a few skills that fit each question instead of using all of them. Skills are text only — the app never runs bundled scripts.",
+    "installFolder": "Install from folder",
+    "installZip": "Install from .zip",
+    "openFolder": "Open skills folder",
+    "howToCall": "Call one by name in chat: \"use skill <name>\" or \"/<name>\".",
+    "empty": "No skills installed yet.",
+    "enable": "Enable skill {{name}}",
+    "view": "View skill {{name}}",
+    "remove": "Remove skill {{name}}",
+    "removeConfirm": "Remove for good?",
+    "builtin": "Built-in app skills ({{count}}) — view only",
+    "preview": {
+      "title": "Install skill \"{{name}}\"?",
+      "origin": "Source",
+      "replaces": "A skill with this name exists — installing replaces it.",
+      "files": "Files to install",
+      "skipped": "Skipped (scripts, binary or oversized files — not installed, never run)",
+      "textOnly": "Read the content before installing: the skill is added to the assistant instructions whenever it is picked.",
+      "install": "Install"
+    },
+    "style": {
+      "heading": "Your style (my-style)",
+      "description": "Notes on how you like answers, slides, documents and code. Always used when present. Only what you approve is saved.",
+      "learn": "Learn from recent chats",
+      "proposed": "Suggestions — untick or edit before saving",
+      "save": "Save selected notes",
+      "discard": "Discard",
+      "nothing": "Nothing new about your style yet.",
+      "error": "Could not learn right now. Try again later.",
+      "removeNote": "Remove note",
+      "add": "Add",
+      "addPlaceholder": "Add a note yourself, e.g. Dark slides, large text"
+    },
+    "errors": {
+      "no_skill_md": "No SKILL.md found in the package.",
+      "many_skill_md": "The package has several SKILL.md files — install one skill at a time.",
+      "bad_frontmatter": "SKILL.md needs a frontmatter with name and description.",
+      "bad_name": "Skill names may only contain lowercase letters, digits and hyphens.",
+      "builtin_name": "Same name as a built-in app skill — rename the skill.",
+      "too_large": "Package too large (max 100 files, 2 MB).",
+      "bad_zip": "The .zip file is broken or unreadable.",
+      "unreadable": "Could not read the selected folder / file.",
+      "install": "Install failed. Try picking the package again."
+    }
   }
 }
