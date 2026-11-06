@@ -19,6 +19,7 @@
 - Bảng cân bằng: cột công thức tự tính (bộ phân tích an toàn, không eval), ô lệch nhiều so với trung bình được tô vàng / đỏ, sửa số ngay trong panel — trợ lý thấy bản mới ở lần hỏi tiếp.
 - Mẫu cho làm game: Game Design Document, bảng cân bằng chỉ số, roadmap, pitch deck. Theme slide: Sáng, Tối, Pixel + theme JSON tự thêm.
 - An toàn: artifact chạy trong iframe chỉ `allow-scripts` ở origin riêng `mmc-artifact://`, CSP chặn mạng, thư viện (Chart.js, Mermaid) đóng gói sẵn; không đọc được dữ liệu / API của app, không mở cửa sổ hay điều hướng; artifact treo không làm đơ app.
+- **Giao diện luôn đúng trạng thái**: mọi trang (Cài đặt › Cập nhật / Giọng nói / Chat biểu cảm / Skill, Điều khiển máy tính, Kết nối agent, Gmail, Telegram, panel Artifacts) tự cập nhật khi trạng thái đổi ở bất kỳ đâu — không phải bật/tắt hay mở lại trang. Bật/tắt, đổi tên, chọn hiện ngay; lưu lỗi thì tự hoàn tác và báo lỗi. Lịch sử trao đổi với agent hiện ngay thay vì đợi tới 5 giây; chép skill vào thư mục rồi quay lại app là thấy.
 
 ### Thêm mới
 - **Giọng nói** (mặc định tắt): nút micro trong khung chat — nhận giọng nói bằng faster-whisper chạy trên máy (GPU NVIDIA: large-v3-turbo; không có GPU hoặc GPU lỗi: small trên CPU), không khoá ngôn ngữ (nói lẫn Việt / Anh / Nhật), có từ vựng riêng. Nói xong điền vào ô nhập để sửa hoặc gửi luôn (tuỳ chọn). Tin gửi bằng giọng có nhãn "🎤 nói" và nghe lại được ghi âm gốc (chỉ trên máy, tự xoá sau 7 ngày).
