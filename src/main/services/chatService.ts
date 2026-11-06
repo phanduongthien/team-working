@@ -15,6 +15,7 @@ import type { AIProvider, HistoryMessage } from '../ai/AIProvider'
 import type { TurnPlan } from '../expressive/affinity'
 import type { FinalizedReply } from '../expressive/service'
 import { buildSystemPrompt, type UserProfileContext } from '../ai/systemPrompt'
+import { titleFromPrompt } from '../chat/organize'
 import type { ConversationRepository, MessageRepository } from '../db/repositories'
 
 export type ChatServiceDeps = {
@@ -33,6 +34,8 @@ export type ChatServiceDeps = {
   log: { info(msg: string): void; error(msg: string): void }
   /** Lượt chạy kết thúc (xong/lỗi/dừng) — vd hủy các yêu cầu duyệt sửa file còn treo. */
   onRunEnd?(conversationId: string): void
+  /** Tin đầu của cuộc chưa có tiêu đề: đặt tiêu đề tạm + gợi ý nhóm (ConversationOrganizer). */
+  onFirstMessage?(conversationId: string, text: string): void
   /** Tool của app được bật cho lượt này (vd xem màn hình) + hướng dẫn chèn vào system prompt. */
   appToolsFor?(conversationId: string): { names: string[]; context: string } | null
   /** Chat biểu cảm (emoji / reaction / GIF / sticker). Không có → chỉ bỏ thẻ khỏi câu trả lời. */
@@ -218,11 +221,11 @@ export class ChatService {
       content: '',
       status: 'streaming'
     })
-    if (!conversation.title)
-      conversations.update({
-        id: conversationId,
-        title: titleFromText(text || media?.title || attachments.map((a) => a.name).join(', '))
-      })
+    if (!conversation.title) {
+      const first = text || media?.title || attachments.map((a) => a.name).join(', ')
+      if (this.deps.onFirstMessage) this.deps.onFirstMessage(conversationId, first)
+      else conversations.setAutoTitle(conversationId, titleFromPrompt(first), 'fixed')
+    }
     conversations.touch(conversationId)
 
     const requestId = randomUUID()
@@ -254,6 +257,7 @@ export class ChatService {
       userMessageId: userMessage.id,
       plan,
       history,
+      forked: !!conversation.forkedFromMessageId,
       attachments,
       options,
       signal: controller.signal
@@ -330,6 +334,8 @@ export class ChatService {
     plan: TurnPlan | null
     voice: boolean
     history: Message[]
+    /** Nhánh (fork) — chưa có session thì gửi kèm lịch sử. */
+    forked: boolean
     attachments: StoredAttachment[]
     options: RunOptions
     signal: AbortSignal
@@ -429,8 +435,13 @@ export class ChatService {
       }
     }
 
+    // Nhánh tách từ cuộc khác: chưa có session CLI nhưng đã có tin cũ → lượt đầu gửi kèm lịch sử.
+    const firstPrompt =
+      provider.stateful && !initialSession && args.forked && args.history.length > 0
+        ? promptWithHistory(args.history, args.text)
+        : args.text
     try {
-      await attempt(args.text, initialSession)
+      await attempt(firstPrompt, initialSession)
       if (error && initialSession && isLostSession(error) && !signal.aborted) {
         deps.log.info(`Session ${initialSession} không còn, tạo session mới cho ${conversationId}`)
         deps.conversations.setSession(conversationId, null)

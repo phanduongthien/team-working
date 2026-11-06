@@ -16,6 +16,7 @@ import { PanelRight } from 'lucide-react'
 import { ArtifactPanel } from '../artifacts/ArtifactPanel'
 import { useArtifacts } from '../artifacts/store'
 import { ConversationSidebar } from './ConversationSidebar'
+import { GroupSuggestion } from './GroupSuggestion'
 import { MessageItem } from './MessageItem'
 
 const EMPTY: never[] = []
@@ -135,6 +136,7 @@ export function ChatPage() {
               </Button>
             </div>
           )}
+          {active && <GroupSuggestion conversation={active} />}
           {mode === 'code' && <CodeBar conversation={active} busy={isStreaming} />}
           <Composer
             mode={mode}

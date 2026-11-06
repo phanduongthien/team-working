@@ -41,6 +41,15 @@ describe('parseVersion / parseAuthStatus', () => {
 describe('buildCliArgs', () => {
   const base = { systemPromptFile: 'C:\\tmp\\system-1.md', tools: [] as string[] }
 
+  it('việc nền dùng model rẻ: --model haiku (chỉ khi yêu cầu)', () => {
+    expect(buildCliArgs({ ...base, mode: 'free', ephemeral: true, cheap: true }).slice(-3)).toEqual([
+      '--no-session-persistence',
+      '--model',
+      'haiku'
+    ])
+    expect(buildCliArgs({ ...base, mode: 'free' })).not.toContain('--model')
+  })
+
   it('không đưa prompt vào args, bật restricted và không tool ở chế độ thường', () => {
     const args = buildCliArgs({ ...base, mode: 'free' })
     expect(args).toEqual([

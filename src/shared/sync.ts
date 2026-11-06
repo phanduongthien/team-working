@@ -18,7 +18,8 @@ export const SYNC_TOPICS = [
   'ai',
   'appearance',
   'assistant',
-  'workday'
+  'workday',
+  'conversations'
 ] as const
 
 export type SyncTopic = (typeof SYNC_TOPICS)[number]
@@ -41,5 +42,6 @@ export const SETTINGS_TOPICS: Record<string, SyncTopic> = {
   ai: 'ai',
   appearance: 'appearance',
   assistant: 'assistant',
-  workday: 'workday'
+  workday: 'workday',
+  chatOrganize: 'conversations'
 }

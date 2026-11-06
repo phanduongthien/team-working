@@ -35,7 +35,9 @@ import {
   computerUseSettingsSchema,
   DEFAULT_COMPUTER_USE_SETTINGS,
   idSchema,
-  type AiProviderId
+  type AiProviderId,
+  chatOrganizeSettingsSchema,
+  DEFAULT_CHAT_ORGANIZE_SETTINGS
 } from '@shared/schemas'
 import type { AIProvider } from './ai/AIProvider'
 import { AnthropicApiProvider } from './ai/AnthropicApiProvider'
@@ -46,6 +48,7 @@ import { openDatabase } from './db/client'
 import {
   AgentExchangeRepository,
   LOCAL_OWNER,
+  ConversationGroupRepository,
   ConversationRepository,
   MemoryRepository,
   MessageRepository,
@@ -53,6 +56,7 @@ import {
   SuggestionRepository
 } from './db/repositories'
 import { CodeApprovals } from './code/approvals'
+import { ConversationOrganizer } from './chat/organizer'
 import { completeText } from './ai/AIProvider'
 import { agentHttpServer } from './agents/httpServer'
 import {
@@ -217,6 +221,7 @@ async function bootstrap(): Promise<void> {
   let scope: AccountScope | null = null
   const getOwner = (): string => scope?.current ?? LOCAL_OWNER
   const conversations = new ConversationRepository(db, getOwner)
+  const conversationGroups = new ConversationGroupRepository(db, getOwner)
   const messages = new MessageRepository(db)
   const memories = new MemoryRepository(db, getOwner)
   const suggestions = new SuggestionRepository(db, getOwner)
@@ -597,6 +602,19 @@ async function bootstrap(): Promise<void> {
     log,
     getOwner
   })
+  // Tiêu đề ngắn + gợi ý nhóm cho cuộc trò chuyện mới (từ khoá ngay; model rẻ sau lượt trả lời đầu).
+  const organizer = new ConversationOrganizer({
+    conversations,
+    groups: conversationGroups,
+    messages,
+    getProvider,
+    getSettings: () => settings.get('chatOrganize', chatOrganizeSettingsSchema, DEFAULT_CHAT_ORGANIZE_SETTINGS),
+    workspaceDir,
+    log,
+    changed: () => sync.changed('conversations')
+  })
+  const legacyTitles = organizer.fixLegacyTitles()
+  if (legacyTitles) log.info(`Sửa ${legacyTitles} tiêu đề chat dạng lệnh tạo artifact`)
   const chat = new ChatService({
     conversations,
     messages,
@@ -608,7 +626,11 @@ async function bootstrap(): Promise<void> {
     workspaceDir,
     emit: (payload) => mainWindow?.webContents.send(IPC.chatEvent, payload),
     log,
+    onFirstMessage: (conversationId, text) => organizer.onFirstMessage(conversationId, text),
     onRunEnd: (conversationId) => {
+      // Thứ tự (cập nhật lúc trả lời xong) trên thanh bên.
+      sync.changed('conversations')
+      void organizer.afterRun(conversationId).catch((e: unknown) => log.warn(`Đặt tiêu đề tự động lỗi: ${String(e)}`))
       approvals.cancelConversation(conversationId)
       mcpApprovals.cancelConversation(conversationId)
       draftApprovals.cancelConversation(conversationId)
@@ -638,6 +660,7 @@ async function bootstrap(): Promise<void> {
   const getWindow = (): BrowserWindow | null => mainWindow
   registerIpc({
     conversations,
+    groups: conversationGroups,
     messages,
     memories,
     suggestions,

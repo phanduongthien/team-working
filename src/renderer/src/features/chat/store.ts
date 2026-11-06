@@ -2,8 +2,9 @@ import { create } from 'zustand'
 import type { ChatMode } from '@shared/ai'
 import type { MediaRef } from '@shared/expressive'
 import type { MessageVoice } from '@shared/voice'
-import type { ChatStreamPayload, Conversation, Message } from '@shared/types'
+import type { ChatStreamPayload, Conversation, ConversationGroup, Message } from '@shared/types'
 import { api } from '@renderer/lib/api'
+import { coalesce, optimistic } from '@renderer/lib/sync'
 import { applyChatEvent, isTerminalEvent } from './chatEvents'
 
 type Streaming = { requestId: string; messageId: string }
@@ -19,6 +20,7 @@ const early = new Map<string, ChatStreamPayload[]>()
 
 type ChatState = {
   conversations: Conversation[]
+  groups: ConversationGroup[]
   query: string
   activeId: string | null
   messages: Record<string, Message[]>
@@ -26,11 +28,23 @@ type ChatState = {
   error: string | null
 
   loadConversations(): Promise<void>
+  /** Hỏi lại danh sách + nhóm (gộp các lần gọi dồn dập) — dùng cho sync 'conversations'. */
+  refreshSidebar(): Promise<void>
   setQuery(query: string): Promise<void>
   select(id: string | null): Promise<void>
   create(mode?: ChatMode): Promise<Conversation>
   rename(id: string, title: string): Promise<void>
   togglePin(id: string): Promise<void>
+  /** Kéo thả / menu: chuyển vào nhóm (null = bỏ khỏi nhóm). `pinned` đổi kèm khi thả vào / ra mục Đã ghim. */
+  moveTo(id: string, target: { groupId: string | null; pinned?: boolean }): Promise<void>
+  /** Tách nhánh từ một tin → mở luôn cuộc mới. */
+  fork(messageId: string): Promise<void>
+  answerSuggestion(id: string, accept: boolean): Promise<void>
+  /** Tạo nhóm; trả mã lỗi (vd group_name_taken) hoặc null. */
+  createGroup(name: string): Promise<string | null>
+  renameGroup(id: string, name: string): Promise<string | null>
+  toggleGroup(id: string): Promise<void>
+  removeGroup(id: string): Promise<void>
   setMode(id: string, mode: ChatMode): Promise<void>
   /** Chế độ Code: chọn thư mục dự án (tạo hội thoại mới nếu chưa có). */
   chooseFolder(): Promise<void>
@@ -55,9 +69,32 @@ type ChatState = {
 export const useChat = create<ChatState>((set, get) => {
   const replaceConversation = (c: Conversation): void =>
     set((s) => ({ conversations: s.conversations.map((x) => (x.id === c.id ? c : x)) }))
+  const patchConversation = (id: string, patch: Partial<Conversation>): void =>
+    set((s) => ({ conversations: s.conversations.map((x) => (x.id === id ? { ...x, ...patch } : x)) }))
+  const patchGroup = (id: string, patch: Partial<ConversationGroup>): void =>
+    set((s) => ({ groups: s.groups.map((g) => (g.id === id ? { ...g, ...patch } : g)) }))
+  /** Thao tác lạc quan trên một hội thoại: hiện ngay, lỗi → về lại bản cũ + báo. */
+  const optimisticConversation = async (id: string, patch: Partial<Conversation>, save: () => Promise<unknown>) => {
+    const before = get().conversations.find((c) => c.id === id)
+    if (!before) return
+    await optimistic({
+      topic: 'conversations',
+      apply: () => patchConversation(id, patch),
+      rollback: () => replaceConversation(before),
+      save
+    })
+  }
+  const refresh = coalesce(async () => {
+    const [conversations, groups] = await Promise.all([
+      api.conversations.list(get().query || undefined),
+      api.conversationGroups.list()
+    ])
+    set({ conversations, groups })
+  })
 
   return {
     conversations: [],
+    groups: [],
     query: '',
     activeId: null,
     messages: {},
@@ -65,9 +102,10 @@ export const useChat = create<ChatState>((set, get) => {
     error: null,
 
     async loadConversations() {
-      const conversations = await api.conversations.list(get().query || undefined)
-      set({ conversations })
+      await refresh()
     },
+
+    refreshSidebar: () => refresh(),
 
     async setQuery(query) {
       set({ query })
@@ -96,14 +134,105 @@ export const useChat = create<ChatState>((set, get) => {
     },
 
     async rename(id, title) {
-      replaceConversation(await api.conversations.update({ id, title }))
+      await optimisticConversation(id, { title }, () => api.conversations.update({ id, title }))
     },
 
     async togglePin(id) {
       const conv = get().conversations.find((c) => c.id === id)
       if (!conv) return
-      await api.conversations.update({ id, pinned: !conv.pinned })
-      await get().loadConversations()
+      const pinned = !conv.pinned
+      await optimisticConversation(id, { pinned }, () => api.conversations.update({ id, pinned }))
+    },
+
+    async moveTo(id, { groupId, pinned }) {
+      const conv = get().conversations.find((c) => c.id === id)
+      if (!conv) return
+      const patch: Partial<Conversation> = { groupId, suggestedGroupId: null }
+      if (pinned !== undefined) patch.pinned = pinned
+      if (conv.groupId === groupId && (pinned === undefined || pinned === conv.pinned)) return
+      await optimisticConversation(id, patch, () =>
+        api.conversations.update({ id, groupId, ...(pinned === undefined ? {} : { pinned }) })
+      )
+    },
+
+    async fork(messageId) {
+      try {
+        const conv = await api.conversations.fork(messageId)
+        set((s) => ({ conversations: [conv, ...s.conversations.filter((c) => c.id !== conv.id)] }))
+        await get().select(conv.id)
+      } catch (err) {
+        set({ error: errorCode(err) })
+      }
+    },
+
+    async answerSuggestion(id, accept) {
+      const conv = get().conversations.find((c) => c.id === id)
+      if (!conv) return
+      const patch: Partial<Conversation> = { suggestedGroupId: null }
+      if (accept && conv.suggestedGroupId) patch.groupId = conv.suggestedGroupId
+      await optimisticConversation(id, patch, () => api.conversations.answerSuggestion(id, accept))
+    },
+
+    async createGroup(name) {
+      let code: string | null = null
+      const tempId = `pending-${Date.now()}`
+      await optimistic({
+        topic: 'conversations',
+        apply: () =>
+          set((s) => ({ groups: [...s.groups, { id: tempId, name: name.trim(), collapsed: false, createdAt: Date.now() }] })),
+        rollback: () => set((s) => ({ groups: s.groups.filter((g) => g.id !== tempId) })),
+        save: () => api.conversationGroups.create(name),
+        onError: (c) => {
+          code = c
+        }
+      })
+      return code
+    },
+
+    async renameGroup(id, name) {
+      const before = get().groups.find((g) => g.id === id)
+      if (!before) return null
+      let code: string | null = null
+      await optimistic({
+        topic: 'conversations',
+        apply: () => patchGroup(id, { name: name.trim() }),
+        rollback: () => patchGroup(id, { name: before.name }),
+        save: () => api.conversationGroups.update({ id, name }),
+        onError: (c) => {
+          code = c
+        }
+      })
+      return code
+    },
+
+    async toggleGroup(id) {
+      const before = get().groups.find((g) => g.id === id)
+      if (!before) return
+      const collapsed = !before.collapsed
+      await optimistic({
+        topic: 'conversations',
+        apply: () => patchGroup(id, { collapsed }),
+        rollback: () => patchGroup(id, { collapsed: before.collapsed }),
+        save: () => api.conversationGroups.update({ id, collapsed })
+      })
+    },
+
+    async removeGroup(id) {
+      const { groups, conversations } = get()
+      await optimistic({
+        topic: 'conversations',
+        apply: () =>
+          set((s) => ({
+            groups: s.groups.filter((g) => g.id !== id),
+            conversations: s.conversations.map((c) => ({
+              ...c,
+              groupId: c.groupId === id ? null : c.groupId,
+              suggestedGroupId: c.suggestedGroupId === id ? null : c.suggestedGroupId
+            }))
+          })),
+        rollback: () => set({ groups, conversations }),
+        save: () => api.conversationGroups.remove(id)
+      })
     },
 
     async setMode(id, mode) {
@@ -189,7 +318,7 @@ export const useChat = create<ChatState>((set, get) => {
         const buffered = early.get(res.assistantMessage.id) ?? []
         early.delete(res.assistantMessage.id)
         for (const payload of buffered) get().handleEvent(payload)
-        await get().loadConversations()
+        // Danh sách (tiêu đề tạm, thứ tự) tự cập nhật qua sync 'conversations'.
         return true
       } catch (err) {
         set({ error: errorCode(err) })
@@ -221,7 +350,6 @@ export const useChat = create<ChatState>((set, get) => {
         }
         return next
       })
-      if (isTerminalEvent(event)) void get().loadConversations()
     },
 
     clearError() {
@@ -232,6 +360,7 @@ export const useChat = create<ChatState>((set, get) => {
       early.clear()
       set({
         conversations: [],
+        groups: [],
         query: '',
         activeId: null,
         messages: {},

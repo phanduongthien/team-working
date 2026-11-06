@@ -1,4 +1,4 @@
-import { CircleAlert, CircleStop, Wrench } from 'lucide-react'
+import { CircleAlert, CircleStop, GitBranch, Wrench } from 'lucide-react'
 import { memo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { stripExpressTags } from '@shared/expressive'
@@ -13,6 +13,28 @@ import { hideArtifactBlocks } from '@shared/artifacts'
 import { AttachmentChip } from './AttachmentChip'
 import { ImageThumb } from './ImageThumb'
 import { Markdown } from './Markdown'
+import { Button } from '@renderer/components/ui/button'
+import { useChat } from '../store'
+
+/** Tách nhánh: cuộc mới có sẵn ngữ cảnh tới tin này. */
+function ForkButton({ message }: { message: Message }) {
+  const { t } = useTranslation('chat')
+  const fork = useChat((s) => s.fork)
+  if (message.status === 'streaming') return null
+  return (
+    <Button
+      variant="ghost"
+      size="icon-sm"
+      className="opacity-0 group-hover/msg:opacity-100 focus-visible:opacity-100"
+      title={t('organize.forkFromHere')}
+      aria-label={t('organize.forkFromHere')}
+      onClick={() => void fork(message.id)}
+      data-testid="fork-message"
+    >
+      <GitBranch />
+    </Button>
+  )
+}
 
 const mediaSize = (m: NonNullable<Message['media']>): string =>
   m.kind === 'sticker' ? 'size-32' : 'h-40 w-56'
@@ -37,6 +59,7 @@ export const MessageItem = memo(function MessageItem({ message }: { message: Mes
         )}
         {message.media && <MediaView item={message.media} className={mediaSize(message.media)} />}
         <div className="flex max-w-[80%] items-center gap-2">
+          <ForkButton message={message} />
           <ReactionBar message={message} align="end" />
           {message.content && (
             <div className="rounded-2xl rounded-br-sm bg-primary px-4 py-2.5 text-sm whitespace-pre-wrap text-primary-foreground">
@@ -103,6 +126,7 @@ export const MessageItem = memo(function MessageItem({ message }: { message: Mes
         )}
         <div className="flex items-center gap-2">
           <SpeakButton message={message} />
+          <ForkButton message={message} />
           <ReactionChips message={message} align="start" />
           <ReactionBar message={message} align="start" />
         </div>

@@ -2,10 +2,11 @@ import { KeyRound, Trash2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router'
-import { AI_PROVIDERS, apiKeySchema, type AiProviderId, type AiSettings } from '@shared/schemas'
+import { AI_PROVIDERS, apiKeySchema, type AiProviderId, type AiSettings, type ChatOrganizeSettings } from '@shared/schemas'
 import { Button } from '@renderer/components/ui/button'
 import { Input, Label } from '@renderer/components/ui/input'
 import { api } from '@renderer/lib/api'
+import { optimistic, useSyncedState } from '@renderer/lib/sync'
 import { cn } from '@renderer/lib/utils'
 
 type AiState = AiSettings & { hasApiKey: boolean; secureStorage: boolean }
@@ -129,6 +130,42 @@ export function AiSection() {
           <span className="block text-xs text-muted-foreground">{t('ai.autoSuggestHelp')}</span>
         </span>
       </label>
+      <ChatOrganizeOptions />
     </div>
+  )
+}
+
+/** Đặt tiêu đề / gợi ý nhóm cho cuộc trò chuyện mới bằng model rẻ (Haiku). */
+function ChatOrganizeOptions() {
+  const { t } = useTranslation('settings')
+  const { data, setData } = useSyncedState('conversations', () => api.settings.getChatOrganize())
+  if (!data) return null
+  const toggle = (key: keyof ChatOrganizeSettings, value: boolean): void => {
+    const next = { ...data, [key]: value }
+    void optimistic({
+      topic: 'conversations',
+      apply: () => setData(next),
+      rollback: () => setData(data),
+      save: () => api.settings.setChatOrganize(next)
+    })
+  }
+  return (
+    <>
+      {(['aiTitles', 'suggestGroups'] as const).map((key) => (
+        <label key={key} className="flex items-start gap-3">
+          <input
+            type="checkbox"
+            className="mt-1"
+            checked={data[key]}
+            onChange={(e) => toggle(key, e.target.checked)}
+            data-testid={`organize-${key}`}
+          />
+          <span>
+            <span className="block text-sm font-medium">{t(`ai.organize.${key}`)}</span>
+            <span className="block text-xs text-muted-foreground">{t(`ai.organize.${key}Help`)}</span>
+          </span>
+        </label>
+      ))}
+    </>
   )
 }

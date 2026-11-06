@@ -1,5 +1,6 @@
 import { MessagesSquare } from 'lucide-react'
 import { api } from '@renderer/lib/api'
+import { onSync } from '@renderer/lib/sync'
 import type { FeatureDefinition } from '../types'
 import { ChatPage } from './components/ChatPage'
 import { CodeApprovalOverlay } from './components/CodeApprovalOverlay'
@@ -20,9 +21,12 @@ export const chatFeature: FeatureDefinition = {
   // Nghe stream ở cấp app để không mất sự kiện khi người dùng sang trang khác.
   setup: () => {
     const offChat = api.chat.onEvent((payload) => useChat.getState().handleEvent(payload))
+    // Thanh bên: tiêu đề AI đặt, gợi ý nhóm, thay đổi từ nơi khác → cập nhật ngay.
+    const offSidebar = onSync('conversations', () => useChat.getState().refreshSidebar())
     const offVoice = setupVoice()
     return () => {
       offChat()
+      offSidebar()
       offVoice()
     }
   },
