@@ -9,7 +9,7 @@
 - **Gợi ý nhóm**: cuộc chat mới có tên nhóm / từ khoá giống các cuộc trong nhóm → trợ lý gợi ý ngay (không tốn hạn mức); không ra thì hỏi kèm lượt đặt tiêu đề. Chỉ chuyển khi bạn bấm "Chuyển vào nhóm".
 - **Tách nhánh**: nút nhánh ở mỗi tin nhắn → cuộc mới có sẵn các tin tới tin đó (trợ lý nắm ngữ cảnh), hiện thụt vào dưới cuộc gốc.
 - **Tiêu đề ngắn tự động**: sau câu trả lời đầu, model rẻ (Haiku) đặt tiêu đề 2–6 từ; tự đổi tên thì giữ tên của bạn. Tắt được trong Cài đặt → AI.
-- Tìm kiếm cuộc trò chuyện tìm được cả theo tên nhóm.
+- Tìm kiếm cuộc trò chuyện tìm được cả theo tên nhóm. Cuộc khớp trong nội dung tin nhắn (không phải tiêu đề) hiện một dòng trích đoạn, chữ khớp tô đậm. Đang tìm: nhóm có kết quả tự mở, vẫn thu gọn được, mỗi nhóm ghi số kết quả; xoá ô tìm → nhóm về trạng thái thu gọn / mở như trước.
 
 ### Sửa lỗi
 - Tiêu đề cuộc chat tạo từ mẫu artifact hiện chữ thô `Tạo artifact type="doc" title=...` → nay là tên artifact; các tiêu đề cũ bị lỗi được sửa tự động khi mở app.

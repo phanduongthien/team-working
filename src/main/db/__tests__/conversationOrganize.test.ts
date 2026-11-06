@@ -80,6 +80,20 @@ describe('nhóm, nhánh, gợi ý nhóm (SQLite in-memory)', () => {
     expect(convs.list('va chạm').map((x) => x.id)).toEqual([c.id])
   })
 
+  it('tìm khớp nội dung tin (không phải tiêu đề) → kèm trích đoạn đánh dấu chữ khớp; khớp tiêu đề thì không', () => {
+    const a = convs.create('free')
+    convs.setAutoTitle(a.id, 'em la ai', 'fixed')
+    msgs.insert({ conversationId: a.id, role: 'assistant', content: 'Em giúp anh:\n- **Học Unity**: từ code C# cơ bản', status: 'done' })
+    const b = convs.create('free')
+    convs.setAutoTitle(b.id, 'Build Unity lỗi', 'fixed')
+    msgs.insert({ conversationId: b.id, role: 'user', content: 'Build Unity lỗi' })
+    const found = convs.list('unity')
+    expect(found.find((c) => c.id === a.id)?.searchSnippet).toBe('Em giúp anh: - Học \u0001Unity\u0002: từ code C# cơ bản')
+    expect(found.find((c) => c.id === b.id)?.searchSnippet).toBeNull()
+    // Không tìm → không có trích đoạn.
+    expect(convs.list().every((c) => c.searchSnippet === undefined)).toBe(true)
+  })
+
   it('tách nhánh: bản sao các tin tới tin được chọn, cùng nhóm, trỏ về gốc', () => {
     const g = groups.create('Unity')
     const parent = convs.create('code')

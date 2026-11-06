@@ -163,6 +163,56 @@ test('tìm kiếm: theo tiêu đề và theo tên nhóm', async () => {
   await expect(groupSection('Tâm sự')).toBeVisible()
 })
 
+test('đang tìm: nhóm có kết quả tự mở, vẫn thu gọn được, hiện số kết quả; xoá ô tìm → về trạng thái cũ', async () => {
+  const search = page.getByRole('textbox', { name: 'Tìm cuộc trò chuyện' })
+  const unity = groupSection('Unity')
+  const toggle = unity.getByTestId('group-toggle')
+  // Trước khi tìm: Unity đang thu gọn (đã lưu).
+  await toggle.click()
+  await expect(toggle).toHaveAttribute('aria-expanded', 'false', FAST)
+
+  await search.fill('unity')
+  await expect(toggle).toHaveAttribute('aria-expanded', 'true')
+  await expect(unity.getByTestId('group-count')).toHaveText('2')
+  await expect(unity.getByTestId('conversation-item')).toHaveCount(2)
+  await toggle.click()
+  await expect(toggle).toHaveAttribute('aria-expanded', 'false', FAST)
+  await expect(unity.getByTestId('conversation-item')).toHaveCount(0, FAST)
+  await expect(unity.getByTestId('group-count')).toHaveText('2')
+  await toggle.click()
+  await expect(unity.getByTestId('conversation-item')).toHaveCount(2, FAST)
+  await toggle.click()
+
+  // Xoá ô tìm → về trạng thái đã lưu trước khi tìm (thu gọn). Nhóm rỗng hiện lại = đã hết tìm thật.
+  await search.fill('')
+  await expect(groupSection('Tâm sự')).toBeVisible()
+  await expect(toggle).toHaveAttribute('aria-expanded', 'false')
+  // Tìm lại → lại tự mở.
+  await search.fill('unity')
+  await expect(toggle).toHaveAttribute('aria-expanded', 'true')
+  await search.fill('')
+  await expect(groupSection('Tâm sự')).toBeVisible()
+  await expect(toggle).toHaveAttribute('aria-expanded', 'false')
+  await toggle.click()
+  await expect(toggle).toHaveAttribute('aria-expanded', 'true', FAST)
+})
+
+test('khớp nội dung tin nhắn (không phải tiêu đề) → dòng trích đoạn, chữ khớp tô đậm', async () => {
+  const search = page.getByRole('textbox', { name: 'Tìm cuộc trò chuyện' })
+  // Tiêu đề "Chủ đề: tối nay nghe" không có "chill" — chỉ tin nhắn có.
+  await search.fill('chill')
+  const row = item(/Chủ đề: tối nay nghe/)
+  await expect(page.getByTestId('conversation-item')).toHaveCount(1)
+  const snippet = row.getByTestId('search-snippet')
+  await expect(snippet).toContainText('tối nay nghe gì cho chill')
+  await expect(snippet.locator('strong').first()).toHaveText('chill')
+  // Khớp ngay ở tiêu đề → không cần trích đoạn.
+  await search.fill('tối nay')
+  await expect(item(/Chủ đề: tối nay nghe/).getByTestId('search-snippet')).toHaveCount(0)
+  await search.fill('')
+  await expect(page.getByTestId('search-snippet')).toHaveCount(0)
+})
+
 test('xoá nhóm: cuộc trò chuyện vẫn còn, ra khỏi nhóm', async () => {
   await groupSection('Unity').getByTestId('group-toggle').hover()
   await groupSection('Unity').getByRole('button', { name: 'Xoá nhóm' }).click()

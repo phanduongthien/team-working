@@ -16,12 +16,35 @@ import { useEffect, useMemo, useState, type DragEvent, type FormEvent, type Reac
 import { useTranslation } from 'react-i18next'
 import type { Conversation, ConversationGroup } from '@shared/types'
 import { GROUP_NAME_MAX } from '@shared/schemas'
+import { snippetParts } from '@shared/search'
 import { Button } from '@renderer/components/ui/button'
 import { Dialog, DialogClose, DialogContent } from '@renderer/components/ui/dialog'
 import { Input } from '@renderer/components/ui/input'
 import { cn } from '@renderer/lib/utils'
 import { buildSidebar, DRAG_TYPE, type SidebarRow, type SidebarSection } from '../sidebarTree'
 import { useChat } from '../store'
+
+/** Dòng trích đoạn dưới tiêu đề: vì sao cuộc này khớp (chữ khớp tô đậm). */
+function SearchSnippet({ snippet }: { snippet: string }) {
+  const { t } = useTranslation('chat')
+  return (
+    <span
+      className="mt-0.5 line-clamp-2 w-full text-xs font-normal text-muted-foreground"
+      data-testid="search-snippet"
+    >
+      <span className="sr-only">{t('organize.matchedIn')}: </span>
+      {snippetParts(snippet).map((p, i) =>
+        p.hit ? (
+          <strong key={i} className="font-semibold text-foreground">
+            {p.text}
+          </strong>
+        ) : (
+          <span key={i}>{p.text}</span>
+        )
+      )}
+    </span>
+  )
+}
 
 type Drop = { kind: 'pinned' } | { kind: 'group'; groupId: string } | { kind: 'recent' }
 const dropKey = (d: Drop): string => (d.kind === 'group' ? `group:${d.groupId}` : d.kind)
@@ -55,13 +78,27 @@ export function ConversationSidebar() {
   const [deletingGroup, setDeletingGroup] = useState<ConversationGroup | null>(null)
   const [over, setOver] = useState<string | null>(null)
 
-  useEffect(() => {
-    const timer = setTimeout(() => void setQuery(search), 200)
-    return () => clearTimeout(timer)
-  }, [search, setQuery])
-
   const searching = !!query.trim()
-  const sections = useMemo(() => buildSidebar(conversations, groups, searching), [conversations, groups, searching])
+  // Thu gọn trong lúc tìm: chỉ tạm thời (không lưu); bắt đầu tìm → nhóm có kết quả mở hết; xoá ô tìm →
+  // về đúng trạng thái thu gọn / mở đã lưu trước khi tìm.
+  const [searchCollapsed, setSearchCollapsed] = useState<Record<string, boolean>>({})
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      // Bắt đầu / kết thúc một lượt tìm → bỏ các lần thu gọn tạm của lượt trước.
+      if (!!search.trim() !== searching) setSearchCollapsed({})
+      void setQuery(search)
+    }, 200)
+    return () => clearTimeout(timer)
+  }, [search, searching, setQuery])
+  const sections = useMemo(
+    () => buildSidebar(conversations, groups, searching, searchCollapsed),
+    [conversations, groups, searching, searchCollapsed]
+  )
+  const onToggleGroup = (id: string, collapsed: boolean): void => {
+    if (searching) setSearchCollapsed((s) => ({ ...s, [id]: !collapsed }))
+    else void toggleGroup(id)
+  }
   const groupName = (id: string | null): string | undefined => groups.find((g) => g.id === id)?.name
 
   // ---- Kéo thả ----
@@ -106,21 +143,24 @@ export function ConversationSidebar() {
         data-title={c.title}
       >
         <button
-          className="flex min-w-0 flex-1 items-center gap-1.5 px-2.5 py-2 text-left"
+          className="flex min-w-0 flex-1 flex-col px-2.5 py-2 text-left"
           onClick={() => void select(c.id)}
           title={c.title || t('untitled')}
         >
-          {streaming[c.id] && <span className="inline-block size-1.5 shrink-0 animate-pulse rounded-full bg-primary" />}
-          {c.parentId && (
-            <GitBranch className="size-3.5 shrink-0 text-muted-foreground" aria-label={t('organize.fork')} />
-          )}
-          <span className="truncate">{c.title || t('untitled')}</span>
-          {c.suggestedGroupId && (
-            <Sparkles
-              className="size-3 shrink-0 text-primary"
-              aria-label={t('organize.suggestedBadge', { group: groupName(c.suggestedGroupId) })}
-            />
-          )}
+          <span className="flex w-full min-w-0 items-center gap-1.5">
+            {streaming[c.id] && <span className="inline-block size-1.5 shrink-0 animate-pulse rounded-full bg-primary" />}
+            {c.parentId && (
+              <GitBranch className="size-3.5 shrink-0 text-muted-foreground" aria-label={t('organize.fork')} />
+            )}
+            <span className="truncate">{c.title || t('untitled')}</span>
+            {c.suggestedGroupId && (
+              <Sparkles
+                className="size-3 shrink-0 text-primary"
+                aria-label={t('organize.suggestedBadge', { group: groupName(c.suggestedGroupId) })}
+              />
+            )}
+          </span>
+          {c.searchSnippet && <SearchSnippet snippet={c.searchSnippet} />}
         </button>
         <div className="hidden shrink-0 group-hover:flex">
           <Button variant="ghost" size="icon-sm" title={c.pinned ? t('unpin') : t('pin')} onClick={() => void togglePin(c.id)}>
@@ -181,13 +221,15 @@ export function ConversationSidebar() {
         <div className="group flex items-center gap-1 pt-2 pr-1">
           <button
             className="flex min-w-0 flex-1 items-center gap-1 px-1.5 py-1 text-left text-xs font-medium text-muted-foreground hover:text-foreground"
-            onClick={() => void toggleGroup(g.id)}
+            onClick={() => onToggleGroup(g.id, s.collapsed)}
             aria-expanded={!s.collapsed}
             data-testid="group-toggle"
           >
             {s.collapsed ? <ChevronRight className="size-3.5 shrink-0" /> : <ChevronDown className="size-3.5 shrink-0" />}
             <span className="truncate">{g.name}</span>
-            <span className="shrink-0 tabular-nums opacity-70">{s.count}</span>
+            <span className="shrink-0 tabular-nums opacity-70" data-testid="group-count">
+              {s.count}
+            </span>
           </button>
           <div className="hidden shrink-0 group-hover:flex">
             <Button

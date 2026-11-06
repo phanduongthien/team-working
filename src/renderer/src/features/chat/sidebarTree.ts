@@ -15,12 +15,14 @@ export const MAX_DEPTH = 3
  * Dựng thanh bên: Đã ghim (luôn ở đầu) → từng nhóm → chưa xếp nhóm.
  * `conversations` giữ thứ tự main trả về (ghim trước, mới nhất trước).
  * - Nhánh nằm ngay dưới cuộc gốc khi cả hai ở cùng mục; khác mục (vd nhánh được ghim) thì đứng riêng.
- * - Đang tìm kiếm: nhóm luôn mở, nhóm không có kết quả bị ẩn.
+ * - Đang tìm kiếm: nhóm có kết quả tự mở (vẫn thu gọn được — `searchCollapsed`, chỉ trong lúc tìm,
+ *   không ghi đè trạng thái đã lưu), nhóm không có kết quả bị ẩn; `count` = số kết quả khớp.
  */
 export function buildSidebar(
   conversations: Conversation[],
   groups: ConversationGroup[],
-  searching: boolean
+  searching: boolean,
+  searchCollapsed: Record<string, boolean> = {}
 ): SidebarSection[] {
   const groupIds = new Set(groups.map((g) => g.id))
   const sectionOf = (c: Conversation): string =>
@@ -61,7 +63,7 @@ export function buildSidebar(
   for (const group of groups) {
     const list = buckets.get(`group:${group.id}`) ?? []
     if (searching && list.length === 0) continue
-    const collapsed = !searching && group.collapsed
+    const collapsed = searching ? (searchCollapsed[group.id] ?? false) : group.collapsed
     sections.push({ kind: 'group', group, rows: collapsed ? [] : rowsOf(list), count: list.length, collapsed })
   }
   const recent = buckets.get('recent') ?? []

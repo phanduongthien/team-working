@@ -84,6 +84,11 @@ export type Conversation = {
   parentId: string | null
   /** Trợ lý gợi ý xếp vào nhóm này — chờ người dùng đồng ý. */
   suggestedGroupId: string | null
+  /**
+   * Chỉ khi đang tìm kiếm và khớp nội dung tin nhắn (không phải tiêu đề): trích đoạn, chữ khớp nằm giữa
+   * SNIPPET_OPEN / SNIPPET_CLOSE (`@shared/search`).
+   */
+  searchSnippet?: string | null
   createdAt: number
   updatedAt: number
 }

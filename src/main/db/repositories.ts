@@ -19,6 +19,7 @@ import type {
   StoredAttachment,
   ToolEvent
 } from '@shared/types'
+import { SNIPPET_CLOSE, SNIPPET_OPEN } from '@shared/search'
 import { normalize } from '../chat/organize'
 import type { AppDatabase } from './client'
 import {
@@ -78,6 +79,19 @@ const toMessage = (r: MessageRow): Message => ({
   createdAt: r.createdAt
 })
 
+/**
+ * Trích đoạn kết quả tìm: bỏ ký hiệu Markdown / xuống dòng, giữ dấu đánh dấu chữ khớp
+ * (SNIPPET_OPEN / SNIPPET_CLOSE — ký tự điều khiển, không bao giờ có trong tin nhắn thường).
+ */
+export function cleanSnippet(snippet: string): string {
+  return snippet
+    .replace(/```[a-z]*|\*+|__+|`+|\[\[[^\]]*\]\]/gi, '')
+    // Đầu dòng tiêu đề / trích dẫn Markdown (giữ "C#", "a > b" giữa câu).
+    .replace(/(^|\n)\s*(#{1,6}|>)\s+/g, '$1')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
 /** Escape ký tự đặc biệt của LIKE để tìm kiếm theo chuỗi người dùng nhập. */
 function likePattern(query: string): string {
   return `%${query.replace(/[\\%_]/g, (c) => `\\${c}`)}%`
@@ -126,13 +140,29 @@ export class ConversationRepository {
             sql`${conversations.id} IN (SELECT conversation_id FROM messages_fts WHERE messages_fts MATCH ${match})`
           )
         : or(titleLike, groupLike)
+    if (!match)
+      return this.db
+        .select()
+        .from(conversations)
+        .where(and(this.mine(), where))
+        .orderBy(desc(conversations.pinned), desc(conversations.updatedAt))
+        .all()
+        .map(toConversation)
+    // Khớp trong nội dung tin nhắn (không phải tiêu đề) → kèm trích đoạn để người dùng hiểu vì sao cuộc này hiện ra.
     return this.db
-      .select()
+      .select({
+        row: conversations,
+        titleHit: sql<number>`${titleLike}`,
+        snippet: sql<string | null>`(SELECT snippet(messages_fts, 0, ${SNIPPET_OPEN}, ${SNIPPET_CLOSE}, '…', 10) FROM messages_fts WHERE messages_fts MATCH ${match} AND conversation_id = ${conversations.id} ORDER BY rowid DESC LIMIT 1)`
+      })
       .from(conversations)
       .where(and(this.mine(), where))
       .orderBy(desc(conversations.pinned), desc(conversations.updatedAt))
       .all()
-      .map(toConversation)
+      .map(({ row, titleHit, snippet }) => ({
+        ...toConversation(row),
+        searchSnippet: !titleHit && snippet ? cleanSnippet(snippet) : null
+      }))
   }
 
   get(

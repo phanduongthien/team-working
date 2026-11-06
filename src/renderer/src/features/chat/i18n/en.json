@@ -316,6 +316,7 @@
     "errors": {
       "group_name_taken": "A group with this name already exists.",
       "invalid_input": "Invalid group name."
-    }
+    },
+    "matchedIn": "Matched in messages"
   }
 }

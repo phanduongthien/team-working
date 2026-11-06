@@ -60,6 +60,20 @@ describe('buildSidebar', () => {
     expect(searching[0]).toMatchObject({ kind: 'group', collapsed: false })
   })
 
+  it('đang tìm: vẫn thu gọn được tạm thời (không đụng trạng thái đã lưu), count = số kết quả', () => {
+    const groups = [group('g', { collapsed: true }), group('h')]
+    const list = [conv('a', { groupId: 'g' }), conv('b', { groupId: 'g' }), conv('c', { groupId: 'h' })]
+    expect(buildSidebar(list, groups, true, { h: true })).toMatchObject([
+      { kind: 'group', collapsed: false, count: 2 },
+      { kind: 'group', collapsed: true, count: 1, rows: [] }
+    ])
+    // Hết tìm → về trạng thái đã lưu.
+    expect(buildSidebar(list, groups, false, { h: true })).toMatchObject([
+      { kind: 'group', collapsed: true },
+      { kind: 'group', collapsed: false }
+    ])
+  })
+
   it('nhóm đã bị xoá → cuộc về mục chưa xếp nhóm; dữ liệu vòng không treo', () => {
     const s = buildSidebar([conv('a', { groupId: 'gone', parentId: 'b' }), conv('b', { parentId: 'a' })], [], false)
     expect(s).toHaveLength(1)
