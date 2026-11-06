@@ -43,21 +43,21 @@ export function registerSkillsIpc(deps: SkillsIpcDeps): void {
     }
     return store.preview(path)
   })
-  handle(IPC.skillsInstall, tokenSchema, (token) => store.install(token))
+  const K = { changes: 'skills' } as const
+  handle(IPC.skillsInstall, tokenSchema, (token) => store.install(token), K)
   handle(IPC.skillsCancelPreview, tokenSchema, (token) => store.cancelPreview(token))
-  handle(IPC.skillsRemove, skillNameSchema, (name) => store.remove(name))
+  handle(IPC.skillsRemove, skillNameSchema, (name) => store.remove(name), K)
   handle(
     IPC.skillsSetEnabled,
     z.object({ name: skillNameSchema, enabled: z.boolean() }),
-    ({ name, enabled }) => store.setEnabled(name, enabled)
+    ({ name, enabled }) => store.setEnabled(name, enabled),
+    K
   )
   handle(IPC.skillsOpenFolder, none, async () => {
     await mkdir(deps.userDir, { recursive: true })
     await shell.openPath(deps.userDir)
   })
   handle(IPC.skillsStyleNotes, none, () => store.styleNotes())
-  handle(IPC.skillsSetStyleNotes, z.array(styleNoteSchema).max(100), (notes) =>
-    store.setStyleNotes(notes)
-  )
+  handle(IPC.skillsSetStyleNotes, z.array(styleNoteSchema).max(100), (notes) => store.setStyleNotes(notes), K)
   handle(IPC.skillsLearnStyle, none, () => deps.learnStyle())
 }

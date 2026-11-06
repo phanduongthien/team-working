@@ -8,7 +8,7 @@ import {
   X,
   FileArchive
 } from 'lucide-react'
-import { useCallback, useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   STYLE_SKILL,
@@ -21,6 +21,7 @@ import { Button } from '@renderer/components/ui/button'
 import { Dialog, DialogClose, DialogContent } from '@renderer/components/ui/dialog'
 import { Input } from '@renderer/components/ui/input'
 import { api } from '@renderer/lib/api'
+import { optimistic, useSyncedState } from '@renderer/lib/sync'
 
 const kb = (n: number): string => (n < 1024 ? `${n} B` : `${(n / 1024).toFixed(1)} KB`)
 
@@ -142,26 +143,23 @@ function PreviewDialog({
 }
 
 /** Học phong cách: trợ lý đề xuất ghi chú, người dùng chọn / sửa rồi mới lưu vào my-style. */
-function StyleNotes({ onChanged }: { onChanged(): void }) {
+function StyleNotes() {
   const { t } = useTranslation('settings')
-  const [notes, setNotes] = useState<string[]>([])
+  // Ghi chú my-style là một skill → đồng bộ cùng mục "skills".
+  const { data, setData: setNotes } = useSyncedState('skills', () => api.skills.styleNotes())
+  const notes = data ?? []
   const [proposed, setProposed] = useState<{ text: string; keep: boolean }[] | null>(null)
   const [state, setState] = useState<'idle' | 'learning' | 'empty' | 'error'>('idle')
   const [draft, setDraft] = useState('')
 
-  const load = useCallback(async () => setNotes(await api.skills.styleNotes()), [])
-  useEffect(() => {
-    let live = true
-    void api.skills.styleNotes().then((n) => live && setNotes(n))
-    return () => {
-      live = false
-    }
-  }, [])
-
+  // Hiện ngay, lưu sau; lỗi → hoàn tác + báo lỗi chung. Danh sách skill tự cập nhật qua đồng bộ.
   const save = async (next: string[]): Promise<void> => {
-    await api.skills.setStyleNotes(next)
-    await load()
-    onChanged()
+    await optimistic({
+      topic: 'skills',
+      apply: () => setNotes(next),
+      rollback: () => setNotes(notes),
+      save: () => api.skills.setStyleNotes(next)
+    })
   }
 
   const learn = async (): Promise<void> => {
@@ -284,20 +282,14 @@ function StyleNotes({ onChanged }: { onChanged(): void }) {
 
 export function SkillsSection() {
   const { t } = useTranslation('settings')
-  const [skills, setSkills] = useState<SkillInfo[]>([])
+  // Tự hỏi lại khi mở trang, khi quay về app (vd vừa chép skill vào thư mục) và khi main báo đồng bộ.
+  const { data, setData: setSkills, refresh } = useSyncedState('skills', () => api.skills.list())
+  const skills: SkillInfo[] = data ?? []
   const [preview, setPreview] = useState<SkillPreview | null>(null)
   const [viewing, setViewing] = useState<SkillDetail | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [confirmRemove, setConfirmRemove] = useState<string | null>(null)
 
-  const refresh = useCallback(async () => setSkills(await api.skills.list()), [])
-  useEffect(() => {
-    let live = true
-    void api.skills.list().then((list) => live && setSkills(list))
-    return () => {
-      live = false
-    }
-  }, [])
 
   const pick = async (kind: 'folder' | 'zip'): Promise<void> => {
     setError(null)
@@ -356,8 +348,12 @@ export function SkillsSection() {
                 data-testid={`skill-enable-${s.name}`}
                 onChange={(e) => {
                   const enabled = e.target.checked
-                  setSkills((list) => list.map((x) => (x.name === s.name ? { ...x, enabled } : x)))
-                  void api.skills.setEnabled(s.name, enabled).then(refresh)
+                  void optimistic({
+                    topic: 'skills',
+                    apply: () => setSkills((list) => list.map((x) => (x.name === s.name ? { ...x, enabled } : x))),
+                    rollback: () => setSkills(skills),
+                    save: () => api.skills.setEnabled(s.name, enabled)
+                  })
                 }}
               />
               <div className="min-w-0 flex-1 space-y-1">
@@ -378,10 +374,14 @@ export function SkillsSection() {
                   size="sm"
                   variant="destructive"
                   data-testid={`skill-remove-confirm-${s.name}`}
-                  onClick={async () => {
-                    await api.skills.remove(s.name)
+                  onClick={() => {
                     setConfirmRemove(null)
-                    await refresh()
+                    void optimistic({
+                      topic: 'skills',
+                      apply: () => setSkills((list) => list.filter((x) => x.name !== s.name)),
+                      rollback: () => setSkills(skills),
+                      save: () => api.skills.remove(s.name)
+                    })
                   }}
                 >
                   {t('skills.removeConfirm')}
@@ -402,7 +402,7 @@ export function SkillsSection() {
         </ul>
       )}
 
-      <StyleNotes onChanged={() => void refresh()} />
+      <StyleNotes />
 
       <details>
         <summary className="cursor-pointer text-muted-foreground">

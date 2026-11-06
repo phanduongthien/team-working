@@ -12,6 +12,7 @@ import {
 } from '@shared/connectors'
 import { IPC } from '@shared/ipc'
 import { registerConnectorsIpc } from '../../ipc/connectors'
+import { StateSync } from '../../services/stateSync'
 import type { HandleFn } from '../../ipc/register'
 import { FakeTelegramBackend } from '../telegram/fake'
 import { TelegramService } from '../telegram/service'
@@ -584,12 +585,17 @@ describe('GmailService — nhiều tài khoản', () => {
   })
 })
 
-describe('IPC Gmail — luôn phát trạng thái cho trang cài đặt', () => {
+describe('IPC Gmail — luôn báo đồng bộ cho trang cài đặt', () => {
   function ipc() {
     const g = gmailService()
+    const synced: string[][] = []
+    // Đồng bộ chạy ngay (không đợi lượt sau) để kiểm tra từng lần gọi.
+    const sync = new StateSync((topics) => synced.push(topics), (fn) => fn())
     const handlers = new Map<string, (input: unknown) => unknown>()
-    const handle: HandleFn = (channel, _schema, fn) =>
-      void handlers.set(channel, fn as (input: unknown) => unknown)
+    const handle: HandleFn = (channel, _schema, fn, options) =>
+      void handlers.set(channel, (input) =>
+        options?.changes ? sync.track(options.changes, () => fn(input as never)) : fn(input as never)
+      )
     const telegram = new TelegramService({
       getSettings: () => ({ ...DEFAULT_TELEGRAM_SETTINGS }),
       setSettings: () => undefined,
@@ -602,36 +608,44 @@ describe('IPC Gmail — luôn phát trạng thái cho trang cài đặt', () => 
     })
     registerConnectorsIpc({ handle, gmail: g.service, telegram, approvals: g.approvals })
     const invoke = (channel: string, input?: unknown) => handlers.get(channel)!(input)
-    return { ...g, invoke }
+    return { ...g, invoke, synced }
   }
 
-  it('đăng nhập Google lỗi / bị huỷ → vẫn phát trạng thái (không kẹt "Đang chờ đăng nhập")', async () => {
+  it('đăng nhập Google lỗi / bị huỷ → vẫn báo đồng bộ (không kẹt "Đang chờ đăng nhập")', async () => {
     const g = ipc()
     vi.spyOn(g.backend, 'authorize').mockRejectedValueOnce(new Error('cancelled'))
     const r = await g.invoke(IPC.gmailConnect, undefined)
     expect(r).toEqual({ error: 'cancelled' })
-    expect(g.emitted.at(-1)).toMatchObject({ adding: false, accounts: [] })
+    expect(g.synced.at(-1)).toEqual(['gmail'])
+    expect(g.service.status()).toMatchObject({ adding: false, accounts: [] })
   })
 
-  it('thêm, đổi tên (kể cả bị từ chối), ngắt kết nối → mỗi lần đều phát trạng thái mới', async () => {
+  it('thêm, đổi tên (kể cả bị từ chối), ngắt kết nối → mỗi lần đều báo đồng bộ', async () => {
     const g = ipc()
     await g.invoke(IPC.gmailConnect, undefined)
-    const id = g.emitted.at(-1)!.accounts[0].id
-    /** Gọi IPC và kiểm tra có ít nhất một lần phát trạng thái mới. */
-    const emits = async (channel: string, input?: unknown): Promise<GmailStatus> => {
-      const before = g.emitted.length
+    const id = g.service.status().accounts[0].id
+    /** Gọi IPC và kiểm tra có báo đồng bộ mục gmail. */
+    const syncs = async (channel: string, input?: unknown): Promise<GmailStatus> => {
+      const before = g.synced.length
       await g.invoke(channel, input)
-      expect(g.emitted.length).toBeGreaterThan(before)
-      return g.emitted.at(-1)!
+      expect(g.synced.slice(before)).toContainEqual(['gmail'])
+      return g.service.status()
     }
-    const renamed = await emits(IPC.gmailUpdateAccount, {
-      ...g.emitted.at(-1)!.accounts[0],
+    const renamed = await syncs(IPC.gmailUpdateAccount, {
+      ...g.service.status().accounts[0],
       label: 'Cá nhân'
     })
     expect(renamed.accounts[0].label).toBe('Cá nhân')
-    // Bị từ chối (id lạ) vẫn phát → UI trả về đúng trạng thái thật.
-    await emits(IPC.gmailUpdateAccount, { ...renamed.accounts[0], id: 'khongco' })
-    expect((await emits(IPC.gmailDisconnect, id)).accounts).toEqual([])
-    await emits(IPC.gmailCancelConnect)
+    // Bị từ chối (id lạ) vẫn báo → UI hỏi lại đúng trạng thái thật.
+    await syncs(IPC.gmailUpdateAccount, { ...renamed.accounts[0], id: 'khongco' })
+    expect((await syncs(IPC.gmailDisconnect, id)).accounts).toEqual([])
+    await syncs(IPC.gmailCancelConnect)
+  })
+
+  it('đọc trạng thái không báo đồng bộ (tránh vòng lặp hỏi lại)', async () => {
+    const g = ipc()
+    await g.invoke(IPC.gmailStatus)
+    await g.invoke(IPC.telegramStatus)
+    expect(g.synced).toEqual([])
   })
 })

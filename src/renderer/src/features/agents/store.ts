@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import type { AgentExchange, AgentNotice, AgentServerStatus, McpApprovalRequest, McpServerInfo } from '@shared/agents'
 import { api } from '@renderer/lib/api'
+import { coalesce, onSync, optimistic } from '@renderer/lib/sync'
 
 type AgentsStore = {
   status: AgentServerStatus | null
@@ -11,8 +12,12 @@ type AgentsStore = {
   /** Lần gọi tool MCP đang chờ duyệt. */
   approvals: McpApprovalRequest[]
   error: string | null
+  refreshStatus(): Promise<void>
   refreshExchanges(): Promise<void>
   refreshServers(): Promise<void>
+  /** Đổi trạng thái trên giao diện ngay, lưu sau; lỗi → hoàn tác + hiện lỗi trên trang. */
+  patchStatus(patch: (s: AgentServerStatus) => AgentServerStatus, save: () => Promise<unknown>): Promise<boolean>
+  patchServers(patch: (list: McpServerInfo[]) => McpServerInfo[], save: () => Promise<unknown>): Promise<boolean>
   dismissNotice(key: number): void
   respondApproval(id: string, decision: 'once' | 'always' | 'deny'): Promise<void>
   setError(error: string | null): void
@@ -27,11 +32,31 @@ export const useAgents = create<AgentsStore>((set, get) => ({
   notices: [],
   approvals: [],
   error: null,
-  async refreshExchanges() {
-    set({ exchanges: await api.agents.exchanges() })
+  // Gộp các lần hỏi lại dồn dập (nhiều sự kiện liền nhau khi agent đang chạy việc) thành một.
+  refreshStatus: coalesce(async () => set({ status: await api.agents.status() })),
+  refreshExchanges: coalesce(async () => set({ exchanges: await api.agents.exchanges() })),
+  refreshServers: coalesce(async () => set({ servers: await api.mcp.list() })),
+  async patchStatus(patch, save) {
+    const before = get().status
+    if (!before) return false
+    const r = await optimistic({
+      topic: 'agents',
+      apply: () => set({ status: patch(before), error: null }),
+      rollback: () => set({ status: before }),
+      save,
+      onError: (error) => set({ error })
+    })
+    return r !== null
   },
-  async refreshServers() {
-    set({ servers: await api.mcp.list() })
+  async patchServers(patch, save) {
+    const before = get().servers
+    const r = await optimistic({
+      topic: 'mcpServers',
+      apply: () => set({ servers: patch(before) }),
+      rollback: () => set({ servers: before }),
+      save
+    })
+    return r !== null
   },
   dismissNotice: (key) => set((s) => ({ notices: s.notices.filter((n) => n.key !== key) })),
   async respondApproval(id, decision) {
@@ -57,11 +82,18 @@ export function setupAgents(): () => void {
     void useAgents.getState().refreshExchanges()
   })
   const offApproval = api.mcp.onApproval((req) => useAgents.setState((s) => ({ approvals: [...s.approvals, req] })))
-  void api.agents.status().then((status) => useAgents.setState({ status }))
+  // Lịch sử trao đổi: main báo mỗi lần thêm / đổi trạng thái một việc → không cần hỏi định kỳ.
+  const offSync = [
+    onSync('agents', () => useAgents.getState().refreshStatus()),
+    onSync('agentExchanges', () => useAgents.getState().refreshExchanges()),
+    onSync('mcpServers', () => useAgents.getState().refreshServers())
+  ]
+  void useAgents.getState().refreshStatus()
   return () => {
     offStatus()
     offNotice()
     offApproval()
+    offSync.forEach((off) => off())
   }
 }
 

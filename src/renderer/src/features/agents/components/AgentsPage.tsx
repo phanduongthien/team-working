@@ -1,11 +1,12 @@
 import { Check, Copy, OctagonX, Plus, ShieldAlert, Trash2 } from 'lucide-react'
-import { useEffect, useState, type ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { NewAgentToken } from '@shared/agents'
 import { Button } from '@renderer/components/ui/button'
 import { Dialog, DialogContent } from '@renderer/components/ui/dialog'
 import { Input, Label } from '@renderer/components/ui/input'
 import { api } from '@renderer/lib/api'
+import { useSync } from '@renderer/lib/sync'
 import { cn } from '@renderer/lib/utils'
 import { hhmm, useAgents } from '../store'
 import { McpServersSection } from './McpServersSection'
@@ -51,31 +52,22 @@ function CopyBlock({ label, value, testId }: { label: string; value: string; tes
 
 export function AgentsPage() {
   const { t } = useTranslation('agents')
-  const { status, exchanges, error, refreshExchanges, setError } = useAgents()
+  const { status, exchanges, error, refreshStatus, refreshExchanges, setError, patchStatus } = useAgents()
   const [name, setName] = useState('')
   const [created, setCreated] = useState<NewAgentToken | null>(null)
   const [limits, setLimits] = useState<{ perHour: number; concurrency: number } | null>(null)
   const [expanded, setExpanded] = useState<string | null>(null)
 
-  // Không chỉ dựa vào sự kiện từ main: làm mới định kỳ và khi quay lại cửa sổ app (lỡ sự kiện vẫn thấy lịch sử mới).
-  useEffect(() => {
-    void refreshExchanges()
-    const timer = setInterval(() => void refreshExchanges(), 5_000)
-    const onFocus = (): void => void refreshExchanges()
-    window.addEventListener('focus', onFocus)
-    return () => {
-      clearInterval(timer)
-      window.removeEventListener('focus', onFocus)
-    }
-  }, [refreshExchanges])
+  // Hỏi lại khi mở trang, khi quay về app và khi main báo đồng bộ — không làm mới định kỳ nữa.
+  useSync('agents', refreshStatus)
+  useSync('agentExchanges', refreshExchanges)
 
   if (!status) return null
   const currentLimits = limits ?? status.limits
 
   const toggle = async (on: boolean): Promise<void> => {
     setError(null)
-    const r = await api.agents.setEnabled(on)
-    if ('error' in r) setError(r.error)
+    await patchStatus((s) => ({ ...s, enabled: on }), () => api.agents.setEnabled(on))
   }
   const create = async (): Promise<void> => {
     if (!name.trim()) return
@@ -147,10 +139,11 @@ export function AgentsPage() {
             <Button
               variant="outline"
               disabled={!limits || currentLimits.perHour < 1 || currentLimits.concurrency < 1}
-              onClick={async () => {
-                await api.agents.setLimits(currentLimits)
+              onClick={() => {
                 setLimits(null)
+                void patchStatus((s) => ({ ...s, limits: currentLimits }), () => api.agents.setLimits(currentLimits))
               }}
+              data-testid="agents-save-limits"
             >
               {t('common:actions.save')}
             </Button>
@@ -191,7 +184,11 @@ export function AgentsPage() {
                     {c.lastSeenAt ? t('clients.lastSeen', { time: new Date(c.lastSeenAt).toLocaleString() }) : t('clients.never')} ·{' '}
                     {t('clients.requests', { count: c.requestCount })}
                   </span>
-                  <Button variant="ghost" size="sm" className="ml-auto" onClick={() => void api.agents.revoke(c.id)}>
+                  <Button variant="ghost" size="sm" className="ml-auto" onClick={() =>
+                      void patchStatus((s) => ({ ...s, clients: s.clients.filter((x) => x.id !== c.id) }), () => api.agents.revoke(c.id))
+                    }
+                    data-testid="agent-revoke"
+                  >
                     <Trash2 />
                     {t('clients.revoke')}
                   </Button>

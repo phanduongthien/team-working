@@ -18,19 +18,23 @@ const none = z.undefined()
 
 export function registerExpressiveIpc({ handle, expressive, giphyKey }: ExpressiveIpcDeps): void {
   handle(IPC.expressiveStatus, none, () => expressive.status())
-  handle(IPC.expressiveSetSettings, expressiveSettingsSchema, (value) =>
-    expressive.setSettings(value)
+  const E = { changes: 'expressive' } as const
+  handle(IPC.expressiveSetSettings, expressiveSettingsSchema, (value) => expressive.setSettings(value), E)
+  handle(IPC.expressiveResetAuto, none, () => expressive.resetAuto(), E)
+  handle(
+    IPC.expressiveSetGiphyKey,
+    giphyKeySchema,
+    (key) => {
+      try {
+        if (key) giphyKey.set(key)
+        else giphyKey.clear()
+        return expressive.status()
+      } catch (err) {
+        return { error: (err as Error).message }
+      }
+    },
+    E
   )
-  handle(IPC.expressiveResetAuto, none, () => expressive.resetAuto())
-  handle(IPC.expressiveSetGiphyKey, giphyKeySchema, (key) => {
-    try {
-      if (key) giphyKey.set(key)
-      else giphyKey.clear()
-      return expressive.status()
-    } catch (err) {
-      return { error: (err as Error).message }
-    }
-  })
   handle(IPC.expressiveSearch, expressiveSearchSchema, ({ kind, query, offset }) =>
     expressive.search(kind, query, offset)
   )
@@ -44,5 +48,5 @@ export function registerExpressiveIpc({ handle, expressive, giphyKey }: Expressi
     refs: expressive.favoriteRefs(),
     items: await expressive.favorites()
   }))
-  handle(IPC.expressiveToggleFavorite, mediaRefSchema, (ref) => expressive.toggleFavorite(ref))
+  handle(IPC.expressiveToggleFavorite, mediaRefSchema, (ref) => expressive.toggleFavorite(ref), E)
 }

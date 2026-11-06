@@ -19,6 +19,8 @@ export type ArtifactServiceDeps = {
   /** Hội thoại thuộc tài khoản hiện tại? (chặn đọc artifact của tài khoản khác) */
   ownsConversation(id: string): boolean
   now?: () => number
+  /** Có artifact mới / phiên bản mới (trợ lý hoặc người dùng) → báo đồng bộ cho panel. */
+  onChange?(conversationId: string): void
 }
 
 /** Artifact theo hội thoại: tạo / sửa từ câu trả lời của trợ lý, người dùng sửa / khôi phục → phiên bản mới. */
@@ -108,6 +110,7 @@ export class ArtifactService {
       .set({ version, updatedAt, ...(type ? { type } : {}) })
       .where(eq(artifacts.id, artifact.id))
       .run()
+    this.deps.onChange?.(artifact.conversationId)
     return { ...artifact, version, updatedAt, type: type ?? artifact.type }
   }
 
@@ -118,6 +121,7 @@ export class ArtifactService {
       .insert(artifacts)
       .values({ id, conversationId, title: title.slice(0, 120), type, version: 1, updatedAt: at })
       .run()
+    this.deps.onChange?.(conversationId)
     this.deps.db
       .insert(artifactVersions)
       .values({

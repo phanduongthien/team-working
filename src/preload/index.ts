@@ -11,6 +11,7 @@ import type {
   TeamWorkingApi
 } from '@shared/types'
 import type { UpdateState } from '@shared/update'
+import type { SyncTopic } from '@shared/sync'
 
 /** Đăng ký nghe sự kiện main → renderer; trả về hàm hủy. */
 function subscribe<T>(channel: string, listener: (payload: T) => void): () => void {
@@ -21,6 +22,9 @@ function subscribe<T>(channel: string, listener: (payload: T) => void): () => vo
 
 /** Chỉ expose các hàm có tên rõ ràng — renderer không bao giờ chạm ipcRenderer trực tiếp. */
 const api: TeamWorkingApi = {
+  sync: {
+    onChanged: (listener) => subscribe<SyncTopic[]>(IPC.syncChanged, listener)
+  },
   cli: {
     check: () => ipcRenderer.invoke(IPC.cliCheck)
   },

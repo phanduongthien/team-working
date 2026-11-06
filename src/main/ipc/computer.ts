@@ -27,12 +27,17 @@ export function registerComputerIpc({ handle, computer, logsDir, sidecar, stopSi
     }
   }
 
+  const C = { changes: 'computer' } as const
+  const S = { changes: 'sidecar' } as const
   handle(IPC.computerStatus, z.undefined(), () => computer.status())
-  handle(IPC.computerSetEnabled, computerSetEnabledSchema, ({ enabled, acceptWarning }) =>
-    guard(() => computer.setEnabled(enabled, acceptWarning))
+  handle(
+    IPC.computerSetEnabled,
+    computerSetEnabledSchema,
+    ({ enabled, acceptWarning }) => guard(() => computer.setEnabled(enabled, acceptWarning)),
+    C
   )
-  handle(IPC.computerSetScreenAccess, z.boolean(), (on) => guard(() => computer.setScreenAccess(on)))
-  handle(IPC.computerEmergencyStop, z.undefined(), () => computer.killSwitch.trigger())
+  handle(IPC.computerSetScreenAccess, z.boolean(), (on) => guard(() => computer.setScreenAccess(on)), C)
+  handle(IPC.computerEmergencyStop, z.undefined(), () => computer.killSwitch.trigger(), C)
   handle(IPC.computerPreview, computerPreviewSchema, async ({ display }) => computer.preview(display).catch(errorOf))
   handle(IPC.computerOpenLogs, z.undefined(), async () => {
     await shell.openPath(logsDir)
@@ -40,14 +45,18 @@ export function registerComputerIpc({ handle, computer, logsDir, sidecar, stopSi
 
   handle(IPC.sidecarState, z.undefined(), () => sidecar.state)
   // Cài lâu (tải ~50 MB) → không chờ; tiến trình đi qua sự kiện sidecar:stateEvent.
-  handle(IPC.sidecarInstall, z.undefined(), () =>
-    guard(() => {
-      if (sidecar.busy) throw new Error('busy')
-      void sidecar.install()
-      return sidecar.state
-    })
+  handle(
+    IPC.sidecarInstall,
+    z.undefined(),
+    () =>
+      guard(() => {
+        if (sidecar.busy) throw new Error('busy')
+        void sidecar.install()
+        return sidecar.state
+      }),
+    S
   )
-  handle(IPC.sidecarCancel, z.undefined(), () => sidecar.cancel())
-  handle(IPC.sidecarUninstall, z.undefined(), async () => sidecar.uninstall(stopSidecar).catch(errorOf))
-  handle(IPC.sidecarCheck, z.undefined(), async () => computer.checkSidecar().catch(errorOf))
+  handle(IPC.sidecarCancel, z.undefined(), () => sidecar.cancel(), S)
+  handle(IPC.sidecarUninstall, z.undefined(), async () => sidecar.uninstall(stopSidecar).catch(errorOf), S)
+  handle(IPC.sidecarCheck, z.undefined(), async () => computer.checkSidecar().catch(errorOf), S)
 }

@@ -43,6 +43,8 @@ import {
 import type { ChatService } from '../services/chatService'
 import type { Logger } from '../services/logger'
 import type { SecretStore } from '../services/secrets'
+import type { StateSync } from '../services/stateSync'
+import type { SyncTopic } from '@shared/sync'
 
 export type IpcDeps = {
   conversations: ConversationRepository
@@ -68,18 +70,28 @@ export type IpcDeps = {
   handle: HandleFn
 }
 
+export type HandleOptions = {
+  /**
+   * Thao tác làm đổi trạng thái của các mục này → sau khi xong (kể cả khi lỗi) tự phát `sync:changed`.
+   * MỌI handler đổi trạng thái phải khai báo — renderer dựa vào đây để cập nhật mọi trang đang mở.
+   */
+  changes?: SyncTopic | SyncTopic[]
+}
+
 export type HandleFn = <S extends z.ZodType, R>(
   channel: string,
   schema: S,
-  fn: (input: z.infer<S>) => R | Promise<R>
+  fn: (input: z.infer<S>) => R | Promise<R>,
+  options?: HandleOptions
 ) => void
 
-/** Tạo hàm đăng ký handler: kiểm tra sender, validate input bằng zod rồi mới gọi logic. */
+/** Tạo hàm đăng ký handler: kiểm tra sender, validate input bằng zod rồi mới gọi logic; báo đồng bộ nếu có `changes`. */
 export function createHandle(
   isTrustedSender: (event: IpcMainInvokeEvent) => boolean,
-  log: { warn(msg: string): void }
+  log: { warn(msg: string): void },
+  sync?: Pick<StateSync, 'track'>
 ): HandleFn {
-  return (channel, schema, fn) => {
+  return (channel, schema, fn, options) => {
     ipcMain.handle(channel, async (event, raw: unknown) => {
       if (!isTrustedSender(event)) throw new Error('untrusted_sender')
       const parsed = schema.safeParse(raw)
@@ -87,7 +99,8 @@ export function createHandle(
         log.warn(`IPC ${channel} input không hợp lệ: ${parsed.error.message}`)
         throw new Error('invalid_input')
       }
-      return fn(parsed.data)
+      const changes = options?.changes
+      return changes && sync ? sync.track(changes, () => fn(parsed.data)) : fn(parsed.data)
     })
   }
 }
@@ -96,9 +109,10 @@ function handle<S extends z.ZodType, R>(
   deps: IpcDeps,
   channel: string,
   schema: S,
-  fn: (input: z.infer<S>) => R | Promise<R>
+  fn: (input: z.infer<S>) => R | Promise<R>,
+  options?: HandleOptions
 ): void {
-  deps.handle(channel, schema, fn)
+  deps.handle(channel, schema, fn, options)
 }
 
 export function registerIpc(deps: IpcDeps): void {
@@ -209,28 +223,35 @@ export function registerIpc(deps: IpcDeps): void {
   // ---- Cài đặt ----
   // Tên/tính cách trợ lý theo tài khoản đang đăng nhập.
   handle(deps, IPC.settingsGetAssistant, none, () => deps.account.getAssistant())
-  handle(deps, IPC.settingsSetAssistant, assistantProfileSchema, (p) =>
-    deps.account.setAssistant(p)
-  )
+  handle(deps, IPC.settingsSetAssistant, assistantProfileSchema, (p) => deps.account.setAssistant(p), {
+    changes: 'assistant'
+  })
   handle(deps, IPC.settingsGetAppearance, none, () =>
     deps.settings.get('appearance', appearanceSchema, DEFAULT_APPEARANCE)
   )
-  handle(deps, IPC.settingsSetAppearance, appearanceSchema, (a) =>
-    deps.settings.set('appearance', a)
-  )
+  handle(deps, IPC.settingsSetAppearance, appearanceSchema, (a) => deps.settings.set('appearance', a), {
+    changes: 'appearance'
+  })
   // Không bao giờ trả API key về renderer — chỉ báo có/không.
   handle(deps, IPC.settingsGetAi, none, () => ({
     ...getAi(),
     hasApiKey: deps.secrets.has(),
     secureStorage: deps.secrets.available
   }))
-  handle(deps, IPC.settingsSetAi, aiSettingsSchema, (s) => deps.settings.set('ai', s))
-  handle(deps, IPC.settingsSetApiKey, apiKeySchema, (key) => deps.secrets.set(key))
-  handle(deps, IPC.settingsClearApiKey, none, () => {
-    deps.secrets.clear()
-    if (getAi().provider === 'anthropic-api')
-      deps.settings.set('ai', { ...getAi(), provider: 'claude-cli' })
-  })
+  const ai = { changes: 'ai' } as const
+  handle(deps, IPC.settingsSetAi, aiSettingsSchema, (s) => deps.settings.set('ai', s), ai)
+  handle(deps, IPC.settingsSetApiKey, apiKeySchema, (key) => deps.secrets.set(key), ai)
+  handle(
+    deps,
+    IPC.settingsClearApiKey,
+    none,
+    () => {
+      deps.secrets.clear()
+      if (getAi().provider === 'anthropic-api')
+        deps.settings.set('ai', { ...getAi(), provider: 'claude-cli' })
+    },
+    ai
+  )
 
   handle(deps, IPC.appOpenExternal, externalUrlSchema, (url) => shell.openExternal(url))
 }

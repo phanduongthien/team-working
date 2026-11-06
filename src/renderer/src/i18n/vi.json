@@ -31,6 +31,9 @@
     "bannerDownloading": "Đang tải bản cập nhật bắt buộc {{version}} ({{percent}}%)…",
     "bannerReady": "Bản cập nhật bắt buộc {{version}} đã sẵn sàng — bấm để khởi động lại"
   },
+  "sync": {
+    "saveFailed": "Không lưu được thay đổi, đã hoàn tác ({{code}})."
+  },
   "errors": {
     "generic": "Có lỗi xảy ra: {{message}}",
     "notFound": "Không tìm thấy trang"

@@ -12,7 +12,7 @@ import {
 import { Button } from '@renderer/components/ui/button'
 import { Input, Label, Textarea } from '@renderer/components/ui/input'
 import { api } from '@renderer/lib/api'
-import { daysLeft, invalid, isError, parseBlocked, safeCall } from '../store'
+import { daysLeft, invalid, isError, parseBlocked, safeCall, useConnectors } from '../store'
 import { ConnectionBadge, ErrorText, SetupSteps } from './shared'
 
 function Credentials({
@@ -84,7 +84,17 @@ function AccountRow({ account, busy }: { account: GmailAccountStatus; busy: bool
   const [blocked, setBlocked] = useState(account.blockedSenders.join('\n'))
   const [error, setError] = useState<string | null>(null)
   const [preview, setPreview] = useState<GmailPreviewItem[] | null>(null)
+  const patchGmail = useConnectors((s) => s.patchGmail)
   const left = daysLeft(account.expiresAt)
+  // Đổi từ nơi khác (đồng bộ / hoàn tác) → ô nhập theo giá trị mới.
+  const blockedText = account.blockedSenders.join('\n')
+  // Chỉnh state ngay lúc render khi giá trị gốc đổi (cách React khuyên, không dùng effect).
+  const [shown, setShown] = useState({ label: account.label, blocked: blockedText })
+  if (shown.label !== account.label || shown.blocked !== blockedText) {
+    setShown({ label: account.label, blocked: blockedText })
+    if (shown.label !== account.label) setLabel(account.label)
+    if (shown.blocked !== blockedText) setBlocked(blockedText)
+  }
   const connected = account.connection === 'connected'
 
   const run = async (fn: () => Promise<unknown>): Promise<void> => {
@@ -107,11 +117,24 @@ function AccountRow({ account, busy }: { account: GmailAccountStatus; busy: bool
       setLabel(account.label)
       return
     }
-    void run(async () => {
-      const r = await api.gmail.updateAccount(input)
-      if (isError(r)) setLabel(account.label)
-      return r
-    })
+    setError(null)
+    // Hiện ngay; lưu lỗi → hoàn tác (ô nhập tự về giá trị cũ theo account) + báo lỗi tại chỗ.
+    void patchGmail(
+      (s) => ({
+        ...s,
+        accounts: s.accounts.map((a) =>
+          a.id === input.id
+            ? { ...a, label: input.label, enabled: input.enabled, skipSensitive: input.skipSensitive, blockedSenders: input.blockedSenders }
+            : a
+        )
+      }),
+      () => api.gmail.updateAccount(input),
+      (code) => {
+        setError(code)
+        setLabel(account.label)
+        setBlocked(blockedText)
+      }
+    )
   }
 
   return (
@@ -281,6 +304,7 @@ function AccountRow({ account, busy }: { account: GmailAccountStatus; busy: bool
 export function GmailSection({ status }: { status: GmailStatus }) {
   const { t } = useTranslation('connectors')
   const [error, setError] = useState<string | null>(null)
+  const patchGmail = useConnectors((s) => s.patchGmail)
   const busy = status.adding || status.accounts.some((a) => a.connection === 'connecting')
 
   const add = async (): Promise<void> => {
@@ -307,7 +331,11 @@ export function GmailSection({ status }: { status: GmailStatus }) {
           type="checkbox"
           className="mt-1"
           checked={status.enabled}
-          onChange={(e) => void api.gmail.setEnabled(e.target.checked)}
+          onChange={(e) => {
+            const on = e.target.checked
+            setError(null)
+            void patchGmail((s) => ({ ...s, enabled: on }), () => api.gmail.setEnabled(on), setError)
+          }}
           data-testid="gmail-enable"
         />
         <span>
@@ -329,7 +357,11 @@ export function GmailSection({ status }: { status: GmailStatus }) {
               type="checkbox"
               className="mt-1"
               checked={status.testingMode}
-              onChange={(e) => void api.gmail.setOptions({ testingMode: e.target.checked })}
+              onChange={(e) => {
+                const testingMode = e.target.checked
+                void patchGmail((s) => ({ ...s, testingMode }), () => api.gmail.setOptions({ testingMode }), setError)
+              }}
+              data-testid="gmail-testing-mode"
             />
             <span>
               <span className="block font-medium">{t('gmail.testingMode')}</span>
@@ -343,7 +375,8 @@ export function GmailSection({ status }: { status: GmailStatus }) {
             <ul className="space-y-3" data-testid="gmail-accounts">
               {status.accounts.map((a) => (
                 <AccountRow
-                  key={`${a.id}:${a.label}:${a.blockedSenders.join(',')}`}
+                  // Chỉ theo id: đổi tên / danh sách chặn không dựng lại hàng (giữ thông báo lỗi khi hoàn tác).
+                  key={a.id}
                   account={a}
                   busy={busy}
                 />
