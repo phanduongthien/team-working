@@ -95,7 +95,7 @@ export class TelegramService {
     if (!enabled) this.deps.approvals.cancelService('telegram')
     this.update({ enabled })
     this.deps.log.info(`Telegram: ${enabled ? 'bật' : 'tắt'}`)
-    return this.changed()
+    return this.publish()
   }
 
   setCredentials(apiId: number, apiHash?: string): TelegramStatus {
@@ -104,14 +104,14 @@ export class TelegramService {
     if (!apiHash && !this.deps.apiHash.has()) throw new Error('api_hash_required')
     if (apiHash) this.deps.apiHash.set(apiHash)
     this.update({ apiId })
-    return this.changed()
+    return this.publish()
   }
 
   async sendCode(phone: string): Promise<TelegramStatus> {
     if (!this.status().configured) throw new Error('not_configured')
     await this.deps.backend.sendCode(phone.replace(/\s+/g, ''))
     this.stage = 'code_sent'
-    return this.changed()
+    return this.publish()
   }
 
   async signIn(code: string): Promise<TelegramStatus> {
@@ -119,7 +119,7 @@ export class TelegramService {
     const r = await this.deps.backend.signIn(code)
     if (r === 'password_needed') {
       this.stage = 'password_needed'
-      return this.changed()
+      return this.publish()
     }
     return this.finishLogin()
   }
@@ -133,7 +133,7 @@ export class TelegramService {
   async cancelLogin(): Promise<TelegramStatus> {
     this.stage = null
     await this.deps.backend.cancelLogin()
-    return this.changed()
+    return this.publish()
   }
 
   /** Đăng xuất phía Telegram + xoá session, danh sách chat đã chọn trên máy. */
@@ -144,14 +144,14 @@ export class TelegramService {
     await this.deps.backend.logout()
     this.update({ account: null, connectedAt: null, allow: [], block: [] })
     this.deps.log.info('Telegram: đã đăng xuất, xoá session trên máy')
-    return this.changed()
+    return this.publish()
   }
 
   setLists(lists: { mode: TelegramMode; allow: string[]; block: string[] }): TelegramStatus {
     const allow = [...new Set(lists.allow)].filter((id) => !TELEGRAM_LOCKED_IDS.has(id))
     const block = [...new Set(lists.block)].filter((id) => !allow.includes(id))
     this.update({ mode: lists.mode, allow, block })
-    return this.changed()
+    return this.publish()
   }
 
   /** Danh sách chat cho trang cài đặt (không có nội dung tin nhắn). */
@@ -329,7 +329,7 @@ export class TelegramService {
         this.cache = null
         this.update({ account: null, connectedAt: null })
         this.deps.log.warn('Telegram: phiên đã bị thu hồi')
-        this.changed()
+        this.publish()
       }
       throw err
     }
@@ -341,14 +341,15 @@ export class TelegramService {
     const account = await this.deps.backend.me()
     this.update({ account, connectedAt: this.now() })
     this.deps.log.info('Telegram: đã đăng nhập')
-    return this.changed()
+    return this.publish()
   }
 
   private update(patch: Partial<TelegramSettings>): void {
     this.deps.setSettings({ ...this.deps.getSettings(), ...patch })
   }
 
-  private changed(): TelegramStatus {
+  /** Phát trạng thái hiện tại cho renderer. IPC gọi sau MỌI thao tác (kể cả khi lỗi) — xem ipc/connectors.ts. */
+  publish(): TelegramStatus {
     const s = this.status()
     this.deps.emit(s)
     return s

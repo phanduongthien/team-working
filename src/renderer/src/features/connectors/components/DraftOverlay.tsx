@@ -29,6 +29,13 @@ function DraftDialog({ draft }: { draft: DraftApprovalRequest }) {
               </span>
             </span>
           </p>
+          {draft.account && (
+            <p className="rounded-md bg-muted px-3 py-2" data-testid="draft-account">
+              {t('draft.account')}{' '}
+              <span className="font-medium">{draft.account.email}</span>{' '}
+              <span className="text-muted-foreground">({draft.account.label})</span>
+            </p>
+          )}
           {draft.subject !== null && (
             <p>
               {t('draft.subject')} <span className="font-medium">{draft.subject || '—'}</span>

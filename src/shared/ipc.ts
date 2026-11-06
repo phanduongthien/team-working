@@ -160,6 +160,7 @@ export const IPC = {
   gmailCancelConnect: 'gmail:cancelConnect',
   gmailDisconnect: 'gmail:disconnect',
   gmailPreview: 'gmail:preview',
+  gmailUpdateAccount: 'gmail:updateAccount',
   telegramStatus: 'telegram:status',
   telegramStatusEvent: 'telegram:statusEvent',
   telegramSetEnabled: 'telegram:setEnabled',

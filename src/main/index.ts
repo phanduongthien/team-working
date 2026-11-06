@@ -86,7 +86,7 @@ import { OAuthLoopback } from './services/oauthLoopback'
 import { RateLimiter } from './agents/rateLimiter'
 import { DraftApprovals } from './connectors/approvals'
 import { FakeGmailBackend } from './connectors/gmail/fake'
-import { GoogleGmailBackend } from './connectors/gmail/google'
+import { gmailTokenFileName, GoogleGmailBackend } from './connectors/gmail/google'
 import { GmailService } from './connectors/gmail/service'
 import { FakeTelegramBackend } from './connectors/telegram/fake'
 import { GramJsBackend } from './connectors/telegram/gramjs'
@@ -372,7 +372,8 @@ async function bootstrap(): Promise<void> {
             redirectUri: OAUTH_REDIRECT_URL,
             clientId: () => getGmailSettings().clientId,
             clientSecret: () => gmailClientSecret.get(),
-            tokens: new SecretStore(secretsDir, safeStorage, 'gmail-refresh-token.bin')
+            // Mỗi tài khoản một file token. Tài khoản chuyển từ bản một-tài-khoản giữ file cũ → không phải đăng nhập lại.
+            tokens: (accountId) => new SecretStore(secretsDir, safeStorage, gmailTokenFileName(accountId))
           }),
     clientSecret: gmailClientSecret,
     approvals: draftApprovals,

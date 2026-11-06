@@ -12,15 +12,16 @@
 | #11 | GĐ 2 — Giọng nói: faster-whisper (GPU/CPU), edge-tts + Piper, đọc to từng câu, ngắt lời |
 | #12 | GĐ 5 — Artifacts: panel sandbox, doc / slides / sheet / chart / mermaid / html, phiên bản, xuất docx/pdf/pptx/xlsx/csv/json/svg, mẫu làm game |
 | #13 | Cài skill cho Mizuki (thư mục / .zip, tự chọn theo câu hỏi, my-style) |
+| #14 | GĐ 4 — Gmail & Telegram chỉ đọc + soạn nháp (mặc định tắt) |
 
 ## PR đang mở
-- **`feat/gmail-telegram`** — GĐ 4: Gmail (OAuth PKCE + REST, đọc + tạo nháp) và Telegram (GramJS, đọc + lưu nháp), mặc định tắt; allowlist/blocklist, ẩn thư/chat nhạy cảm, mọi nháp qua hộp duyệt (sửa được), 60 lần/giờ, đăng xuất + xoá phiên. Chi tiết: `docs/connectors.md`. Chờ CI + test tay (cần tạo OAuth client Google + api_id Telegram thật).
+- **`feat/gmail-multi-account`** — Gmail nhiều tài khoản: một OAuth client, token DPAPI riêng từng tài khoản, tên gọi + bật/tắt + lọc riêng tư theo tài khoản, tìm gộp / đích danh, nháp đúng tài khoản chứa thư gốc, 60 lần/giờ mỗi tài khoản; tài khoản cũ tự chuyển (id `primary`, giữ file token cũ). Đã sửa: trang Gmail & Telegram không tự cập nhật (đường lỗi như huỷ / lỗi đăng nhập Google không phát trạng thái → kẹt "Đang chờ đăng nhập"): IPC luôn phát trạng thái sau mọi thao tác, kể cả khi lỗi; trang tự hỏi lại khi mở và khi quay lại cửa sổ (cũng áp dụng cho trang Điều khiển máy tính). Chờ CI + test tay với 2–3 Gmail thật.
 
 ## Lỗi nhỏ — sửa ở PR sau
 - Tiêu đề cuộc chat hiện chữ thô `Tạo artifact type="doc" title=...` (lấy từ tin nhắn mẫu). Nên đặt tiêu đề theo tên mẫu / tên artifact.
 
 ## Việc tiếp theo
-1. Sau khi test tay GĐ 4: sửa lỗi tiêu đề chat từ tin nhắn mẫu (mục trên).
+1. Sau khi test tay Gmail nhiều tài khoản: sửa lỗi tiêu đề chat từ tin nhắn mẫu (mục trên).
 2. Để sau: thao tác chuột/bàn phím (chỉ khi người dùng đồng ý riêng); A2A + mở kết nối ra LAN (chỉ có đề xuất trong `docs/agents.md`).
 
 ## Quyết định đã duyệt
@@ -32,4 +33,6 @@
 - **Giọng nói:** STT faster-whisper — GPU + CUDA → large-v3-turbo, không thì small/CPU, chỉ lùi về CPU khi lỗi GPU thật; không khoá ngôn ngữ; tự giải mã WAV (không qua `av.open`, khoá av 14.2). TTS Edge, lỗi thì Piper. "Nói xong" mặc định điền ô nhập. Ghi âm gốc giữ 7 ngày trên máy. Yêu cầu hành động từ chữ chép lời → hỏi xác nhận.
 - **Artifacts:** `<artifact>` tạo / viết lại, `<artifact-edit>` find/replace (khớp đúng một chỗ, không thì báo lỗi). iframe CHỈ `allow-scripts`, origin `mmc-artifact://`, CSP chặn mạng, thư viện đóng gói sẵn, postMessage lệnh cố định. Công thức bảng không dùng eval. Slide Markdown → pptx sửa được; theme mở rộng được (JSON, sau này từ skill).
 - **Skill:** SKILL.md kiểu Claude, lưu `%APPDATA%/Team Working/skills`; chỉ giữ .md/.txt/.json (script, nhị phân bị bỏ — không bao giờ chạy); ≤100 file, 2 MB; chặn zip-slip; trùng tên skill có sẵn → từ chối. Xem trước (nguồn + nội dung + file bị bỏ) rồi mới cài. Mỗi câu: my-style + skill gọi đích danh (≤3) + tối đa 2 skill tự chọn theo description (điểm ≥3), phần skill ≤5000 ký tự; skill khác chỉ liệt kê tên. my-style: trợ lý đề xuất, người dùng chọn/sửa rồi mới lưu.
-- **Gmail / Telegram (GĐ 4):** chỉ đọc + soạn nháp, không có hàm gửi; mọi nháp qua hộp duyệt (sửa được, 10 phút không trả lời = từ chối). Mỗi người tự tạo OAuth client Desktop / api_id; secret + token + session DPAPI. Gmail: PKCE + state qua loopback 47823, scope readonly + compose, REST bằng fetch; Testing hết hạn 7 ngày → `expired`, trợ lý chỉ nhận lời nhắc kết nối lại; ẩn thư nhạy cảm (mặc định bật) + chặn người gửi/tên miền. Telegram: GramJS nạp động, allowlist mặc định (rỗng), blocklist tự chặn chat nhạy cảm, 777000 luôn chặn; danh sách chat cache 15 phút, Làm mới ≤1 lần/phút, không đồng bộ nền; FLOOD_WAIT báo lại, không ngủ. 60 lần gọi tool/giờ mỗi dịch vụ.
+- **Gmail / Telegram (GĐ 4):** chỉ đọc + soạn nháp, không có hàm gửi; mọi nháp qua hộp duyệt (sửa được, 10 phút không trả lời = từ chối). Mỗi người tự tạo OAuth client Desktop / api_id; secret + token + session DPAPI. Gmail: PKCE + state qua loopback 47823, scope readonly + compose, REST bằng fetch; Testing hết hạn 7 ngày → `expired`, trợ lý chỉ nhận lời nhắc kết nối lại; ẩn thư nhạy cảm (mặc định bật) + chặn người gửi/tên miền. Telegram: GramJS nạp động, allowlist mặc định (rỗng), blocklist tự chặn chat nhạy cảm, 777000 luôn chặn; danh sách chat cache 15 phút, Làm mới ≤1 lần/phút, không đồng bộ nền; FLOOD_WAIT báo lại, không ngủ. 60 lần gọi tool/giờ: Telegram và từng tài khoản Gmail riêng.
+- **Trang cài đặt có trạng thái từ main:** không chỉ dựa vào sự kiện — IPC thao tác luôn phát trạng thái (kể cả lỗi), trang dùng `useRefreshOnFocus` (hỏi lại khi mở + khi focus cửa sổ).
+- **Gmail nhiều tài khoản:** một OAuth client dùng chung; mỗi tài khoản token riêng, tên gọi riêng (không trùng, so không dấu), bật/tắt cho trợ lý + chặn người gửi + ẩn thư nhạy cảm riêng. Ngắt kết nối = bỏ khỏi danh sách. id thư cho trợ lý = `<tài khoản>:<id thư>` → nháp trả lời luôn vào tài khoản chứa thư gốc; thư mới nhiều tài khoản → trợ lý phải hỏi. Kết nối lại dùng `login_hint`, đăng nhập nhầm tài khoản → từ chối. Bản cũ chuyển thành tài khoản `primary` dùng lại `gmail-refresh-token.bin`.

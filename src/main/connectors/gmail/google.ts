@@ -1,4 +1,5 @@
 import { createHash, randomBytes } from 'node:crypto'
+import { GMAIL_LEGACY_ACCOUNT_ID } from '@shared/connectors'
 import type { OAuthResult } from '../../services/oauthLoopback'
 
 export type FetchFn = (url: string, init?: RequestInit) => Promise<Response>
@@ -33,17 +34,36 @@ export type GmailDraftInput = {
   replyTo?: GmailMessage
 }
 
-/** Phần Gmail mà service cần — bản thật gọi Google, bản giả cho test e2e. */
+/** Kết quả đăng nhập Google: biết email rồi service mới quyết định lưu token vào tài khoản nào. */
+export type GmailAuthorization = {
+  email: string
+  /** Lưu refresh token (DPAPI) cho tài khoản `accountId`. */
+  commit(accountId: string): void
+  /** Không dùng (vd đăng nhập nhầm tài khoản) → thu hồi phía Google, không lưu gì. */
+  discard(): Promise<void>
+}
+
+/** Phần Gmail mà service cần — bản thật gọi Google, bản giả cho test e2e. Mỗi tài khoản một token riêng. */
 export interface GmailBackend {
-  /** Mở trình duyệt đăng nhập Google, chờ callback, lưu refresh token. */
-  connect(): Promise<{ email: string }>
+  /** Mở trình duyệt đăng nhập Google (gợi ý sẵn email nếu có), chờ callback. */
+  authorize(loginHint?: string): Promise<GmailAuthorization>
   cancelConnect(): void
   /** Thu hồi token ở Google (nếu được) và xoá trên máy. */
-  disconnect(): Promise<void>
-  hasToken(): boolean
-  search(query: string, max: number): Promise<GmailSummary[]>
-  read(id: string): Promise<GmailMessage>
-  createDraft(draft: GmailDraftInput): Promise<{ id: string }>
+  disconnect(accountId: string): Promise<void>
+  hasToken(accountId: string): boolean
+  search(accountId: string, query: string, max: number): Promise<GmailSummary[]>
+  read(accountId: string, id: string): Promise<GmailMessage>
+  createDraft(accountId: string, draft: GmailDraftInput): Promise<{ id: string }>
+}
+
+/**
+ * File refresh token (DPAPI) của từng tài khoản. Tài khoản chuyển từ bản một-tài-khoản dùng lại file cũ
+ * → người dùng không phải đăng nhập lại sau khi cập nhật.
+ */
+export function gmailTokenFileName(accountId: string): string {
+  return accountId === GMAIL_LEGACY_ACCOUNT_ID
+    ? 'gmail-refresh-token.bin'
+    : `gmail-refresh-token-${accountId}.bin`
 }
 
 export type TokenStore = {
@@ -75,6 +95,8 @@ export function buildAuthUrl(p: {
   redirectUri: string
   challenge: string
   state: string
+  /** Gợi ý tài khoản khi kết nối lại (Google chọn sẵn email đó). */
+  loginHint?: string
 }): string {
   const q = new URLSearchParams({
     client_id: p.clientId,
@@ -85,9 +107,11 @@ export function buildAuthUrl(p: {
     code_challenge_method: 'S256',
     access_type: 'offline',
     // Luôn hỏi lại để Google trả refresh token mới (kể cả lần kết nối lại sau 7 ngày).
-    prompt: 'consent',
+    // Thêm tài khoản: select_account để không tự dùng lại tài khoản Google đang đăng nhập trong trình duyệt.
+    prompt: p.loginHint ? 'consent' : 'consent select_account',
     state: p.state
   })
+  if (p.loginHint) q.set('login_hint', p.loginHint)
   return `${AUTH_URL}?${q.toString()}`
 }
 
@@ -224,28 +248,43 @@ export type GoogleGmailDeps = {
   redirectUri: string
   clientId(): string | null
   clientSecret(): string | null
-  /** Refresh token (DPAPI). */
-  tokens: TokenStore
+  /** Refresh token (DPAPI) của từng tài khoản. */
+  tokens(accountId: string): TokenStore
   now?: () => number
+}
+
+type AccessToken = { token: string; expiresAt: number }
+
+/** Access token bị Google từ chối (401) → lấy token mới một lần rồi thử lại. */
+class AccessRejected extends Error {
+  constructor() {
+    super('gmail_401')
+  }
 }
 
 /** Gmail thật: OAuth 2.0 + PKCE qua loopback, REST API bằng fetch (không cần thư viện Google). */
 export class GoogleGmailBackend implements GmailBackend {
-  private access: { token: string; expiresAt: number } | null = null
+  private access = new Map<string, AccessToken>()
 
   constructor(private readonly deps: GoogleGmailDeps) {}
 
-  hasToken(): boolean {
-    return this.deps.tokens.has()
+  hasToken(accountId: string): boolean {
+    return this.deps.tokens(accountId).has()
   }
 
-  async connect(): Promise<{ email: string }> {
+  async authorize(loginHint?: string): Promise<GmailAuthorization> {
     const clientId = this.deps.clientId()
     const secret = this.deps.clientSecret()
     if (!clientId || !secret) throw new Error('not_configured')
     const { verifier, challenge } = pkcePair()
     const state = b64url(randomBytes(16))
-    const url = buildAuthUrl({ clientId, redirectUri: this.deps.redirectUri, challenge, state })
+    const url = buildAuthUrl({
+      clientId,
+      redirectUri: this.deps.redirectUri,
+      challenge,
+      state,
+      loginHint
+    })
     const result = await this.deps.waitForCode(() => this.deps.openExternal(url))
     if ('error' in result)
       throw new Error(result.error === 'access_denied' ? 'access_denied' : result.error)
@@ -258,35 +297,42 @@ export class GoogleGmailBackend implements GmailBackend {
       client_id: clientId,
       client_secret: secret
     })
-    if (!token.refresh_token) throw new Error('no_refresh_token')
-    this.deps.tokens.set(token.refresh_token)
-    this.access = {
+    const refresh = token.refresh_token
+    if (!refresh) throw new Error('no_refresh_token')
+    const access: AccessToken = {
       token: token.access_token,
       expiresAt: this.now() + (token.expires_in - 60) * 1000
     }
-    const profile = await this.api<{ emailAddress: string }>('/profile')
-    return { email: profile.emailAddress }
+    const profile = await this.request<{ emailAddress: string }>(access.token, '/profile')
+    return {
+      email: profile.emailAddress,
+      commit: (accountId) => {
+        this.deps.tokens(accountId).set(refresh)
+        this.access.set(accountId, access)
+      },
+      discard: () => this.revoke(refresh)
+    }
   }
 
   cancelConnect(): void {
     this.deps.cancelWait()
   }
 
-  async disconnect(): Promise<void> {
-    const refresh = this.deps.tokens.get()
-    this.access = null
-    this.deps.tokens.clear()
-    if (!refresh) return
-    // Thu hồi phía Google; mất mạng cũng không sao — token trên máy đã xoá.
-    await this.deps
-      .fetch(`${REVOKE_URL}?token=${encodeURIComponent(refresh)}`, { method: 'POST' })
-      .catch(() => undefined)
+  async disconnect(accountId: string): Promise<void> {
+    const store = this.deps.tokens(accountId)
+    const refresh = store.get()
+    this.access.delete(accountId)
+    store.clear()
+    if (refresh) await this.revoke(refresh)
   }
 
-  async search(query: string, max: number): Promise<GmailSummary[]> {
+  async search(accountId: string, query: string, max: number): Promise<GmailSummary[]> {
     const q = new URLSearchParams({ maxResults: String(max) })
     if (query.trim()) q.set('q', query.trim())
-    const list = await this.api<{ messages?: { id: string }[] }>(`/messages?${q.toString()}`)
+    const list = await this.api<{ messages?: { id: string }[] }>(
+      accountId,
+      `/messages?${q.toString()}`
+    )
     const ids = (list.messages ?? []).map((m) => m.id)
     const meta = new URLSearchParams({ format: 'metadata' })
     for (const h of ['From', 'Subject', 'Date']) meta.append('metadataHeaders', h)
@@ -294,20 +340,25 @@ export class GoogleGmailBackend implements GmailBackend {
     for (const id of ids)
       out.push(
         toSummary(
-          await this.api<RawMessage>(`/messages/${encodeURIComponent(id)}?${meta.toString()}`)
+          await this.api<RawMessage>(
+            accountId,
+            `/messages/${encodeURIComponent(id)}?${meta.toString()}`
+          )
         )
       )
     return out
   }
 
-  async read(id: string): Promise<GmailMessage> {
-    return toMessage(await this.api<RawMessage>(`/messages/${encodeURIComponent(id)}?format=full`))
+  async read(accountId: string, id: string): Promise<GmailMessage> {
+    return toMessage(
+      await this.api<RawMessage>(accountId, `/messages/${encodeURIComponent(id)}?format=full`)
+    )
   }
 
-  async createDraft(draft: GmailDraftInput): Promise<{ id: string }> {
+  async createDraft(accountId: string, draft: GmailDraftInput): Promise<{ id: string }> {
     const message: Record<string, string> = { raw: buildRawDraft(draft) }
     if (draft.replyTo) message.threadId = draft.replyTo.threadId
-    const r = await this.api<{ id: string }>('/drafts', {
+    const r = await this.api<{ id: string }>(accountId, '/drafts', {
       method: 'POST',
       body: JSON.stringify({ message })
     })
@@ -316,6 +367,13 @@ export class GoogleGmailBackend implements GmailBackend {
 
   private now(): number {
     return this.deps.now?.() ?? Date.now()
+  }
+
+  /** Thu hồi phía Google; mất mạng cũng không sao — token trên máy đã xoá / chưa lưu. */
+  private async revoke(refresh: string): Promise<void> {
+    await this.deps
+      .fetch(`${REVOKE_URL}?token=${encodeURIComponent(refresh)}`, { method: 'POST' })
+      .catch(() => undefined)
   }
 
   private async tokenRequest(
@@ -335,9 +393,11 @@ export class GoogleGmailBackend implements GmailBackend {
     return json as { access_token: string; expires_in: number; refresh_token?: string }
   }
 
-  private async accessToken(): Promise<string> {
-    if (this.access && this.access.expiresAt > this.now()) return this.access.token
-    const refresh = this.deps.tokens.get()
+  private async accessToken(accountId: string): Promise<string> {
+    const cached = this.access.get(accountId)
+    if (cached && cached.expiresAt > this.now()) return cached.token
+    const store = this.deps.tokens(accountId)
+    const refresh = store.get()
     const clientId = this.deps.clientId()
     const secret = this.deps.clientSecret()
     if (!refresh || !clientId || !secret) throw new GmailAuthExpired()
@@ -348,16 +408,29 @@ export class GoogleGmailBackend implements GmailBackend {
         client_id: clientId,
         client_secret: secret
       })
-      this.access = { token: t.access_token, expiresAt: this.now() + (t.expires_in - 60) * 1000 }
+      this.access.set(accountId, {
+        token: t.access_token,
+        expiresAt: this.now() + (t.expires_in - 60) * 1000
+      })
       return t.access_token
     } catch (err) {
-      if (err instanceof GmailAuthExpired) this.deps.tokens.clear()
+      // Chỉ tài khoản này hết hạn; tài khoản khác vẫn dùng được.
+      if (err instanceof GmailAuthExpired) store.clear()
       throw err
     }
   }
 
-  private async api<T>(path: string, init?: RequestInit, retried = false): Promise<T> {
-    const token = await this.accessToken()
+  private async api<T>(accountId: string, path: string, init?: RequestInit): Promise<T> {
+    try {
+      return await this.request<T>(await this.accessToken(accountId), path, init)
+    } catch (err) {
+      if (!(err instanceof AccessRejected)) throw err
+      this.access.delete(accountId)
+      return this.request<T>(await this.accessToken(accountId), path, init)
+    }
+  }
+
+  private async request<T>(token: string, path: string, init?: RequestInit): Promise<T> {
     const res = await this.deps.fetch(`${API}${path}`, {
       ...init,
       headers: {
@@ -365,10 +438,7 @@ export class GoogleGmailBackend implements GmailBackend {
         ...(init?.body ? { 'Content-Type': 'application/json' } : {})
       }
     })
-    if (res.status === 401 && !retried) {
-      this.access = null
-      return this.api<T>(path, init, true)
-    }
+    if (res.status === 401) throw new AccessRejected()
     if (!res.ok) {
       const json = (await res.json().catch(() => ({}))) as {
         error?: { message?: string; status?: string }

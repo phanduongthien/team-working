@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { gmailCredentialsSchema, telegramCodeSchema, telegramCredentialsSchema } from '@shared/connectors'
-import { daysLeft, invalid, toggleChat } from '../store'
+import { daysLeft, invalid, parseBlocked, toggleChat } from '../store'
 
 describe('connectors store', () => {
   const chat = (id: string, sensitive = false) => ({ id, allowed: false, sensitive })
@@ -30,5 +30,9 @@ describe('connectors store', () => {
     expect(invalid(gmailCredentialsSchema, { clientId: '1-a.apps.googleusercontent.com' })).toBeNull()
     expect(invalid(telegramCredentialsSchema, { apiId: 1, apiHash: 'xyz' })).toBe('api_hash_invalid')
     expect(invalid(telegramCodeSchema, '12a')).toBe('code_invalid')
+  })
+
+  it('danh sách người gửi bị chặn: tách dòng / dấu phẩy, chữ thường, bỏ trùng', () => {
+    expect(parseBlocked('Sep@X.com\n bank.vn, sep@x.com;;\n')).toEqual(['sep@x.com', 'bank.vn'])
   })
 })

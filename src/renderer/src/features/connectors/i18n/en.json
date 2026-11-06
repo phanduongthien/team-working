@@ -31,23 +31,21 @@
     "setup": [
       "Open console.cloud.google.com and create a new project (e.g. \"MMC studio personal\").",
       "APIs & Services → Library → enable \"Gmail API\".",
-      "OAuth consent screen: choose External, fill in app name + your email; under Test users add your own Gmail address.",
+      "OAuth consent screen: choose External, fill in app name + your email; under Test users add EVERY Gmail address you plan to connect (personal, school, work…).",
       "Credentials → Create credentials → OAuth client ID → Application type: Desktop app.",
-      "Paste the Client ID and Client secret below, click Save, then click Connect Gmail."
+      "Paste the Client ID and Client secret below, click Save, then click \"+ Add Gmail account\". One OAuth client is shared by all accounts."
     ],
     "clientId": "Client ID",
     "clientSecret": "Client secret",
-    "connect": "Connect Gmail",
     "reconnect": "Reconnect",
     "waiting": "Waiting for you to sign in in the browser…",
-    "connectedAs": "Using {{email}}",
     "disconnect": "Disconnect",
     "preview": "Try reading 5 latest",
     "previewHelp": "Shown locally only, not sent to the assistant. Struck-through mail is hidden from the assistant.",
     "previewEmpty": "Inbox is empty.",
     "noSubject": "(no subject)",
     "hidden": "hidden from assistant",
-    "expired": "Your Google sign-in expired (OAuth apps in Testing mode only stay signed in for 7 days). Click Reconnect.",
+    "expired": "This account's Google sign-in expired (OAuth apps in Testing mode only stay signed in for 7 days). Click Reconnect.",
     "expiresIn_one": "Google will ask you to sign in again in about {{count}} day (Testing mode).",
     "expiresIn_other": "Google will ask you to sign in again in about {{count}} days (Testing mode).",
     "skipSensitive": "Hide sensitive mail",
@@ -56,7 +54,14 @@
     "testingModeHelp": "Google signs you out after 7 days; the app will remind you to reconnect.",
     "blocked": "Blocked senders",
     "blockedPlaceholder": "boss@company.com\nmybank.com",
-    "blockedHelp": "One address or domain per line. Mail from these is never given to the assistant."
+    "blockedHelp": "One address or domain per line. Mail from these is never given to the assistant.",
+    "addAccount": "Add Gmail account",
+    "testUsersHint": "Before adding: in Google Cloud → OAuth consent screen → Test users, add that Gmail address (up to 100). Otherwise Google shows \"access blocked\".",
+    "accountCount_one": "{{count}} account",
+    "accountCount_other": "{{count}} accounts",
+    "label": "Name",
+    "accountEnabled": "Let the assistant read this account",
+    "privacy": "Privacy filters for this account"
   },
   "telegram": {
     "enable": "Enable Telegram connection",
@@ -119,7 +124,8 @@
     "approve": {
       "gmail": "Create draft",
       "telegram": "Save draft"
-    }
+    },
+    "account": "Draft will be saved in:"
   },
   "errors": {
     "generic": "Error: {{message}}",
@@ -145,6 +151,11 @@
     "no_account": "This number has no Telegram account.",
     "no_login": "Sign-in was cancelled — start again from the phone number.",
     "session_revoked": "Your Telegram session was logged out from another device — sign in again.",
-    "invalid_input": "Input is not in the right format."
+    "invalid_input": "Input is not in the right format.",
+    "wrong_account": "You signed in with a different Google account. To add a new account, use \"+ Add Gmail account\".",
+    "label_taken": "This name is already used by another account.",
+    "label_invalid": "Names are 1–40 characters, without quotes or < >.",
+    "account_not_found": "Account not found (it may have just been disconnected).",
+    "too_many_accounts": "You already have 10 Gmail accounts."
   }
 }
