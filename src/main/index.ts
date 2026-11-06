@@ -45,7 +45,12 @@ import {
 import { CodeApprovals } from './code/approvals'
 import { completeText } from './ai/AIProvider'
 import { agentHttpServer } from './agents/httpServer'
-import { AgentHub, agentSettingsSchema, DEFAULT_AGENT_SETTINGS, storedClientSchema } from './agents/hub'
+import {
+  AgentHub,
+  agentSettingsSchema,
+  DEFAULT_AGENT_SETTINGS,
+  storedClientSchema
+} from './agents/hub'
 import { agentPrompt, agentSystemPrompt } from './agents/prompt'
 import { KillSwitch } from './computer/killSwitch'
 import { registerAgentsIpc } from './ipc/agents'
@@ -77,6 +82,18 @@ import { ChatService } from './services/chatService'
 import { createLogger } from './services/logger'
 import { SavedAccountStore } from './services/savedAccounts'
 import { SecretStore } from './services/secrets'
+import { FakeChatProvider } from './ai/FakeChatProvider'
+import { affinityStatsSchema } from './expressive/affinity'
+import { GiphyClient, readEnvKey } from './expressive/giphy'
+import { ExpressiveService } from './expressive/service'
+import { StickerLibrary } from './expressive/stickers'
+import { registerExpressiveIpc } from './ipc/expressive'
+import {
+  DEFAULT_EXPRESSIVE_SETTINGS,
+  expressiveSettingsSchema,
+  mediaRefSchema,
+  stripExpressTags
+} from '@shared/expressive'
 
 // Phải chạy trước mọi thứ dùng userData (single-instance lock, log, safeStorage, DB). Không module nào
 // được đọc app.getPath('userData') lúc import, vì import chạy trước dòng này.
@@ -95,7 +112,9 @@ function resourcePath(packaged: string, dev: string): string {
 const log = createLogger(join(app.getPath('userData'), 'logs'))
 let mainWindow: BrowserWindow | null = null
 
-process.on('uncaughtException', (err) => log.error(`uncaughtException: ${err.stack ?? err.message}`))
+process.on('uncaughtException', (err) =>
+  log.error(`uncaughtException: ${err.stack ?? err.message}`)
+)
 process.on('unhandledRejection', (reason) => log.error(`unhandledRejection: ${String(reason)}`))
 
 function createWindow(): BrowserWindow {
@@ -142,11 +161,13 @@ async function bootstrap(): Promise<void> {
 
   const dbFile = join(userData, 'team-working.db')
   // Lần đầu chạy phiên bản mới (sau khi cập nhật): sao lưu DB trước khi migration chạy.
-  await backupBeforeUpgrade({ dbFile, backupDir: join(userData, 'backups'), version: app.getVersion(), log })
-  const { db, close } = openDatabase(
+  await backupBeforeUpgrade({
     dbFile,
-    resourcePath('migrations', 'src/main/db/migrations')
-  )
+    backupDir: join(userData, 'backups'),
+    version: app.getVersion(),
+    log
+  })
+  const { db, close } = openDatabase(dbFile, resourcePath('migrations', 'src/main/db/migrations'))
   app.on('will-quit', close)
 
   // Dữ liệu cá nhân (chat, trí nhớ, hồ sơ, trợ lý) theo tài khoản đang đăng nhập (renderer báo qua account:set).
@@ -186,7 +207,8 @@ async function bootstrap(): Promise<void> {
       return conv && conv.mode === 'code' && conv.codeWrite && conv.cwd ? conv.cwd : null
     },
     emit: (request) => emitApproval(mainWindow, request),
-    mcpApproval: (conversationId, toolName, input) => mcpApprovals.request(conversationId, toolName, input),
+    mcpApproval: (conversationId, toolName, input) =>
+      mcpApprovals.request(conversationId, toolName, input),
     log
   })
   await approvals.start()
@@ -202,15 +224,21 @@ async function bootstrap(): Promise<void> {
 
   const actionsDir = join(userData, 'logs', 'computer-use')
   const actions = new ActionLog(actionsDir)
-  void actions.prune().catch((err: Error) => log.warn(`Không dọn được log điều khiển máy tính: ${err.message}`))
+  void actions
+    .prune()
+    .catch((err: Error) => log.warn(`Không dọn được log điều khiển máy tính: ${err.message}`))
   // Màn hình giả chỉ cho bản chưa đóng gói (test e2e) — không bao giờ có trong bản phát hành.
   const fakeScreen = app.isPackaged ? undefined : process.env.MMC_FAKE_SCREEN
 
   // Python sidecar (đọc cửa sổ / cây UI): chỉ tải khi người dùng bấm cài, nằm trong thư mục dữ liệu app.
-  const devOverride = (name: string): string | undefined => (app.isPackaged ? undefined : process.env[name] || undefined)
+  const devOverride = (name: string): string | undefined =>
+    app.isPackaged ? undefined : process.env[name] || undefined
   const sidecarInstaller = new SidecarInstaller({
     root: join(userData, 'sidecar'),
-    requirementsFile: resourcePath('sidecar/requirements.txt', 'resources/sidecar/requirements.txt'),
+    requirementsFile: resourcePath(
+      'sidecar/requirements.txt',
+      'resources/sidecar/requirements.txt'
+    ),
     uvUrl: devOverride('MMC_SIDECAR_UV_URL'),
     fetch: (url, init) => net.fetch(url, init),
     run: runProcess,
@@ -219,10 +247,15 @@ async function bootstrap(): Promise<void> {
     log
   })
   void sidecarInstaller.refresh()
-  const sidecarScript = resourcePath('sidecar/desktop_server.py', 'resources/sidecar/desktop_server.py')
+  const sidecarScript = resourcePath(
+    'sidecar/desktop_server.py',
+    'resources/sidecar/desktop_server.py'
+  )
   const sidecarClient = new SidecarClient({
     command: () =>
-      sidecarInstaller.state.state === 'installed' ? pythonCommand(sidecarInstaller.paths.venvPython, sidecarScript) : null,
+      sidecarInstaller.state.state === 'installed'
+        ? pythonCommand(sidecarInstaller.paths.venvPython, sidecarScript)
+        : null,
     log
   })
   app.on('before-quit', () => {
@@ -234,7 +267,8 @@ async function bootstrap(): Promise<void> {
   const killSwitch = new KillSwitch(globalShortcut)
   const computer = new ComputerUseService({
     killSwitch,
-    getSettings: () => settings.get('computerUse', computerUseSettingsSchema, DEFAULT_COMPUTER_USE_SETTINGS),
+    getSettings: () =>
+      settings.get('computerUse', computerUseSettingsSchema, DEFAULT_COMPUTER_USE_SETTINGS),
     setSettings: (value) => settings.set('computerUse', value),
     shortcuts: globalShortcut,
     capture: fakeScreen ? fakeCapture(fakeScreen) : electronCapture,
@@ -247,7 +281,10 @@ async function bootstrap(): Promise<void> {
       if (status.lastStop && status.lastStop.at !== lastStopAt) {
         lastStopAt = status.lastStop.at
         if (Notification.isSupported()) {
-          new Notification({ title: APP_NAME, body: 'Đã dừng khẩn cấp: trợ lý ngừng xem màn hình, mọi phản hồi đang chạy đã dừng.' }).show()
+          new Notification({
+            title: APP_NAME,
+            body: 'Đã dừng khẩn cấp: trợ lý ngừng xem màn hình, mọi phản hồi đang chạy đã dừng.'
+          }).show()
         }
       }
     },
@@ -264,17 +301,65 @@ async function bootstrap(): Promise<void> {
   computer.registerTools(tools)
   app.on('will-quit', () => globalShortcut.unregisterAll())
 
+  // Chat biểu cảm: GIF/sticker GIPHY (key: .env khi dev, hoặc người dùng dán — mã hoá DPAPI), sticker local, độ thân thiết trên máy.
+  const giphyUserKey = new SecretStore(join(userData, 'secrets'), safeStorage, 'giphy-api-key.bin')
+  // .env chỉ đọc ở bản chưa đóng gói (không có tiền tố VITE_ → không bao giờ nằm trong bộ cài).
+  const giphyEnvKey = app.isPackaged
+    ? null
+    : 'GIPHY_API_KEY' in process.env // biến môi trường (kể cả rỗng, dùng trong test) được ưu tiên hơn file .env
+      ? process.env.GIPHY_API_KEY || null
+      : readEnvKey(join(app.getAppPath(), '.env'))
+  const giphyKeySource = (): 'env' | 'user' | null =>
+    giphyUserKey.has() ? 'user' : giphyEnvKey ? 'env' : null
+  const giphy = new GiphyClient({
+    getKey: () => giphyUserKey.get() ?? giphyEnvKey,
+    fetch: (url) => net.fetch(url),
+    baseUrl: devOverride('MMC_GIPHY_BASE')
+  })
+  const stickers = new StickerLibrary(
+    resourcePath('stickers', 'resources/stickers'),
+    join(userData, 'stickers')
+  )
+  stickers.ensureUserDir()
+  const expressive = new ExpressiveService({
+    getSettings: () =>
+      settings.get('expressive', expressiveSettingsSchema, DEFAULT_EXPRESSIVE_SETTINGS),
+    setSettings: (value) => settings.set('expressive', value),
+    getStats: () => settings.get('expressiveStats', affinityStatsSchema.nullable(), null),
+    setStats: (value) => settings.set('expressiveStats', value),
+    getFavorites: () => settings.get('expressiveFavorites', z.array(mediaRefSchema), []),
+    setFavorites: (list) => settings.set('expressiveFavorites', list),
+    giphy,
+    giphyKeySource,
+    stickers,
+    loadSkill: () => loadSkill(resourcePath('assistant-skills', 'assistant-skills'), 'expressive'),
+    log
+  })
+  // Claude giả chỉ cho test e2e ở bản chưa đóng gói.
+  const fakeChat =
+    !app.isPackaged && process.env.MMC_FAKE_CHAT === '1' ? new FakeChatProvider() : null
+
   const providers: Record<AiProviderId, AIProvider> = {
     'claude-cli': new ClaudeCliProvider(
       log,
-      () => ({ electronPath: process.execPath, script: permissionScript, url: approvals.url, token: approvals.token }),
-      () => ({ electronPath: process.execPath, script: appToolsScript, url: toolBridge.url, token: toolBridge.token }),
+      () => ({
+        electronPath: process.execPath,
+        script: permissionScript,
+        url: approvals.url,
+        token: approvals.token
+      }),
+      () => ({
+        electronPath: process.execPath,
+        script: appToolsScript,
+        url: toolBridge.url,
+        token: toolBridge.token
+      }),
       () => mcpStore.forCli()
     ),
     'anthropic-api': new AnthropicApiProvider(() => secrets.get())
   }
   const getProvider = (): AIProvider =>
-    providers[settings.get('ai', aiSettingsSchema, DEFAULT_AI_SETTINGS).provider]
+    fakeChat ?? providers[settings.get('ai', aiSettingsSchema, DEFAULT_AI_SETTINGS).provider]
 
   const skillsDir = resourcePath('assistant-skills', 'assistant-skills')
   const memory = new MemoryService({
@@ -304,11 +389,15 @@ async function bootstrap(): Promise<void> {
       approvals.cancelConversation(conversationId)
       mcpApprovals.cancelConversation(conversationId)
     },
-    appToolsFor: () => computer.toolsFor()
+    appToolsFor: () => computer.toolsFor(),
+    expressive
   })
   app.on('before-quit', () => chat.abortAll())
 
-  const handle = createHandle((event: IpcMainInvokeEvent) => event.sender === mainWindow?.webContents, log)
+  const handle = createHandle(
+    (event: IpcMainInvokeEvent) => event.sender === mainWindow?.webContents,
+    log
+  )
   const getWindow = (): BrowserWindow | null => mainWindow
   registerIpc({
     conversations,
@@ -318,6 +407,8 @@ async function bootstrap(): Promise<void> {
     settings,
     account: accountScope,
     chat,
+    resolveMedia: (ref) => expressive.resolve(ref),
+    fakeCli: !!fakeChat,
     memory,
     attachments: new AttachmentStore(join(workspaceDir, 'attachments'), electronImages),
     // Clipboard giả chỉ cho test e2e ở bản chưa đóng gói — không bao giờ có trong bản phát hành.
@@ -357,7 +448,8 @@ async function bootstrap(): Promise<void> {
     setSkipped: (version) => settings.set('updateSkipped', version),
     emit: (state) => mainWindow?.webContents.send(IPC.updateState, state),
     beforeInstall: async () => {
-      if (!(await chat.stopAll(5_000))) log.warn('Vẫn còn lượt chat chưa dừng hẳn khi cài bản cập nhật')
+      if (!(await chat.stopAll(5_000)))
+        log.warn('Vẫn còn lượt chat chưa dừng hẳn khi cài bản cập nhật')
     },
     log
   })
@@ -394,7 +486,8 @@ async function bootstrap(): Promise<void> {
     // Trả lời agent khác: KHÔNG tool, KHÔNG trí nhớ/hồ sơ người dùng, không lưu session CLI.
     answer: async ({ agentName, request, kind, title }, signal) => {
       // Chỉ bản chưa đóng gói + MMC_FAKE_AGENT_ANSWER (test e2e): không gọi Claude thật.
-      if (!app.isPackaged && process.env.MMC_FAKE_AGENT_ANSWER) return `Mizuki (giả lập) đã nhận: ${request.slice(0, 200)}`
+      if (!app.isPackaged && process.env.MMC_FAKE_AGENT_ANSWER)
+        return `Mizuki (giả lập) đã nhận: ${request.slice(0, 200)}`
       const result = await completeText(
         getProvider(),
         {
@@ -407,7 +500,8 @@ async function bootstrap(): Promise<void> {
         signal
       )
       if ('error' in result) throw new Error(result.error)
-      return result.text
+      // Agent khác chỉ nhận chữ thường: không bao giờ có thẻ biểu cảm.
+      return stripExpressTags(result.text)
     },
     emitStatus: (status) => mainWindow?.webContents.send(IPC.agentsStatusEvent, status),
     emitNotice: (notice) => {
@@ -427,8 +521,12 @@ async function bootstrap(): Promise<void> {
     hub: agentHub,
     mcp: mcpStore,
     mcpApprovals,
-    bridge: { exe: process.execPath, script: resourcePath('mizuki-mcp-bridge.cjs', 'resources/mizuki-mcp-bridge.cjs') }
+    bridge: {
+      exe: process.execPath,
+      script: resourcePath('mizuki-mcp-bridge.cjs', 'resources/mizuki-mcp-bridge.cjs')
+    }
   })
+  registerExpressiveIpc({ handle, expressive, giphyKey: giphyUserKey })
   registerComputerIpc({
     handle,
     computer,

@@ -17,10 +17,11 @@ export class SecretStore {
 
   constructor(
     dir: string,
-    private readonly crypto: Encryptor
+    private readonly crypto: Encryptor,
+    fileName = 'anthropic-api-key.bin'
   ) {
     mkdirSync(dir, { recursive: true })
-    this.file = join(dir, 'anthropic-api-key.bin')
+    this.file = join(dir, fileName)
   }
 
   get available(): boolean {

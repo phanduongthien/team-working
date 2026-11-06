@@ -5,6 +5,12 @@
 ## [Unreleased]
 
 ### Thêm mới
+- **Chat biểu cảm**: bộ chọn emoji (tìm tiếng Việt, gõ không dấu cũng được, mục "dùng gần đây"); gửi GIF và sticker GIPHY (có ô tìm, mục thịnh hành, "Powered by GIPHY"); sticker trên máy (6 sticker mẫu kèm app + thư mục bạn tự chép png/webp/gif/svg vào); tab Yêu thích (GIPHY chỉ lưu ID).
+- **Thả cảm xúc** cho từng tin nhắn (rê chuột → 6 cảm xúc nhanh hoặc chọn thêm), lưu trong lịch sử; trợ lý biết bạn đã thả gì ở lượt sau.
+- **Trợ lý biểu cảm** theo mức Tắt / Ít / Vừa / Nhiều / Tự động (tăng dần theo độ thân thiết, có trần và nút đặt lại về Ít; dữ liệu chỉ trên máy). Mặc định **Tắt**. Trợ lý bắt chước số emoji bạn dùng, tự giảm khi bạn đang sửa lỗi / làm việc nghiêm túc / buồn. Tối đa 1 reaction và 1 GIF/sticker mỗi câu trả lời, có giãn cách chống spam.
+- GIPHY API key: mỗi người tự lấy key miễn phí và dán trong Cài đặt → Chat biểu cảm (mã hoá DPAPI). Bản dev đọc `GIPHY_API_KEY` trong `.env` (không vào bộ cài). Chưa có key thì tab GIF hiện hướng dẫn.
+
+### Thêm mới
 - **Kết nối agent** (thử nghiệm, mặc định tắt): Claude Code, Claude Desktop và agent khác trên máy dùng được trợ lý qua MCP — `ask_mizuki`, `submit_task`, `get_task`, `list_tasks`. Chỉ nghe 127.0.0.1; mỗi agent một token (chỉ hiện một lần); lần đầu kết nối phải bấm Cho phép; danh sách agent đã cho phép có nút thu hồi; lịch sử trao đổi. Hướng dẫn thêm vào Claude Code / Claude Desktop: `docs/agents.md`.
 - Agent khác **không kế thừa quyền của bạn**: khi trả lời agent khác, trợ lý không có công cụ nào và không dùng trí nhớ của bạn; nội dung agent gửi chỉ là dữ liệu.
 - Giới hạn mặc định 20 yêu cầu/giờ/agent và 1 việc cùng lúc (chỉnh được); chạm giới hạn thì agent nhận lỗi kèm giờ gọi lại và app hiện thông báo nhỏ.

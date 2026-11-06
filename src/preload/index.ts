@@ -3,7 +3,12 @@ import { IPC } from '@shared/ipc'
 import type { ComputerStatus } from '@shared/computer'
 import type { SidecarState } from '@shared/sidecar'
 import type { AgentNotice, AgentServerStatus, McpApprovalRequest } from '@shared/agents'
-import type { ChatStreamPayload, CodeApprovalRequest, MemoryEventPayload, TeamWorkingApi } from '@shared/types'
+import type {
+  ChatStreamPayload,
+  CodeApprovalRequest,
+  MemoryEventPayload,
+  TeamWorkingApi
+} from '@shared/types'
 import type { UpdateState } from '@shared/update'
 
 /** Đăng ký nghe sự kiện main → renderer; trả về hàm hủy. */
@@ -27,6 +32,19 @@ const api: TeamWorkingApi = {
   messages: {
     list: (conversationId) => ipcRenderer.invoke(IPC.messagesList, conversationId)
   },
+  expressive: {
+    status: () => ipcRenderer.invoke(IPC.expressiveStatus),
+    setSettings: (value) => ipcRenderer.invoke(IPC.expressiveSetSettings, value),
+    resetAuto: () => ipcRenderer.invoke(IPC.expressiveResetAuto),
+    setGiphyKey: (key) => ipcRenderer.invoke(IPC.expressiveSetGiphyKey, key),
+    search: (kind, query, offset = 0) =>
+      ipcRenderer.invoke(IPC.expressiveSearch, { kind, query, offset }),
+    stickers: () => ipcRenderer.invoke(IPC.expressiveStickers),
+    stickerData: (id) => ipcRenderer.invoke(IPC.expressiveStickerData, id),
+    openStickersFolder: () => ipcRenderer.invoke(IPC.expressiveOpenStickers),
+    favorites: () => ipcRenderer.invoke(IPC.expressiveFavorites),
+    toggleFavorite: (ref) => ipcRenderer.invoke(IPC.expressiveToggleFavorite, ref)
+  },
   chat: {
     send: (conversationId, text, attachmentIds = []) =>
       ipcRenderer.invoke(IPC.chatSend, { conversationId, text, attachmentIds }),
@@ -35,19 +53,24 @@ const api: TeamWorkingApi = {
     pickAttachments: () => ipcRenderer.invoke(IPC.chatPickAttachments),
     addFile: (name, data) => ipcRenderer.invoke(IPC.chatAddFile, { name, data }),
     pasteClipboard: () => ipcRenderer.invoke(IPC.chatPasteClipboard),
-    attachmentPreview: (id, size) => ipcRenderer.invoke(IPC.chatAttachmentPreview, { id, size })
+    attachmentPreview: (id, size) => ipcRenderer.invoke(IPC.chatAttachmentPreview, { id, size }),
+    sendMedia: (conversationId, text, media) =>
+      ipcRenderer.invoke(IPC.chatSend, { conversationId, text, media }),
+    react: (messageId, emoji) => ipcRenderer.invoke(IPC.chatReact, { messageId, emoji })
   },
   memory: {
     getProfile: () => ipcRenderer.invoke(IPC.memoryGetProfile),
     setProfile: (profile) => ipcRenderer.invoke(IPC.memorySetProfile, profile),
     list: (query) => ipcRenderer.invoke(IPC.memoryList, query),
     create: (content, category) => ipcRenderer.invoke(IPC.memoryCreate, { content, category }),
-    update: (id, content, category) => ipcRenderer.invoke(IPC.memoryUpdate, { id, content, category }),
+    update: (id, content, category) =>
+      ipcRenderer.invoke(IPC.memoryUpdate, { id, content, category }),
     remove: (id) => ipcRenderer.invoke(IPC.memoryRemove, id),
     suggestions: () => ipcRenderer.invoke(IPC.memorySuggestions),
     resolve: (input) => ipcRenderer.invoke(IPC.memoryResolve, input),
     extract: (conversationId) => ipcRenderer.invoke(IPC.memoryExtract, conversationId),
-    conversationLeft: (conversationId) => ipcRenderer.invoke(IPC.memoryConversationLeft, conversationId),
+    conversationLeft: (conversationId) =>
+      ipcRenderer.invoke(IPC.memoryConversationLeft, conversationId),
     export: () => ipcRenderer.invoke(IPC.memoryExport),
     onEvent: (listener) => subscribe<MemoryEventPayload>(IPC.memoryEvent, listener)
   },
@@ -81,7 +104,8 @@ const api: TeamWorkingApi = {
   computer: {
     status: () => ipcRenderer.invoke(IPC.computerStatus),
     onStatus: (listener) => subscribe<ComputerStatus>(IPC.computerStatusEvent, listener),
-    setEnabled: (enabled, acceptWarning) => ipcRenderer.invoke(IPC.computerSetEnabled, { enabled, acceptWarning }),
+    setEnabled: (enabled, acceptWarning) =>
+      ipcRenderer.invoke(IPC.computerSetEnabled, { enabled, acceptWarning }),
     setScreenAccess: (on) => ipcRenderer.invoke(IPC.computerSetScreenAccess, on),
     emergencyStop: () => ipcRenderer.invoke(IPC.computerEmergencyStop),
     preview: (display) => ipcRenderer.invoke(IPC.computerPreview, { display }),
@@ -95,7 +119,8 @@ const api: TeamWorkingApi = {
     setLimits: (limits) => ipcRenderer.invoke(IPC.agentsSetLimits, limits),
     createClient: (name) => ipcRenderer.invoke(IPC.agentsCreateClient, name),
     revoke: (id) => ipcRenderer.invoke(IPC.agentsRevoke, id),
-    respondPairing: (clientId, allow) => ipcRenderer.invoke(IPC.agentsRespondPairing, { clientId, allow }),
+    respondPairing: (clientId, allow) =>
+      ipcRenderer.invoke(IPC.agentsRespondPairing, { clientId, allow }),
     stopAll: () => ipcRenderer.invoke(IPC.agentsStopAll),
     exchanges: () => ipcRenderer.invoke(IPC.agentsExchanges)
   },
@@ -135,7 +160,8 @@ const api: TeamWorkingApi = {
   },
   code: {
     chooseFolder: (conversationId) => ipcRenderer.invoke(IPC.codeChooseFolder, conversationId),
-    setWrite: (conversationId, enabled) => ipcRenderer.invoke(IPC.codeSetWrite, { conversationId, enabled }),
+    setWrite: (conversationId, enabled) =>
+      ipcRenderer.invoke(IPC.codeSetWrite, { conversationId, enabled }),
     respond: (id, allow) => ipcRenderer.invoke(IPC.codeRespond, { id, allow }),
     onApproval: (listener) => subscribe<CodeApprovalRequest>(IPC.codeApproval, listener)
   },
@@ -156,7 +182,8 @@ const api: TeamWorkingApi = {
     planPath: (request) => ipcRenderer.invoke(IPC.learningPath, request),
     makeQuiz: (request) => ipcRenderer.invoke(IPC.learningQuiz, request),
     grade: (request) => ipcRenderer.invoke(IPC.learningGrade, request),
-    suggestMemory: (content, category) => ipcRenderer.invoke(IPC.memorySuggest, { content, category })
+    suggestMemory: (content, category) =>
+      ipcRenderer.invoke(IPC.memorySuggest, { content, category })
   },
   dayPlanner: {
     plan: (request) => ipcRenderer.invoke(IPC.plannerDay, request),
@@ -168,7 +195,8 @@ const api: TeamWorkingApi = {
   accounts: {
     list: () => ipcRenderer.invoke(IPC.accountsList),
     record: (account, session) => ipcRenderer.invoke(IPC.accountsRecord, { account, session }),
-    remember: (id, remember, session) => ipcRenderer.invoke(IPC.accountsRemember, { id, remember, session }),
+    remember: (id, remember, session) =>
+      ipcRenderer.invoke(IPC.accountsRemember, { id, remember, session }),
     session: (id) => ipcRenderer.invoke(IPC.accountsSession, id),
     dropSession: (id) => ipcRenderer.invoke(IPC.accountsDropSession, id),
     forget: (id) => ipcRenderer.invoke(IPC.accountsForget, id)

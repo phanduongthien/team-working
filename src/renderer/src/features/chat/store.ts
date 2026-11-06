@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import type { ChatMode } from '@shared/ai'
+import type { MediaRef } from '@shared/expressive'
 import type { ChatStreamPayload, Conversation, Message } from '@shared/types'
 import { api } from '@renderer/lib/api'
 import { applyChatEvent, isTerminalEvent } from './chatEvents'
@@ -34,7 +35,9 @@ type ChatState = {
   chooseFolder(): Promise<void>
   setCodeWrite(id: string, enabled: boolean): Promise<void>
   remove(id: string): Promise<void>
-  send(text: string, mode: ChatMode, attachmentIds?: string[]): Promise<boolean>
+  send(text: string, mode: ChatMode, attachmentIds?: string[], media?: MediaRef): Promise<boolean>
+  /** Thả / bỏ cảm xúc của người dùng cho một tin. */
+  react(message: Message, emoji: string): Promise<void>
   stop(): Promise<void>
   handleEvent(payload: ChatStreamPayload): void
   clearError(): void
@@ -77,7 +80,11 @@ export const useChat = create<ChatState>((set, get) => {
 
     async create(mode = 'free') {
       const conv = await api.conversations.create(mode)
-      set((s) => ({ conversations: [conv, ...s.conversations], activeId: conv.id, messages: { ...s.messages, [conv.id]: [] } }))
+      set((s) => ({
+        conversations: [conv, ...s.conversations],
+        activeId: conv.id,
+        messages: { ...s.messages, [conv.id]: [] }
+      }))
       return conv
     },
 
@@ -99,7 +106,8 @@ export const useChat = create<ChatState>((set, get) => {
     async chooseFolder() {
       let id = get().activeId
       if (!id) id = (await get().create('code')).id
-      else if (get().conversations.find((c) => c.id === id)?.mode !== 'code') await get().setMode(id, 'code')
+      else if (get().conversations.find((c) => c.id === id)?.mode !== 'code')
+        await get().setMode(id, 'code')
       const updated = await api.code.chooseFolder(id)
       if (updated) replaceConversation(updated)
     },
@@ -127,18 +135,42 @@ export const useChat = create<ChatState>((set, get) => {
       })
     },
 
-    async send(text, mode, attachmentIds = []) {
-      let id = get().activeId
-      if (!id) id = (await get().create(mode)).id
-      else if (get().conversations.find((c) => c.id === id)?.mode !== mode) await get().setMode(id, mode)
-      const conversationId = id
-
+    async react(message, emoji) {
+      const mine = message.reactions.find((r) => r.by === 'user')?.emoji
       try {
-        const res = await api.chat.send(conversationId, text, attachmentIds)
+        const updated = await api.chat.react(message.id, mine === emoji ? null : emoji)
         set((s) => ({
           messages: {
             ...s.messages,
-            [conversationId]: [...(s.messages[conversationId] ?? []), res.userMessage, res.assistantMessage]
+            [message.conversationId]: (s.messages[message.conversationId] ?? []).map((m) =>
+              m.id === updated.id ? { ...m, reactions: updated.reactions } : m
+            )
+          }
+        }))
+      } catch (err) {
+        set({ error: errorCode(err) })
+      }
+    },
+
+    async send(text, mode, attachmentIds = [], media) {
+      let id = get().activeId
+      if (!id) id = (await get().create(mode)).id
+      else if (get().conversations.find((c) => c.id === id)?.mode !== mode)
+        await get().setMode(id, mode)
+      const conversationId = id
+
+      try {
+        const res = media
+          ? await api.chat.sendMedia(conversationId, text, media)
+          : await api.chat.send(conversationId, text, attachmentIds)
+        set((s) => ({
+          messages: {
+            ...s.messages,
+            [conversationId]: [
+              ...(s.messages[conversationId] ?? []),
+              res.userMessage,
+              res.assistantMessage
+            ]
           },
           streaming: {
             ...s.streaming,
@@ -189,7 +221,14 @@ export const useChat = create<ChatState>((set, get) => {
 
     async switchAccount() {
       early.clear()
-      set({ conversations: [], query: '', activeId: null, messages: {}, streaming: {}, error: null })
+      set({
+        conversations: [],
+        query: '',
+        activeId: null,
+        messages: {},
+        streaming: {},
+        error: null
+      })
       await get().loadConversations()
     }
   }

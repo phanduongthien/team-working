@@ -1,3 +1,4 @@
+import type { MessageMedia, Reaction } from '@shared/expressive'
 import { randomUUID } from 'node:crypto'
 import { and, asc, desc, eq, gt, inArray, or, sql } from 'drizzle-orm'
 import type { z } from 'zod'
@@ -43,6 +44,8 @@ const toMessage = (r: MessageRow): Message => ({
   toolEvents: r.toolEvents,
   attachments: r.attachments.map(({ id, name, mimeType, size }) => ({ id, name, mimeType, size })),
   usage: r.usage ?? null,
+  reactions: r.reactions ?? [],
+  media: r.media ?? null,
   createdAt: r.createdAt
 })
 
@@ -183,6 +186,7 @@ export type NewMessage = {
   content: string
   status?: MessageStatus
   attachments?: StoredAttachment[]
+  media?: MessageMedia | null
 }
 
 export type MessagePatch = {
@@ -191,6 +195,8 @@ export type MessagePatch = {
   error?: string | null
   toolEvents?: ToolEvent[]
   usage?: ChatUsage | null
+  reactions?: Reaction[]
+  media?: MessageMedia | null
 }
 
 export class MessageRepository {
@@ -242,11 +248,17 @@ export class MessageRepository {
         content: input.content,
         status: input.status ?? 'done',
         attachments: input.attachments ?? [],
+        media: input.media ?? null,
         createdAt: Date.now()
       })
       .returning()
       .get()
     return toMessage(row)
+  }
+
+  get(id: string): Message | null {
+    const row = this.db.select().from(messages).where(eq(messages.id, id)).get()
+    return row ? toMessage(row) : null
   }
 
   update(id: string, patch: MessagePatch): void {

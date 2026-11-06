@@ -93,5 +93,99 @@
   "tools": {
     "screenshot": "screenshot",
     "list_displays": "list displays"
+  },
+  "expressive": {
+    "button": "Emoji, GIFs and stickers",
+    "tabs": {
+      "emoji": "Emoji",
+      "gif": "GIF",
+      "sticker": "Sticker",
+      "favorites": "Favorites"
+    },
+    "emojiSearch": "Search emoji (e.g. laugh, heart, cat)",
+    "gifSearch": "Search GIPHY GIFs",
+    "stickerSearch": "Search GIPHY stickers",
+    "recent": "Recently used",
+    "loading": "Loading…",
+    "noResults": "Nothing found.",
+    "noFavorites": "Nothing yet. Click the star on a GIF/sticker to save it here.",
+    "groups": {
+      "0": "Smileys & emotion",
+      "1": "People & body",
+      "3": "Animals & nature",
+      "4": "Food & drink",
+      "5": "Travel & places",
+      "6": "Activities",
+      "7": "Objects",
+      "8": "Symbols",
+      "9": "Flags"
+    },
+    "send": "Send {{title}}",
+    "favorite": "Add to favorites",
+    "unfavorite": "Remove from favorites",
+    "stickerSource": {
+      "local": "On this PC",
+      "giphy": "GIPHY"
+    },
+    "openFolder": "Open folder",
+    "localHelp": "Copy png, webp, gif or svg files into the sticker folder (each subfolder is a pack), then reopen this tab.",
+    "cannotSend": "Cannot send right now (replying, or Claude is not set up).",
+    "noKey": {
+      "title": "A GIPHY API key is needed to search GIFs/stickers",
+      "step1": "Create a free account and an API app at",
+      "step2": "Copy the app's API key.",
+      "step3": "Paste it in",
+      "settings": "Settings → Expressive chat"
+    },
+    "errors": {
+      "giphy_bad_key": "GIPHY rejected the key — check it in Settings.",
+      "giphy_rate_limited": "GIPHY rate limit reached, try again in a few minutes.",
+      "giphy_network": "Could not reach GIPHY — check your connection."
+    },
+    "you": "You",
+    "reactedBy": "{{name}} reacted",
+    "react": "React {{emoji}}",
+    "moreReactions": "Pick another reaction",
+    "modes": {
+      "off": "Off",
+      "low": "Low",
+      "medium": "Medium",
+      "high": "High",
+      "auto": "Automatic (gradual)"
+    },
+    "settings": {
+      "heading": "Expressive chat",
+      "description": "How much emoji, reactions and GIFs/stickers {{name}} uses with you. Your own emoji/GIF/sticker picker and reactions always work.",
+      "mode": "Expressiveness",
+      "max": "Maximum level",
+      "help": {
+        "off": "The assistant uses no emoji, reactions, GIFs or stickers.",
+        "low": "An occasional emoji at the end; rarely reacts or sends GIFs.",
+        "medium": "A few well-placed emoji; reacts and sends GIFs/stickers now and then.",
+        "high": "Chats like a cheerful friend: emoji runs, :)) hihi ^^; reacts and sends GIFs/stickers more often.",
+        "auto": "Starts at \"Low\" and rises slowly (a step every few days) based on how many days you chat and how often you use emoji/GIFs/stickers. When you are debugging, working seriously or feeling down, the assistant tones it down."
+      },
+      "current": "Currently: {{level}}",
+      "trend": {
+        "up": "rising",
+        "down": "falling"
+      },
+      "reset": "Reset to Low",
+      "autoPrivacy": "The closeness data is stored only on this computer.",
+      "giphyKey": "GIPHY API key",
+      "giphyKeyPlaceholder": "Paste a new key…",
+      "giphyKeyStatus": {
+        "none": "No key — the GIPHY GIF/sticker tabs show how to get one.",
+        "user": "Your key is saved (encrypted on this PC, only sent to GIPHY).",
+        "env": "Using the key from the .env file (dev builds only)."
+      },
+      "removeKey": "Remove key",
+      "giphyHelp": "Everyone uses their own key, free at",
+      "keyErrors": {
+        "invalid_key": "Invalid key (letters and digits only).",
+        "secure_storage_unavailable": "Secure storage is not available, so the key cannot be saved."
+      },
+      "openStickers": "Open sticker folder"
+    }
   }
 }

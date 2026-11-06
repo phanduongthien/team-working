@@ -21,7 +21,17 @@ export function ChatPage() {
   const { t } = useTranslation('chat')
   const assistant = usePreferences((s) => s.assistant)
   const cliOk = useCliStatus((s) => s.status?.state === 'ok')
-  const { activeId, conversations, streaming, error, loadConversations, send, stop, setMode, clearError } = useChat()
+  const {
+    activeId,
+    conversations,
+    streaming,
+    error,
+    loadConversations,
+    send,
+    stop,
+    setMode,
+    clearError
+  } = useChat()
   const messages = useChat((s) => (activeId ? (s.messages[activeId] ?? EMPTY) : EMPTY))
   const active = conversations.find((c) => c.id === activeId)
   const [draftMode, setDraftMode] = useState<ChatMode>('free')
@@ -80,7 +90,9 @@ export function ChatPage() {
             {t('attach.drop')}
           </div>
         )}
-        {active && messages.length > 0 && <ChatHeader key={active.id} conversation={active} busy={isStreaming} />}
+        {active && messages.length > 0 && (
+          <ChatHeader key={active.id} conversation={active} busy={isStreaming} />
+        )}
         <div className="flex-1 overflow-y-auto">
           <div className="mx-auto max-w-3xl space-y-6 px-6 py-6">
             {messages.length === 0 ? (
@@ -110,7 +122,9 @@ export function ChatPage() {
           )}
           {error && (
             <div className="flex items-center justify-between rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
-              {t(`errors.${error}`, { defaultValue: t('common:errors.generic', { message: error }) })}
+              {t(`errors.${error}`, {
+                defaultValue: t('common:errors.generic', { message: error })
+              })}
               <Button variant="ghost" size="icon-sm" onClick={clearError}>
                 <X />
               </Button>
@@ -123,6 +137,9 @@ export function ChatPage() {
             streaming={isStreaming}
             disabled={!cliOk}
             onSend={(text, attachmentIds) => void send(text, mode, attachmentIds)}
+            onSendMedia={(m) =>
+              void send('', mode, [], { kind: m.kind, source: m.source, id: m.id })
+            }
             onStop={() => void stop()}
           />
           <p className="text-center text-[11px] text-muted-foreground">{t('usageNote')}</p>

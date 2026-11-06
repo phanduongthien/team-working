@@ -1,8 +1,17 @@
 import { randomUUID } from 'node:crypto'
 import type { ChatEvent, ChatMode, ChatUsage } from '@shared/ai'
 import type { AssistantProfile } from '@shared/schemas'
-import type { ChatSendResult, ChatStreamPayload, Message, StoredAttachment, ToolEvent } from '@shared/types'
+import type {
+  ChatSendResult,
+  ChatStreamPayload,
+  Message,
+  StoredAttachment,
+  ToolEvent
+} from '@shared/types'
+import { stripExpressTags, type MessageMedia, type Reaction } from '@shared/expressive'
 import type { AIProvider, HistoryMessage } from '../ai/AIProvider'
+import type { TurnPlan } from '../expressive/affinity'
+import type { FinalizedReply } from '../expressive/service'
 import { buildSystemPrompt, type UserProfileContext } from '../ai/systemPrompt'
 import type { ConversationRepository, MessageRepository } from '../db/repositories'
 
@@ -22,7 +31,20 @@ export type ChatServiceDeps = {
   onRunEnd?(conversationId: string): void
   /** Tool của app được bật cho lượt này (vd xem màn hình) + hướng dẫn chèn vào system prompt. */
   appToolsFor?(conversationId: string): { names: string[]; context: string } | null
+  /** Chat biểu cảm (emoji / reaction / GIF / sticker). Không có → chỉ bỏ thẻ khỏi câu trả lời. */
+  expressive?: {
+    onUserMessage(input: { text: string; media: boolean; mode: string }): TurnPlan
+    onUserReaction(): void
+    promptFor(plan: TurnPlan): Promise<string>
+    finalize(raw: string, plan: TurnPlan): Promise<FinalizedReply>
+  }
 }
+
+/** GIF / sticker người dùng gửi → Claude chỉ thấy chữ mô tả (không gửi ảnh, đỡ tốn hạn mức). */
+export const mediaNote = (media: MessageMedia): string =>
+  `[Người dùng gửi ${media.kind === 'gif' ? 'GIF' : 'sticker'}: "${media.title || 'không tên'}"]`
+
+const MAX_NOTES = 3
 
 const TITLE_MAX = 60
 const PERSIST_INTERVAL_MS = 1_000
@@ -56,7 +78,8 @@ export function promptWithHistory(history: Message[], text: string): string {
 }
 
 /** Prompt khi người dùng chỉ gửi file/ảnh, không gõ chữ. */
-export const EMPTY_TEXT_PROMPT = 'Người dùng gửi file đính kèm (không kèm lời nhắn). Hãy xem và phản hồi phù hợp.'
+export const EMPTY_TEXT_PROMPT =
+  'Người dùng gửi file đính kèm (không kèm lời nhắn). Hãy xem và phản hồi phù hợp.'
 
 const isLostSession = (message: string): boolean => /no conversation found/i.test(message)
 
@@ -83,9 +106,11 @@ export function withAppTools(
   return {
     ...options,
     appTools: { conversationId, names: tools.names },
-    context: options.context ? `${options.context}
+    context: options.context
+      ? `${options.context}
 
-${tools.context}` : tools.context
+${tools.context}`
+      : tools.context
   }
 }
 
@@ -125,9 +150,13 @@ export function toHistory(messages: Message[]): HistoryMessage[] {
     .filter((m) => m.status === 'done' || m.role === 'user')
     .map((m) => ({
       role: m.role,
-      content: m.attachments.length
-        ? `${m.content}\n[Đã đính kèm: ${m.attachments.map((a) => a.name).join(', ')}]`
-        : m.content
+      content: [
+        m.content,
+        m.attachments.length ? `[Đã đính kèm: ${m.attachments.map((a) => a.name).join(', ')}]` : '',
+        m.media && m.role === 'user' ? mediaNote(m.media) : ''
+      ]
+        .filter(Boolean)
+        .join('\n')
     }))
 }
 
@@ -135,6 +164,8 @@ type ActiveRequest = { controller: AbortController; conversationId: string }
 
 export class ChatService {
   private active = new Map<string, ActiveRequest>()
+  /** Cảm xúc người dùng thả vào câu trả lời của trợ lý — báo cho trợ lý ở lượt sau. */
+  private notes = new Map<string, string[]>()
 
   constructor(private readonly deps: ChatServiceDeps) {}
 
@@ -142,21 +173,38 @@ export class ChatService {
     return [...this.active.values()].some((r) => r.conversationId === conversationId)
   }
 
-  send(conversationId: string, text: string, attachments: StoredAttachment[] = []): ChatSendResult {
+  send(
+    conversationId: string,
+    text: string,
+    attachments: StoredAttachment[] = [],
+    media: MessageMedia | null = null
+  ): ChatSendResult {
     const { conversations, messages } = this.deps
     const conversation = conversations.get(conversationId)
     if (!conversation) throw new ConversationNotFoundError()
     if (this.isBusy(conversationId)) throw new ChatBusyError()
 
     const history = messages.recent(conversationId, HISTORY_LIMIT)
-    const userMessage = messages.insert({ conversationId, role: 'user', content: text, attachments })
+    const userMessage = messages.insert({
+      conversationId,
+      role: 'user',
+      content: text,
+      attachments,
+      media
+    })
+    const plan =
+      this.deps.expressive?.onUserMessage({ text, media: !!media, mode: conversation.mode }) ?? null
     const assistantMessage = messages.insert({
       conversationId,
       role: 'assistant',
       content: '',
       status: 'streaming'
     })
-    if (!conversation.title) conversations.update({ id: conversationId, title: titleFromText(text || attachments.map((a) => a.name).join(', ')) })
+    if (!conversation.title)
+      conversations.update({
+        id: conversationId,
+        title: titleFromText(text || media?.title || attachments.map((a) => a.name).join(', '))
+      })
     conversations.touch(conversationId)
 
     const requestId = randomUUID()
@@ -183,7 +231,9 @@ export class ChatService {
       mode: conversation.mode,
       sessionId: conversation.cliSessionId ?? undefined,
       // Chỉ gửi ảnh/file không kèm chữ → vẫn cần một câu nhắc cho Claude.
-      text: text || EMPTY_TEXT_PROMPT,
+      text: this.promptText(conversationId, text, media, attachments.length > 0),
+      userMessageId: userMessage.id,
+      plan,
       history,
       attachments,
       options,
@@ -194,6 +244,43 @@ export class ChatService {
     })
 
     return { requestId, userMessage, assistantMessage }
+  }
+
+  private promptText(
+    conversationId: string,
+    text: string,
+    media: MessageMedia | null,
+    hasFiles: boolean
+  ): string {
+    const notes = this.notes.get(conversationId) ?? []
+    this.notes.delete(conversationId)
+    const body =
+      [text, media ? mediaNote(media) : ''].filter(Boolean).join('\n') ||
+      (hasFiles ? EMPTY_TEXT_PROMPT : '')
+    return notes.length ? `(${notes.join(' ')})\n\n${body}` : body
+  }
+
+  /** Người dùng thả / bỏ cảm xúc (null) cho một tin nhắn — mỗi người tối đa 1 cảm xúc mỗi tin. */
+  react(messageId: string, emoji: string | null): Message {
+    const { messages, conversations } = this.deps
+    const message = messages.get(messageId)
+    // Chỉ tin trong hội thoại của tài khoản hiện tại.
+    if (!message || !conversations.get(message.conversationId))
+      throw new ConversationNotFoundError()
+    const reactions: Reaction[] = [
+      ...message.reactions.filter((r) => r.by !== 'user'),
+      ...(emoji ? [{ emoji, by: 'user' as const }] : [])
+    ]
+    messages.update(messageId, { reactions })
+    if (emoji && message.role === 'assistant') {
+      const list = [
+        ...(this.notes.get(message.conversationId) ?? []),
+        `Người dùng vừa thả ${emoji} vào một câu trả lời của bạn.`
+      ]
+      this.notes.set(message.conversationId, list.slice(-MAX_NOTES))
+      this.deps.expressive?.onUserReaction()
+    }
+    return { ...message, reactions }
   }
 
   abort(requestId: string): void {
@@ -208,7 +295,8 @@ export class ChatService {
   async stopAll(timeoutMs: number): Promise<boolean> {
     this.abortAll()
     const deadline = Date.now() + timeoutMs
-    while (this.active.size > 0 && Date.now() < deadline) await new Promise((r) => setTimeout(r, 50))
+    while (this.active.size > 0 && Date.now() < deadline)
+      await new Promise((r) => setTimeout(r, 50))
     return this.active.size === 0
   }
 
@@ -219,6 +307,8 @@ export class ChatService {
     mode: ChatMode
     sessionId?: string
     text: string
+    userMessageId: string
+    plan: TurnPlan | null
     history: Message[]
     attachments: StoredAttachment[]
     options: RunOptions
@@ -226,7 +316,8 @@ export class ChatService {
   }): Promise<void> {
     const { deps } = this
     const { requestId, conversationId, messageId, signal } = args
-    const emit = (event: ChatEvent): void => deps.emit({ requestId, conversationId, messageId, event })
+    const emit = (event: ChatEvent): void =>
+      deps.emit({ requestId, conversationId, messageId, event })
 
     let content = ''
     const toolEvents: ToolEvent[] = []
@@ -245,7 +336,12 @@ export class ChatService {
       modeSkill: await deps.loadModeSkill(args.mode),
       user: memory.user,
       memories: memory.memories,
-      extraContext: args.options.context
+      extraContext: [
+        args.options.context,
+        args.plan && deps.expressive ? await deps.expressive.promptFor(args.plan) : ''
+      ]
+        .filter(Boolean)
+        .join('\n\n')
     })
     // Provider có session (CLI) tự nhớ hội thoại; provider không session (API) cần lịch sử.
     const history = provider.stateful ? undefined : toHistory(args.history)
@@ -313,7 +409,26 @@ export class ChatService {
     }
 
     const status = signal.aborted ? 'aborted' : error ? 'error' : 'done'
-    deps.messages.update(messageId, { content, status, error, toolEvents, usage })
+    // Thẻ biểu cảm không bao giờ còn trong nội dung lưu lại; chỉ câu trả lời xong mới được reaction / GIF / sticker.
+    let media: MessageMedia | null = null
+    if (status === 'done' && args.plan && deps.expressive) {
+      const reply = await deps.expressive.finalize(content, args.plan)
+      content = reply.text
+      media = reply.media
+      if (reply.reaction) {
+        const target = deps.messages.get(args.userMessageId)
+        if (target) {
+          const reactions: Reaction[] = [
+            ...target.reactions.filter((r) => r.by !== 'assistant'),
+            { emoji: reply.reaction, by: 'assistant' }
+          ]
+          deps.messages.update(target.id, { reactions })
+          emit({ type: 'reactions', targetId: target.id, reactions })
+        }
+      }
+    } else content = stripExpressTags(content)
+    deps.messages.update(messageId, { content, status, error, toolEvents, usage, media })
+    emit({ type: 'final', content, media })
     deps.conversations.touch(conversationId)
     this.active.delete(requestId)
     if (signal.aborted) terminal = { type: 'error', message: 'aborted' }

@@ -1,3 +1,4 @@
+import type { MessageMedia, Reaction } from './expressive'
 export const CHAT_MODES = ['free', 'study', 'code', 'project'] as const
 export type ChatMode = (typeof CHAT_MODES)[number]
 
@@ -14,6 +15,10 @@ export type ChatEvent =
   | { type: 'tool'; name: string; input: unknown }
   | { type: 'done'; usage?: ChatUsage }
   | { type: 'error'; message: string }
+  /** Chỉ main → renderer: câu trả lời đã bỏ thẻ biểu cảm + GIF/sticker kèm theo. */
+  | { type: 'final'; content: string; media: MessageMedia | null }
+  /** Chỉ main → renderer: cảm xúc của một tin nhắn (có thể là tin khác trong hội thoại) thay đổi. */
+  | { type: 'reactions'; targetId: string; reactions: Reaction[] }
 
 export type CliState = 'ok' | 'not_installed' | 'not_logged_in' | 'error'
 

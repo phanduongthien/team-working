@@ -10,7 +10,7 @@
 | #8 | Kết nối agent: Mizuki làm MCP server cho Claude Code / Claude Desktop (kèm cầu nối stdio), Mizuki dùng MCP server khác, Ctrl+Alt+Q dùng chung. Gồm cả bản sửa: trả `not_approved` ngay khi chờ duyệt lần đầu; lịch sử trao đổi tự làm mới (5 giây/lần và khi quay lại cửa sổ app) |
 
 ## PR đang mở
-Không có.
+- **GĐ 3 `feat/expressive-chat`** — Chat biểu cảm: emoji, GIF/sticker GIPHY, sticker trên máy, Yêu thích, thả cảm xúc, trợ lý biểu cảm theo mức (có "Tự động"). Chờ CI xanh và test tay.
 
 ## Lưu ý còn treo
 - ⚠️ Token "Claude Code" cũ đã lộ trong ảnh chụp màn hình: thu hồi trong trang Kết nối agent và tạo token mới (nếu chưa làm).
@@ -18,7 +18,7 @@ Không có.
 
 ## Bước tiếp theo (chờ người dùng chọn — chưa bắt đầu)
 1. Thao tác chuột/bàn phím (GĐ 1, phần điều khiển): chỉ làm khi người dùng đồng ý riêng.
-2. Giọng nói (GĐ 2), chat biểu cảm (GĐ 3), Gmail/Telegram (GĐ 4), Artifacts (GĐ 5).
+2. Giọng nói (GĐ 2), Gmail/Telegram (GĐ 4), Artifacts (GĐ 5).
 3. A2A và mở kết nối ra LAN: chỉ có đề xuất (`docs/agents.md`), chưa code, chờ duyệt.
 
 ## Quyết định đã duyệt
@@ -35,3 +35,9 @@ Không có.
   - Giới hạn 20 yêu cầu/giờ và 1 việc cùng lúc; chạm giới hạn thì báo trong app và trả lỗi kèm thời gian chờ.
   - MCP client duyệt từng lần gọi tool, có tuỳ chọn "luôn cho phép".
   - LAN và A2A làm sau.
+- **Chat biểu cảm (GĐ 3)**
+  - GIPHY key: `.env` (`GIPHY_API_KEY`, chỉ bản dev, không có tiền tố VITE_) + ô nhập trong Cài đặt (DPAPI). Mỗi người key riêng.
+  - Trợ lý gửi biểu cảm bằng thẻ `[[react:😂]]`, `[[gif:từ khoá]]`, `[[sticker:từ khoá]]`, `[[sticker:local/tên]]`. Thẻ chỉ chứa TỪ KHOÁ, không bao giờ nhận URL; thẻ sai / không tìm được thì ẩn. Trả lời agent khác qua MCP: bỏ thẻ, chữ thường.
+  - Tối đa 1 GIF/sticker + 1 reaction mỗi câu trả lời, giãn cách theo mức. Emoji trong chữ không giới hạn cứng, theo mức + bắt chước người dùng; ngữ cảnh nghiêm túc/buồn được ưu tiên. Hướng dẫn kèm ví dụ: `assistant-skills/expressive/SKILL.md`.
+  - Mức: Tắt / Ít / Vừa / Nhiều / Tự động (bắt đầu Ít, mỗi bậc chờ ≥ 3 ngày, có trần, nút đặt lại). Mặc định TẮT với mọi người (không hard-code máy ai trong repo public) — người dùng tự chọn "Tự động" một lần trong Cài đặt.
+  - Sticker: GIPHY Stickers + thư mục local + Yêu thích (GIPHY chỉ lưu ID) + 6 sticker SVG mẫu nguyên bản.
