@@ -4,6 +4,23 @@
 
 ## [Unreleased]
 
+## [0.4.0-beta.1] - 2026-11-06
+
+> Bản thử nghiệm (beta): chỉ máy chọn kênh beta nhận được. Các tính năng cá nhân (điều khiển máy tính, kết nối agent, giọng nói, Gmail/Telegram) đều **mặc định tắt**, ai cần thì tự bật trong Cài đặt → Tính năng thử nghiệm.
+
+### Tóm tắt
+- **Thông báo cập nhật mới**: hiện số phiên bản và nội dung thay đổi, chọn Cập nhật ngay / Để sau / Bỏ qua; có kênh beta.
+- **Dán ảnh bằng Ctrl+V** và kéo thả ảnh, file vào khung chat.
+- **Chat biểu cảm**: emoji, GIF và sticker, thả cảm xúc cho từng tin nhắn; trợ lý biểu cảm theo mức bạn chọn.
+- **Artifacts**: tài liệu, slide, bảng cân bằng chỉ số, biểu đồ, sơ đồ trong panel cạnh khung chat; xuất docx, pdf, pptx, xlsx, csv, json.
+- **Sắp xếp cuộc trò chuyện**: ghim, nhóm, tách nhánh, tiêu đề tự động, tìm kiếm có trích đoạn.
+- **Cài skill** cho trợ lý và ghi chú phong cách riêng (my-style).
+- **Giao diện luôn đúng trạng thái**: bật/tắt, đổi tên hiện ngay, không phải mở lại trang.
+- Thử nghiệm (mặc định tắt): **điều khiển máy tính** chế độ chỉ xem (phím dừng Ctrl+Alt+Q), **kết nối agent** qua MCP, **giọng nói**, **Gmail (nhiều tài khoản) và Telegram** chỉ đọc và soạn nháp.
+- Windows SmartScreen có thể cảnh báo vì bộ cài chưa có chữ ký số: bấm "More info" → "Run anyway".
+
+### Chi tiết
+
 ### Thêm mới
 - **Sắp xếp cuộc trò chuyện** ở thanh bên trái: ghim (luôn ở đầu, kéo vào mục Đã ghim cũng được); nhóm tự đặt tên ("Unity", "Học", "Tâm sự"…) — tạo / đổi tên / xoá (xoá nhóm không xoá cuộc trò chuyện), thu gọn / mở rộng từng nhóm, kéo thả cuộc chat vào / ra khỏi nhóm hoặc dùng nút "Chuyển vào nhóm".
 - **Gợi ý nhóm**: cuộc chat mới có tên nhóm / từ khoá giống các cuộc trong nhóm → trợ lý gợi ý ngay (không tốn hạn mức); không ra thì hỏi kèm lượt đặt tiêu đề. Chỉ chuyển khi bạn bấm "Chuyển vào nhóm".
