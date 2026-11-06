@@ -31,6 +31,7 @@ Mục tiêu: mọi trang cập nhật giao diện ngay, không phải bật/tắ
 | Skill | Lấy 1 lần + sau thao tác của chính trang | Chép skill vào thư mục rồi quay lại không hiện; ghi chú my-style lấy 1 lần | `useSyncedState('skills')` (focus hỏi lại), bật/tắt / gỡ lạc quan |
 | Gmail | Sự kiện + focus (PR #15) | Bật/tắt, đổi tên, tuỳ chọn chờ IPC; hàng tài khoản dựng lại theo tên (mất thông báo lỗi) | `onSync('gmail')`, `patchGmail` lạc quan, hàng giữ theo id |
 | Telegram | Sự kiện + focus (PR #15) | Bật/tắt, chọn chat chờ IPC | `onSync('telegram')`, `patchTelegram` lạc quan (danh sách chat tính lại tại chỗ) |
+| Thanh bên chat (PR sắp xếp) | Tải lại sau khi gửi / trả lời xong; ghim chờ IPC | Tiêu đề AI đặt / gợi ý nhóm nền không hiện | `onSync('conversations')` ở `setup` của chat; ghim / đổi tên / chuyển nhóm / thu gọn lạc quan; main báo sau gửi, sau lượt chạy, sau khi đặt tiêu đề |
 | Panel Artifacts | Tải lại khi số tin có artifact đổi | Khôi phục / sửa phiên bản từ nơi khác không hiện; trợ lý sửa artifact cũ không đổi số tin | `useSync('artifacts')`, main báo khi tạo / thêm phiên bản |
 
 ## Thêm tính năng mới

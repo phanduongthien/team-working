@@ -71,7 +71,13 @@
     "keyHelp": "The key is encrypted, stays on this computer, and is only ever sent to Anthropic.",
     "getKey": "Create a key on Claude Console",
     "autoSuggest": "Suggest memories automatically",
-    "autoSuggestHelp": "When you leave a chat with 2+ new messages, the assistant suggests what to remember (uses one extra AI call). You still review before saving."
+    "autoSuggestHelp": "When you leave a chat with 2+ new messages, the assistant suggests what to remember (uses one extra AI call). You still review before saving.",
+    "organize": {
+      "aiTitles": "Auto-name conversations",
+      "aiTitlesHelp": "After the first reply, a cheap model (Haiku) writes a 2–6 word title. Titles you rename stay yours.",
+      "suggestGroups": "Suggest a group for new conversations",
+      "suggestGroupsHelp": "Matches keywords against group names (no quota); otherwise asked along with the title call. Moves only when you accept."
+    }
   },
   "update": {
     "heading": "Updates",

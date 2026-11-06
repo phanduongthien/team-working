@@ -53,6 +53,8 @@ export type CliRunOptions = {
   permissionTool?: string
   /** Thư mục được đọc thêm ngoài cwd (vd thư mục file đính kèm). */
   addDirs?: string[]
+  /** Model rẻ cho việc nền nhỏ → `--model haiku` (alias của CLI, luôn trỏ bản Haiku mới nhất). */
+  cheap?: boolean
 }
 
 /**
@@ -84,6 +86,7 @@ export function buildCliArgs(opts: CliRunOptions): string[] {
   for (const dir of opts.addDirs ?? []) args.push('--add-dir', dir)
   if (opts.sessionId) args.push('--resume', opts.sessionId)
   if (opts.ephemeral) args.push('--no-session-persistence')
+  if (opts.cheap) args.push('--model', 'haiku')
   return args
 }
 

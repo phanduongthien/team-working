@@ -9,6 +9,7 @@ import type { AgentExchange } from '@shared/agents'
 import type { MemoryAction, MemoryCategory } from '@shared/schemas'
 import type {
   Conversation,
+  ConversationGroup,
   ConversationUpdate,
   Memory,
   MemorySuggestion,
@@ -18,8 +19,18 @@ import type {
   StoredAttachment,
   ToolEvent
 } from '@shared/types'
+import { normalize } from '../chat/organize'
 import type { AppDatabase } from './client'
-import { agentExchanges, conversations, memories, memorySuggestions, messages, settings } from './schema'
+import {
+  agentExchanges,
+  conversationGroups,
+  conversations,
+  memories,
+  memorySuggestions,
+  messages,
+  settings,
+  type TitleSource
+} from './schema'
 
 type ConversationRow = typeof conversations.$inferSelect
 type MessageRow = typeof messages.$inferSelect
@@ -31,9 +42,23 @@ const toConversation = (r: ConversationRow): Conversation => ({
   pinned: r.pinned,
   cwd: r.cwd,
   codeWrite: r.codeWrite,
+  groupId: r.groupId,
+  parentId: r.parentId,
+  suggestedGroupId: r.suggestedGroupId,
   createdAt: r.createdAt,
   updatedAt: r.updatedAt
 })
+
+type GroupRow = typeof conversationGroups.$inferSelect
+const toGroup = (r: GroupRow): ConversationGroup => ({
+  id: r.id,
+  name: r.name,
+  collapsed: r.collapsed,
+  createdAt: r.createdAt
+})
+
+/** So tên nhóm không phân biệt hoa thường / dấu ("Học" = "hoc"). */
+export const groupKey = (name: string): string => normalize(name).trim()
 
 /** Renderer không cần (và không được thấy) đường dẫn file trên máy. */
 const toMessage = (r: MessageRow): Message => ({
@@ -88,15 +113,19 @@ export class ConversationRepository {
   list(query?: string): Conversation[] {
     const q = query?.trim()
     const match = q ? ftsQuery(q) : ''
-    const titleLike = sql`${conversations.title} LIKE ${likePattern(q ?? '')} ESCAPE '\\'`
+    const pattern = likePattern(q ?? '')
+    const titleLike = sql`${conversations.title} LIKE ${pattern} ESCAPE '\\'`
+    // Tìm được cả theo tên nhóm: gõ "Unity" → mọi cuộc trong nhóm Unity.
+    const groupLike = sql`${conversations.groupId} IN (SELECT id FROM conversation_groups WHERE owner = ${this.getOwner()} AND name LIKE ${pattern} ESCAPE '\\')`
     const where = !q
       ? undefined
       : match
         ? or(
             titleLike,
+            groupLike,
             sql`${conversations.id} IN (SELECT conversation_id FROM messages_fts WHERE messages_fts MATCH ${match})`
           )
-        : titleLike
+        : or(titleLike, groupLike)
     return this.db
       .select()
       .from(conversations)
@@ -106,9 +135,102 @@ export class ConversationRepository {
       .map(toConversation)
   }
 
-  get(id: string): (Conversation & { cliSessionId: string | null; memoryExtractedAt: number | null }) | null {
+  get(
+    id: string
+  ):
+    | (Conversation & {
+        cliSessionId: string | null
+        memoryExtractedAt: number | null
+        titleSource: TitleSource
+        forkedFromMessageId: string | null
+      })
+    | null {
     const row = this.db.select().from(conversations).where(this.mine(id)).get()
-    return row ? { ...toConversation(row), cliSessionId: row.cliSessionId, memoryExtractedAt: row.memoryExtractedAt } : null
+    return row
+      ? {
+          ...toConversation(row),
+          cliSessionId: row.cliSessionId,
+          memoryExtractedAt: row.memoryExtractedAt,
+          titleSource: row.titleSource,
+          forkedFromMessageId: row.forkedFromMessageId
+        }
+      : null
+  }
+
+  /** Tiêu đề do app / AI đặt (không phải người dùng đổi tên). `auto` = AI còn được đặt lại. */
+  setAutoTitle(id: string, title: string, source: Exclude<TitleSource, 'user'>): void {
+    this.db.update(conversations).set({ title, titleSource: source }).where(eq(conversations.id, id)).run()
+  }
+
+  /** Gợi ý nhóm (null = bỏ gợi ý). */
+  setSuggestedGroup(id: string, groupId: string | null): void {
+    this.db.update(conversations).set({ suggestedGroupId: groupId }).where(eq(conversations.id, id)).run()
+  }
+
+  /** Người dùng trả lời gợi ý nhóm: đồng ý → chuyển vào nhóm; luôn xoá gợi ý. */
+  answerSuggestion(id: string, accept: boolean): Conversation | null {
+    const row = this.db.select().from(conversations).where(this.mine(id)).get()
+    if (!row) return null
+    const patch: Partial<ConversationRow> = { suggestedGroupId: null }
+    if (accept && row.suggestedGroupId) patch.groupId = row.suggestedGroupId
+    const updated = this.db.update(conversations).set(patch).where(this.mine(id)).returning().get()
+    return updated ? toConversation(updated) : null
+  }
+
+  /**
+   * Tách nhánh từ một tin: hội thoại mới (cùng chế độ / thư mục / nhóm) có bản sao các tin tới tin đó.
+   * Không có session CLI → lượt đầu gửi kèm lịch sử (ChatService) để trợ lý nắm ngữ cảnh.
+   */
+  fork(messageId: string): Conversation | null {
+    const target = this.db
+      .select({ conversationId: messages.conversationId })
+      .from(messages)
+      .innerJoin(conversations, eq(conversations.id, messages.conversationId))
+      .where(and(this.mine(), eq(messages.id, messageId)))
+      .get()
+    if (!target) return null
+    const parent = this.db.select().from(conversations).where(this.mine(target.conversationId)).get()
+    if (!parent) return null
+    return this.db.transaction((tx) => {
+      const ts = Date.now()
+      const row = tx
+        .insert(conversations)
+        .values({
+          id: randomUUID(),
+          owner: parent.owner,
+          title: parent.title,
+          titleSource: 'fixed',
+          mode: parent.mode,
+          cwd: parent.cwd,
+          groupId: parent.groupId,
+          parentId: parent.id,
+          forkedFromMessageId: messageId,
+          createdAt: ts,
+          updatedAt: ts
+        })
+        .returning()
+        .get()
+      const list = tx
+        .select()
+        .from(messages)
+        .where(eq(messages.conversationId, parent.id))
+        .orderBy(asc(messages.createdAt))
+        .all()
+      const upTo = list.findIndex((m) => m.id === messageId)
+      for (const m of list.slice(0, upTo + 1)) {
+        // Tin đang chạy coi như đã dừng; artifact thuộc hội thoại gốc nên bỏ thẻ.
+        tx.insert(messages)
+          .values({
+            ...m,
+            id: randomUUID(),
+            conversationId: row.id,
+            status: m.status === 'streaming' ? 'aborted' : m.status,
+            artifacts: []
+          })
+          .run()
+      }
+      return toConversation(row)
+    })
   }
 
   /** File đính kèm (theo ID) nằm trong một tin nhắn thuộc hội thoại của tài khoản hiện tại. */
@@ -153,6 +275,15 @@ export class ConversationRepository {
     if (input.title !== undefined) patch.title = input.title
     if (input.pinned !== undefined) patch.pinned = input.pinned
     if (input.mode !== undefined) patch.mode = input.mode
+    // Người dùng tự đổi tên → AI không đặt lại nữa.
+    if (input.title !== undefined) patch.titleSource = 'user'
+    if (input.groupId !== undefined) {
+      // Chỉ nhóm của chính tài khoản này.
+      if (input.groupId !== null && !this.ownsGroup(input.groupId)) return null
+      patch.groupId = input.groupId
+      // Đã tự xếp nhóm → bỏ gợi ý.
+      patch.suggestedGroupId = null
+    }
     if (Object.keys(patch).length === 0) {
       const row = this.db.select().from(conversations).where(this.mine(input.id)).get()
       return row ? toConversation(row) : null
@@ -171,8 +302,30 @@ export class ConversationRepository {
     this.db.update(conversations).set({ cliSessionId }).where(eq(conversations.id, id)).run()
   }
 
+  /** Bảo trì nội bộ (mọi tài khoản): hội thoại có tiêu đề kiểu lệnh tạo artifact của bản cũ. */
+  listAllForMaintenance(): { id: string; title: string; titleSource: TitleSource }[] {
+    return this.db
+      .select({ id: conversations.id, title: conversations.title, titleSource: conversations.titleSource })
+      .from(conversations)
+      .where(sql`lower(${conversations.title}) LIKE '%artifact%'`)
+      .all()
+  }
+
+  private ownsGroup(groupId: string): boolean {
+    return !!this.db
+      .select({ id: conversationGroups.id })
+      .from(conversationGroups)
+      .where(and(eq(conversationGroups.id, groupId), eq(conversationGroups.owner, this.getOwner())))
+      .get()
+  }
+
   remove(id: string): void {
-    this.db.delete(conversations).where(this.mine(id)).run()
+    if (!this.get(id)) return
+    this.db.transaction((tx) => {
+      // Nhánh con thành hội thoại thường (không mất theo gốc).
+      tx.update(conversations).set({ parentId: null }).where(eq(conversations.parentId, id)).run()
+      tx.delete(conversations).where(this.mine(id)).run()
+    })
   }
 
   countFor(owner: string): number {
@@ -181,6 +334,78 @@ export class ConversationRepository {
 
   reassign(from: string, to: string): void {
     this.db.update(conversations).set({ owner: to }).where(eq(conversations.owner, from)).run()
+    // Nhóm đi cùng lịch sử chat.
+    this.db.update(conversationGroups).set({ owner: to }).where(eq(conversationGroups.owner, from)).run()
+  }
+}
+
+export class GroupNameTakenError extends Error {
+  constructor() {
+    super('group_name_taken')
+  }
+}
+
+/** Nhóm cuộc trò chuyện theo tài khoản. Tên không trùng (so không dấu, không phân biệt hoa thường). */
+export class ConversationGroupRepository {
+  constructor(
+    private readonly db: AppDatabase,
+    private readonly getOwner: () => string = () => LOCAL_OWNER
+  ) {}
+
+  private mine(id?: string) {
+    return and(eq(conversationGroups.owner, this.getOwner()), id === undefined ? undefined : eq(conversationGroups.id, id))
+  }
+
+  list(): ConversationGroup[] {
+    return this.db
+      .select()
+      .from(conversationGroups)
+      .where(this.mine())
+      .orderBy(asc(conversationGroups.createdAt), asc(conversationGroups.id))
+      .all()
+      .map(toGroup)
+  }
+
+  get(id: string): ConversationGroup | null {
+    const row = this.db.select().from(conversationGroups).where(this.mine(id)).get()
+    return row ? toGroup(row) : null
+  }
+
+  private taken(name: string, except?: string): boolean {
+    const key = groupKey(name)
+    return this.list().some((g) => g.id !== except && groupKey(g.name) === key)
+  }
+
+  create(name: string): ConversationGroup {
+    if (this.taken(name)) throw new GroupNameTakenError()
+    const row = this.db
+      .insert(conversationGroups)
+      .values({ id: randomUUID(), owner: this.getOwner(), name: name.trim(), createdAt: Date.now() })
+      .returning()
+      .get()
+    return toGroup(row)
+  }
+
+  update(input: { id: string; name?: string; collapsed?: boolean }): ConversationGroup | null {
+    const patch: Partial<GroupRow> = {}
+    if (input.name !== undefined) {
+      if (this.taken(input.name, input.id)) throw new GroupNameTakenError()
+      patch.name = input.name.trim()
+    }
+    if (input.collapsed !== undefined) patch.collapsed = input.collapsed
+    if (Object.keys(patch).length === 0) return this.get(input.id)
+    const row = this.db.update(conversationGroups).set(patch).where(this.mine(input.id)).returning().get()
+    return row ? toGroup(row) : null
+  }
+
+  /** Xoá nhóm: cuộc trò chuyện ra khỏi nhóm (KHÔNG bị xoá); gợi ý trỏ tới nhóm này cũng bỏ. */
+  remove(id: string): void {
+    if (!this.get(id)) return
+    this.db.transaction((tx) => {
+      tx.update(conversations).set({ groupId: null }).where(eq(conversations.groupId, id)).run()
+      tx.update(conversations).set({ suggestedGroupId: null }).where(eq(conversations.suggestedGroupId, id)).run()
+      tx.delete(conversationGroups).where(this.mine(id)).run()
+    })
   }
 }
 

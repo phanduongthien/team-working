@@ -88,7 +88,8 @@
     "invalid_output": "The assistant returned an unexpected format, please retry.",
     "already_running": "Already fetching suggestions, hang on.",
     "approval_unavailable": "Could not start file-change approval. Turn off editing or restart the app.",
-    "no_project_folder": "Choose a project folder first."
+    "no_project_folder": "Choose a project folder first.",
+    "message_not_found": "Message to branch from was not found."
   },
   "tools": {
     "screenshot": "screenshot",
@@ -289,6 +290,32 @@
       "not_found": "Could not edit \"{{title}}\": the text to replace no longer matches.",
       "ambiguous": "Could not edit \"{{title}}\": the text to replace matches several places.",
       "no_artifact": "There is no artifact \"{{title}}\" to edit."
+    }
+  },
+  "organize": {
+    "newGroup": "New group",
+    "groupName": "Group name",
+    "groupPlaceholder": "e.g. Unity, Study, Personal",
+    "renameGroup": "Rename group",
+    "deleteGroup": "Delete group",
+    "deleteGroupConfirm": "Delete group",
+    "deleteGroupDescription": "Delete group “{{name}}”? Its conversations are kept, they just leave the group.",
+    "emptyGroup": "Drag conversations here",
+    "ungrouped": "Ungrouped",
+    "dropUngroup": "Drop here to remove from group",
+    "moveTo": "Move to group",
+    "moveTitle": "Move “{{title}}” to a group",
+    "noGroups": "No groups yet — use the folder button next to “New chat” to create one.",
+    "removeFromGroup": "Remove from group",
+    "fork": "Branch",
+    "forkFromHere": "Branch from this message",
+    "suggestedBadge": "Suggested group: {{group}}",
+    "suggestion": "{{name}} suggests moving this chat to “{{group}}”.",
+    "accept": "Move to group",
+    "dismiss": "Dismiss",
+    "errors": {
+      "group_name_taken": "A group with this name already exists.",
+      "invalid_input": "Invalid group name."
     }
   }
 }

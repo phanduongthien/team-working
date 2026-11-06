@@ -2,10 +2,12 @@ import type { ArtifactType, MessageArtifact } from '@shared/artifacts'
 import type { MessageVoice } from '@shared/voice'
 import type { MessageMedia, Reaction } from '@shared/expressive'
 import { sql } from 'drizzle-orm'
-import { index, integer, sqliteTable, text } from 'drizzle-orm/sqlite-core'
+import { index, integer, sqliteTable, text, type AnySQLiteColumn } from 'drizzle-orm/sqlite-core'
 import type { ChatMode, ChatUsage } from '@shared/ai'
 import type { MemoryAction, MemoryCategory, SuggestionStatus, TimeEntryKind } from '@shared/schemas'
 import type { MessageRole, MessageStatus, StoredAttachment, ToolEvent } from '@shared/types'
+
+export type TitleSource = 'auto' | 'ai' | 'user' | 'fixed'
 
 const now = sql`(unixepoch('subsec') * 1000)`
 
@@ -14,6 +16,19 @@ export const settings = sqliteTable('settings', {
   value: text('value', { mode: 'json' }).notNull(),
   updatedAt: integer('updated_at').notNull().default(now)
 })
+
+/** Nhóm cuộc trò chuyện ở thanh bên (vd "Unity", "Học") — chỉ trên máy, theo tài khoản. */
+export const conversationGroups = sqliteTable(
+  'conversation_groups',
+  {
+    id: text('id').primaryKey(),
+    owner: text('owner').notNull().default('local'),
+    name: text('name').notNull(),
+    collapsed: integer('collapsed', { mode: 'boolean' }).notNull().default(false),
+    createdAt: integer('created_at').notNull().default(now)
+  },
+  (t) => [index('conversation_groups_owner_idx').on(t.owner, t.createdAt)]
+)
 
 export const conversations = sqliteTable(
   'conversations',
@@ -31,6 +46,14 @@ export const conversations = sqliteTable(
     memoryExtractedAt: integer('memory_extracted_at'),
     /** Chế độ Code: người dùng đã bật rõ ràng cho phép sửa file (mỗi lần sửa vẫn phải duyệt). */
     codeWrite: integer('code_write', { mode: 'boolean' }).notNull().default(false),
+    groupId: text('group_id').references(() => conversationGroups.id, { onDelete: 'set null' }),
+    /** Nhánh (fork): hội thoại gốc + tin được tách ra. Xoá gốc → nhánh thành hội thoại thường. */
+    parentId: text('parent_id').references((): AnySQLiteColumn => conversations.id, { onDelete: 'set null' }),
+    forkedFromMessageId: text('forked_from_message_id'),
+    /** auto = tạm lấy từ tin đầu (AI sẽ đặt lại sau lượt trả lời); ai / user / fixed = giữ nguyên. */
+    titleSource: text('title_source').$type<TitleSource>().notNull().default('fixed'),
+    /** Nhóm trợ lý gợi ý, chờ người dùng đồng ý (null = không có / đã trả lời). */
+    suggestedGroupId: text('suggested_group_id').references(() => conversationGroups.id, { onDelete: 'set null' }),
     createdAt: integer('created_at').notNull().default(now),
     updatedAt: integer('updated_at').notNull().default(now)
   },

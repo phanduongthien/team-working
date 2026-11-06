@@ -84,6 +84,34 @@ describe('ChatService', () => {
   })
   afterEach(() => handle.close())
 
+  it('nhánh (fork) chưa có session: lượt đầu gửi kèm lịch sử tới tin được tách', async () => {
+    const provider = new FakeProvider(() => events({ type: 'session', sessionId: 's-f' }, { type: 'text', delta: 'ok' }, { type: 'done' }))
+    const parent = convs.create('free')
+    msgs.insert({ conversationId: parent.id, role: 'user', content: 'Mình đang làm game Unity' })
+    const reply = msgs.insert({ conversationId: parent.id, role: 'assistant', content: 'Hay quá!', status: 'done' })
+    msgs.insert({ conversationId: parent.id, role: 'user', content: 'tin sau không được chép' })
+    const fork = convs.fork(reply.id)!
+    const service = makeService(provider)
+    service.send(fork.id, 'Tiếp tục nhánh này')
+    await waitForStatus(fork.id, 'done')
+    expect(provider.calls[0].sessionId).toBeUndefined()
+    expect(provider.calls[0].prompt).toContain('Người dùng: Mình đang làm game Unity')
+    expect(provider.calls[0].prompt).not.toContain('tin sau')
+    expect(provider.calls[0].prompt.endsWith('Tiếp tục nhánh này')).toBe(true)
+    // Lượt sau dùng session như thường.
+    service.send(fork.id, 'lượt 2')
+    await vi.waitFor(() => expect(provider.calls).toHaveLength(2))
+    expect(provider.calls[1]).toMatchObject({ sessionId: 's-f', prompt: 'lượt 2' })
+  })
+
+  it('tiêu đề tạm từ lời nhắn mẫu artifact lấy tên artifact', async () => {
+    const provider = new FakeProvider(() => events({ type: 'done' }))
+    const conv = convs.create('free')
+    makeService(provider).send(conv.id, 'Tạo artifact type="doc" title="GDD Pixel Quest" cho game của mình')
+    await waitForStatus(conv.id, 'done')
+    expect(convs.get(conv.id)?.title).toBe('GDD Pixel Quest')
+  })
+
   it('lưu tin nhắn, stream text, lưu session và đặt tiêu đề', async () => {
     const provider = new FakeProvider(() =>
       events(

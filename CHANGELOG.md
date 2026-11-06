@@ -5,6 +5,16 @@
 ## [Unreleased]
 
 ### Thêm mới
+- **Sắp xếp cuộc trò chuyện** ở thanh bên trái: ghim (luôn ở đầu, kéo vào mục Đã ghim cũng được); nhóm tự đặt tên ("Unity", "Học", "Tâm sự"…) — tạo / đổi tên / xoá (xoá nhóm không xoá cuộc trò chuyện), thu gọn / mở rộng từng nhóm, kéo thả cuộc chat vào / ra khỏi nhóm hoặc dùng nút "Chuyển vào nhóm".
+- **Gợi ý nhóm**: cuộc chat mới có tên nhóm / từ khoá giống các cuộc trong nhóm → trợ lý gợi ý ngay (không tốn hạn mức); không ra thì hỏi kèm lượt đặt tiêu đề. Chỉ chuyển khi bạn bấm "Chuyển vào nhóm".
+- **Tách nhánh**: nút nhánh ở mỗi tin nhắn → cuộc mới có sẵn các tin tới tin đó (trợ lý nắm ngữ cảnh), hiện thụt vào dưới cuộc gốc.
+- **Tiêu đề ngắn tự động**: sau câu trả lời đầu, model rẻ (Haiku) đặt tiêu đề 2–6 từ; tự đổi tên thì giữ tên của bạn. Tắt được trong Cài đặt → AI.
+- Tìm kiếm cuộc trò chuyện tìm được cả theo tên nhóm.
+
+### Sửa lỗi
+- Tiêu đề cuộc chat tạo từ mẫu artifact hiện chữ thô `Tạo artifact type="doc" title=...` → nay là tên artifact; các tiêu đề cũ bị lỗi được sửa tự động khi mở app.
+
+### Thêm mới
 - **Gmail & Telegram** (thử nghiệm, mặc định tắt — Cài đặt → Tính năng thử nghiệm): trợ lý đọc email / tin nhắn của bạn để tóm tắt, nhắc việc, soạn trả lời. **Chỉ đọc + soạn nháp** — mọi bản nháp hiện hộp thoại để bạn xem / sửa trước, và bạn tự gửi trong Gmail / Telegram.
 - Gmail: bạn tự tạo OAuth client (hướng dẫn từng bước trong app), đăng nhập bằng trình duyệt; ẩn sẵn thư OTP / ngân hàng, chặn người gửi theo địa chỉ hoặc tên miền, "Thử đọc 5 thư mới" để xem trợ lý thấy gì. App OAuth ở chế độ Testing hết hạn sau 7 ngày — app báo trước và nhắc kết nối lại.
 - Telegram: đăng nhập tài khoản cá nhân (api_id của bạn, mã + mật khẩu 2 bước); mặc định trợ lý không đọc chat nào cho tới khi bạn chọn, hoặc chế độ "mọi chat trừ chat bị chặn" (chat ngân hàng / ví chặn sẵn); tin nhắn hệ thống chứa mã đăng nhập luôn bị chặn. "Đăng xuất + xoá phiên" một nút.

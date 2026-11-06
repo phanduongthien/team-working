@@ -126,7 +126,8 @@ export class ClaudeCliProvider implements AIProvider {
       permissionTool: bridge ? PERMISSION_TOOL : undefined,
       // File đính kèm nằm ở workspace; ở chế độ Code (cwd = dự án) phải cho phép đọc thêm thư mục đó.
       addDirs: [...new Set(attachmentPaths.map((p) => dirname(p)))].filter((d) => !isInside(req.cwd, d)),
-      ephemeral: req.ephemeral
+      ephemeral: req.ephemeral,
+      cheap: req.model === 'cheap'
     })
     const prompt = promptWithAttachments(req.prompt, attachmentPaths)
     const cleanup = async (): Promise<void> => {

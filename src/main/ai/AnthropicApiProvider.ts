@@ -6,7 +6,10 @@ import type { AIProvider, ChatRequest, HistoryMessage } from './AIProvider'
 
 /** Model mặc định theo skill claude-api (không tự đoán ID). */
 export const ANTHROPIC_MODEL = 'claude-opus-5-5'
+/** Model rẻ cho việc nền nhỏ (đặt tiêu đề, gợi ý nhóm). Haiku không có server-side fallback. */
+export const ANTHROPIC_CHEAP_MODEL = 'claude-haiku-5-5'
 const MAX_TOKENS = 64_000
+const CHEAP_MAX_TOKENS = 2_000
 const MAX_TEXT_ATTACHMENT_CHARS = 200_000
 
 const IMAGE_TYPES = ['image/png', 'image/jpeg', 'image/gif', 'image/webp'] as const
@@ -85,19 +88,32 @@ export class AnthropicApiProvider implements AIProvider {
         ...(await attachmentBlocks(req.attachments ?? [])),
         { type: 'text', text: req.prompt }
       ]
-      const stream = client.beta.messages.stream(
-        {
-          model: ANTHROPIC_MODEL,
-          max_tokens: MAX_TOKENS,
-          system: req.systemPrompt,
-          messages: [...historyToMessages(req.history ?? []), { role: 'user', content }],
-          output_config: { effort: 'medium' },
-          // Bị từ chối vì an toàn → server tự chạy lại trên model dự phòng phù hợp.
-          betas: ['server-side-fallback-2026-07-01'],
-          fallbacks: 'default'
-        },
-        { signal }
-      )
+      const messages = [...historyToMessages(req.history ?? []), { role: 'user' as const, content }]
+      const stream =
+        req.model === 'cheap'
+          ? client.beta.messages.stream(
+              {
+                model: ANTHROPIC_CHEAP_MODEL,
+                max_tokens: CHEAP_MAX_TOKENS,
+                system: req.systemPrompt,
+                messages,
+                output_config: { effort: 'low' }
+              },
+              { signal }
+            )
+          : client.beta.messages.stream(
+              {
+                model: ANTHROPIC_MODEL,
+                max_tokens: MAX_TOKENS,
+                system: req.systemPrompt,
+                messages,
+                output_config: { effort: 'medium' },
+                // Bị từ chối vì an toàn → server tự chạy lại trên model dự phòng phù hợp.
+                betas: ['server-side-fallback-2026-07-01'],
+                fallbacks: 'default'
+              },
+              { signal }
+            )
 
       for await (const event of stream) {
         if (event.type === 'content_block_delta' && event.delta.type === 'text_delta') {

@@ -15,7 +15,12 @@ import {
   chatReactSchema,
   chatAddFileSchema,
   chatAttachmentPreviewSchema,
+  DEFAULT_CHAT_ORGANIZE_SETTINGS,
+  chatOrganizeSettingsSchema,
+  conversationAnswerSuggestionSchema,
   conversationCreateSchema,
+  conversationGroupNameSchema,
+  conversationGroupUpdateSchema,
   conversationListSchema,
   conversationUpdateSchema,
   externalUrlSchema,
@@ -26,12 +31,14 @@ import {
   userProfileSchema
 } from '@shared/schemas'
 import { checkClaudeCli } from '../ai/claudeCli'
-import type {
-  ConversationRepository,
-  MemoryRepository,
-  MessageRepository,
-  SettingsRepository,
-  SuggestionRepository
+import {
+  GroupNameTakenError,
+  type ConversationGroupRepository,
+  type ConversationRepository,
+  type MemoryRepository,
+  type MessageRepository,
+  type SettingsRepository,
+  type SuggestionRepository
 } from '../db/repositories'
 import type { AccountScope } from '../memory/accountScope'
 import type { MemoryService } from '../memory/memoryService'
@@ -48,6 +55,7 @@ import type { SyncTopic } from '@shared/sync'
 
 export type IpcDeps = {
   conversations: ConversationRepository
+  groups: ConversationGroupRepository
   messages: MessageRepository
   memories: MemoryRepository
   suggestions: SuggestionRepository
@@ -127,15 +135,84 @@ export function registerIpc(deps: IpcDeps): void {
   handle(deps, IPC.conversationsList, conversationListSchema, ({ query }) =>
     deps.conversations.list(query)
   )
-  handle(deps, IPC.conversationsCreate, conversationCreateSchema, ({ mode }) =>
-    deps.conversations.create(mode)
+  const conv = { changes: 'conversations' } as const
+  handle(deps, IPC.conversationsCreate, conversationCreateSchema, ({ mode }) => deps.conversations.create(mode), conv)
+  handle(
+    deps,
+    IPC.conversationsUpdate,
+    conversationUpdateSchema,
+    (input) => {
+      const updated = deps.conversations.update(input)
+      if (!updated) throw new Error('conversation_not_found')
+      return updated
+    },
+    conv
   )
-  handle(deps, IPC.conversationsUpdate, conversationUpdateSchema, (input) => {
-    const updated = deps.conversations.update(input)
-    if (!updated) throw new Error('conversation_not_found')
-    return updated
-  })
-  handle(deps, IPC.conversationsRemove, idSchema, (id) => deps.conversations.remove(id))
+  handle(deps, IPC.conversationsRemove, idSchema, (id) => deps.conversations.remove(id), conv)
+  handle(
+    deps,
+    IPC.conversationsFork,
+    idSchema,
+    (messageId) => {
+      const forked = deps.conversations.fork(messageId)
+      if (!forked) throw new Error('message_not_found')
+      return forked
+    },
+    conv
+  )
+  handle(
+    deps,
+    IPC.conversationsAnswerSuggestion,
+    conversationAnswerSuggestionSchema,
+    ({ id, accept }) => {
+      const updated = deps.conversations.answerSuggestion(id, accept)
+      if (!updated) throw new Error('conversation_not_found')
+      return updated
+    },
+    conv
+  )
+
+  // ---- Nhóm cuộc trò chuyện ----
+  /** Trùng tên → trả { error } để renderer hoàn tác + báo, không ném. */
+  const groupResult = <T>(fn: () => T): T | { error: string } => {
+    try {
+      return fn()
+    } catch (err) {
+      if (err instanceof GroupNameTakenError) return { error: err.message }
+      throw err
+    }
+  }
+  handle(deps, IPC.conversationGroupsList, none, () => deps.groups.list())
+  handle(
+    deps,
+    IPC.conversationGroupsCreate,
+    conversationGroupNameSchema,
+    (name) => groupResult(() => deps.groups.create(name)),
+    conv
+  )
+  handle(
+    deps,
+    IPC.conversationGroupsUpdate,
+    conversationGroupUpdateSchema,
+    (input) =>
+      groupResult(() => {
+        const updated = deps.groups.update(input)
+        if (!updated) throw new Error('group_not_found')
+        return updated
+      }),
+    conv
+  )
+  handle(deps, IPC.conversationGroupsRemove, idSchema, (id) => deps.groups.remove(id), conv)
+  handle(deps, IPC.settingsGetChatOrganize, none, () =>
+    deps.settings.get('chatOrganize', chatOrganizeSettingsSchema, DEFAULT_CHAT_ORGANIZE_SETTINGS)
+  )
+  handle(
+    deps,
+    IPC.settingsSetChatOrganize,
+    chatOrganizeSettingsSchema,
+    (s) => deps.settings.set('chatOrganize', s),
+    conv
+  )
   // Chỉ đọc tin nhắn trong hội thoại của tài khoản hiện tại.
   handle(deps, IPC.messagesList, idSchema, (conversationId) =>
     deps.conversations.get(conversationId) ? deps.messages.list(conversationId) : []
@@ -151,7 +228,9 @@ export function registerIpc(deps: IpcDeps): void {
       // Tin giọng nói: chỉ nhận id ghi âm do chính main đã lưu.
       if (voice && !deps.hasRecording?.(voice.recordingId)) throw new Error('recording_not_found')
       return deps.chat.send(conversationId, text, deps.attachments.take(attachmentIds), resolved, voice ?? null)
-    }
+    },
+    // Tiêu đề tạm / gợi ý nhóm / thứ tự trên thanh bên đổi ngay khi gửi.
+    conv
   )
   handle(deps, IPC.chatReact, chatReactSchema, ({ messageId, emoji }) =>
     deps.chat.react(messageId, emoji)

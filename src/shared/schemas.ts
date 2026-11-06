@@ -19,8 +19,31 @@ export const conversationUpdateSchema = z.object({
   id: idSchema,
   title: z.string().trim().min(1).max(120).optional(),
   pinned: z.boolean().optional(),
-  mode: chatModeSchema.optional()
+  mode: chatModeSchema.optional(),
+  groupId: idSchema.nullable().optional()
 })
+
+export const GROUP_NAME_MAX = 40
+export const conversationGroupNameSchema = z.string().trim().min(1).max(GROUP_NAME_MAX)
+
+export const conversationGroupUpdateSchema = z.object({
+  id: idSchema,
+  name: conversationGroupNameSchema.optional(),
+  collapsed: z.boolean().optional()
+})
+
+export const conversationAnswerSuggestionSchema = z.object({
+  id: idSchema,
+  accept: z.boolean()
+})
+
+/** Sắp xếp cuộc trò chuyện: AI (model rẻ) đặt tiêu đề ngắn + gợi ý nhóm sau lượt trả lời đầu. */
+export const chatOrganizeSettingsSchema = z.object({
+  aiTitles: z.boolean().default(true),
+  suggestGroups: z.boolean().default(true)
+})
+export type ChatOrganizeSettings = z.infer<typeof chatOrganizeSettingsSchema>
+export const DEFAULT_CHAT_ORGANIZE_SETTINGS: ChatOrganizeSettings = { aiTitles: true, suggestGroups: true }
 
 export const MAX_ATTACHMENTS = 10
 /** Ảnh gốc tối đa (bản gửi Claude được thu nhỏ riêng). Khớp MAX_IMAGE_BYTES ở main. */

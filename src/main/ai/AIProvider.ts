@@ -27,6 +27,8 @@ export type ChatRequest = {
   externalMcp?: { conversationId: string }
   /** Lượt gọi một lần (vd trích memory) — không lưu session. */
   ephemeral?: boolean
+  /** 'cheap' = model rẻ (Haiku) cho việc nền nhỏ như đặt tiêu đề; bỏ trống = model mặc định. */
+  model?: 'cheap'
 }
 
 export interface AIProvider {

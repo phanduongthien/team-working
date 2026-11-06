@@ -71,7 +71,13 @@
     "keyHelp": "Key được mã hóa và chỉ lưu trên máy này, không bao giờ gửi cho ai khác ngoài Anthropic.",
     "getKey": "Tạo key trên Claude Console",
     "autoSuggest": "Tự đề xuất ghi nhớ",
-    "autoSuggestHelp": "Khi bạn rời một cuộc trò chuyện có từ 2 tin nhắn mới, trợ lý đề xuất điều nên nhớ (dùng thêm một lượt gọi AI). Bạn vẫn duyệt trước khi lưu."
+    "autoSuggestHelp": "Khi bạn rời một cuộc trò chuyện có từ 2 tin nhắn mới, trợ lý đề xuất điều nên nhớ (dùng thêm một lượt gọi AI). Bạn vẫn duyệt trước khi lưu.",
+    "organize": {
+      "aiTitles": "Tự đặt tiêu đề ngắn cho cuộc trò chuyện",
+      "aiTitlesHelp": "Sau câu trả lời đầu tiên, dùng model rẻ (Haiku) đặt tiêu đề 2–6 từ. Bạn đổi tên thì giữ tên của bạn.",
+      "suggestGroups": "Gợi ý nhóm cho cuộc trò chuyện mới",
+      "suggestGroupsHelp": "So khớp từ khoá với tên nhóm (không tốn hạn mức), không ra thì hỏi kèm ở lượt đặt tiêu đề. Chỉ chuyển khi bạn bấm đồng ý."
+    }
   },
   "update": {
     "heading": "Cập nhật",

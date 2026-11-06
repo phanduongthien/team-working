@@ -2,6 +2,7 @@ import type { ChatEvent } from '@shared/ai'
 import type { AIProvider, ChatRequest } from './AIProvider'
 import type { ToolResult } from '../tools/registry'
 import { FAKE_ARTIFACTS } from './fakeArtifacts'
+import { ORGANIZE_MARKER } from '../chat/organize'
 
 export type FakeToolCaller = (name: string, input: unknown, conversationId: string) => Promise<ToolResult>
 
@@ -27,6 +28,18 @@ export class FakeChatProvider implements AIProvider {
         type: 'text',
         delta: '{"type":"style_notes","notes":["Trả lời ngắn gọn, có gạch đầu dòng"]}'
       }
+      yield { type: 'done' }
+      return
+    }
+    // Đặt tiêu đề / gợi ý nhóm (model rẻ): tiêu đề "Chủ đề: <3 từ đầu>"; FAKE_GROUP:<n> trong tin → nhóm thứ n
+    // trong danh sách được gửi (dùng số để tên nhóm không lọt vào so khớp từ khoá).
+    if (req.systemPrompt.startsWith(ORGANIZE_MARKER)) {
+      const user = /^Người dùng: (.*)$/m.exec(req.prompt)?.[1] ?? ''
+      const names = [...(/^Các nhóm hiện có: (.*)$/m.exec(req.prompt)?.[1] ?? '').matchAll(/"([^"]+)"/g)].map((m) => m[1])
+      const index = Number(/FAKE_GROUP:(\d+)/.exec(user)?.[1] ?? NaN)
+      const group = names[index - 1] ?? null
+      const words = user.replace(/FAKE_\w+:\S+/g, '').trim().split(/\s+/).slice(0, 3).join(' ')
+      yield { type: 'text', delta: JSON.stringify({ title: `Chủ đề: ${words}`, group }) }
       yield { type: 'done' }
       return
     }

@@ -65,7 +65,8 @@ import type {
   SuggestionStatus,
   UpdateSettings,
   McpServerInput,
-  UserProfile
+  UserProfile,
+  ChatOrganizeSettings
 } from './schemas'
 
 export type Conversation = {
@@ -77,8 +78,21 @@ export type Conversation = {
   cwd: string | null
   /** Chế độ Code: người dùng đã bật cho phép sửa file (mỗi lần sửa vẫn phải duyệt). */
   codeWrite: boolean
+  /** Nhóm ở thanh bên (null = chưa xếp nhóm). */
+  groupId: string | null
+  /** Nhánh: hội thoại gốc (null = không phải nhánh, hoặc gốc đã bị xoá). */
+  parentId: string | null
+  /** Trợ lý gợi ý xếp vào nhóm này — chờ người dùng đồng ý. */
+  suggestedGroupId: string | null
   createdAt: number
   updatedAt: number
+}
+
+export type ConversationGroup = {
+  id: string
+  name: string
+  collapsed: boolean
+  createdAt: number
 }
 
 export type MessageRole = 'user' | 'assistant'
@@ -144,6 +158,8 @@ export type ConversationUpdate = {
   title?: string
   pinned?: boolean
   mode?: ChatMode
+  /** null = bỏ khỏi nhóm. */
+  groupId?: string | null
 }
 
 export type Memory = {
@@ -202,6 +218,17 @@ export interface TeamWorkingApi {
     list(query?: string): Promise<Conversation[]>
     create(mode?: ChatMode): Promise<Conversation>
     update(input: ConversationUpdate): Promise<Conversation>
+    remove(id: string): Promise<void>
+    /** Tách nhánh từ một tin nhắn: hội thoại mới có sẵn các tin tới tin đó. */
+    fork(messageId: string): Promise<Conversation>
+    /** Trả lời gợi ý nhóm của trợ lý: đồng ý → chuyển vào nhóm; không → bỏ gợi ý. */
+    answerSuggestion(id: string, accept: boolean): Promise<Conversation>
+  }
+  conversationGroups: {
+    list(): Promise<ConversationGroup[]>
+    create(name: string): Promise<ConversationGroup | { error: string }>
+    update(input: { id: string; name?: string; collapsed?: boolean }): Promise<ConversationGroup | { error: string }>
+    /** Xoá nhóm — các cuộc trò chuyện trong nhóm KHÔNG bị xoá, chỉ ra khỏi nhóm. */
     remove(id: string): Promise<void>
   }
   messages: {
@@ -316,6 +343,8 @@ export interface TeamWorkingApi {
     setAi(settings: AiSettings): Promise<AiSettings>
     setApiKey(key: string): Promise<void>
     clearApiKey(): Promise<void>
+    getChatOrganize(): Promise<ChatOrganizeSettings>
+    setChatOrganize(settings: ChatOrganizeSettings): Promise<ChatOrganizeSettings>
   }
   update: {
     getState(): Promise<UpdateState>

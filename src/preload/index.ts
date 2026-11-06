@@ -32,7 +32,15 @@ const api: TeamWorkingApi = {
     list: (query) => ipcRenderer.invoke(IPC.conversationsList, { query }),
     create: (mode) => ipcRenderer.invoke(IPC.conversationsCreate, { mode }),
     update: (input) => ipcRenderer.invoke(IPC.conversationsUpdate, input),
-    remove: (id) => ipcRenderer.invoke(IPC.conversationsRemove, id)
+    remove: (id) => ipcRenderer.invoke(IPC.conversationsRemove, id),
+    fork: (messageId) => ipcRenderer.invoke(IPC.conversationsFork, messageId),
+    answerSuggestion: (id, accept) => ipcRenderer.invoke(IPC.conversationsAnswerSuggestion, { id, accept })
+  },
+  conversationGroups: {
+    list: () => ipcRenderer.invoke(IPC.conversationGroupsList),
+    create: (name) => ipcRenderer.invoke(IPC.conversationGroupsCreate, name),
+    update: (input) => ipcRenderer.invoke(IPC.conversationGroupsUpdate, input),
+    remove: (id) => ipcRenderer.invoke(IPC.conversationGroupsRemove, id)
   },
   messages: {
     list: (conversationId) => ipcRenderer.invoke(IPC.messagesList, conversationId)
@@ -123,7 +131,9 @@ const api: TeamWorkingApi = {
     getAi: () => ipcRenderer.invoke(IPC.settingsGetAi),
     setAi: (settings) => ipcRenderer.invoke(IPC.settingsSetAi, settings),
     setApiKey: (key) => ipcRenderer.invoke(IPC.settingsSetApiKey, key),
-    clearApiKey: () => ipcRenderer.invoke(IPC.settingsClearApiKey)
+    clearApiKey: () => ipcRenderer.invoke(IPC.settingsClearApiKey),
+    getChatOrganize: () => ipcRenderer.invoke(IPC.settingsGetChatOrganize),
+    setChatOrganize: (settings) => ipcRenderer.invoke(IPC.settingsSetChatOrganize, settings)
   },
   update: {
     getState: () => ipcRenderer.invoke(IPC.updateGetState),
