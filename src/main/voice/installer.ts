@@ -54,15 +54,35 @@ export class VoiceInstaller {
     return join(this.modelDir('piper'), basename(MODELS.piper.files[0].name))
   }
 
-  private async marker(): Promise<Partial<Record<VoiceComponent, boolean>>> {
+  /** Marker: phần đã cài → SHA-256 của file khoá thư viện lúc cài (bản cũ ghi `true`). */
+  private async marker(): Promise<Partial<Record<'packages' | 'cuda', string | boolean>>> {
     const { paths } = this.deps.sidecar()
     try {
       return JSON.parse(await readFile(join(paths.root, MARKER), 'utf8')) as Partial<
-        Record<VoiceComponent, boolean>
+        Record<'packages' | 'cuda', string | boolean>
       >
     } catch {
       return {}
     }
+  }
+
+  private async lockHash(component: 'packages' | 'cuda'): Promise<string> {
+    return createHash('sha256')
+      .update(await readFile(this.deps.requirements[component]))
+      .digest('hex')
+  }
+
+  /**
+   * Thư viện đã cài nhưng file khoá trong app đã đổi (vd sửa phiên bản av) → cần cập nhật venv.
+   * Cập nhật chỉ tải gói thay đổi; model và CUDA (nếu không đổi) giữ nguyên.
+   */
+  async outdated(): Promise<Array<'packages' | 'cuda'>> {
+    if (!this.deps.sidecar().installed) return []
+    const m = await this.marker()
+    const out: Array<'packages' | 'cuda'> = []
+    for (const c of ['packages', 'cuda'] as const)
+      if (m[c] && m[c] !== (await this.lockHash(c))) out.push(c)
+    return out
   }
 
   async installed(): Promise<Record<VoiceComponent, boolean>> {
@@ -71,8 +91,8 @@ export class VoiceInstaller {
     const model = (c: Exclude<VoiceComponent, 'packages' | 'cuda'>): boolean =>
       MODELS[c].files.every((f) => existsSync(join(this.modelDir(c), basename(f.name))))
     return {
-      packages: !!m.packages,
-      cuda: !!m.cuda,
+      packages: !!m.packages && m.packages === (await this.lockHash('packages')),
+      cuda: !!m.cuda && m.cuda === (await this.lockHash('cuda')),
       piper: model('piper'),
       base: model('base'),
       small: model('small'),
@@ -99,7 +119,7 @@ export class VoiceInstaller {
         await this.pip(side.paths, this.deps.requirements[component], controller.signal)
         await writeFile(
           join(side.paths.root, MARKER),
-          JSON.stringify({ ...(await this.marker()), [component]: true })
+          JSON.stringify({ ...(await this.marker()), [component]: await this.lockHash(component) })
         )
       } else {
         await this.download(component, MODELS[component], controller.signal)
@@ -144,7 +164,7 @@ export class VoiceInstaller {
     }
     const r = await this.deps.run(
       paths.uvExe,
-      ['pip', 'install', '--python', paths.venvPython, '--require-hashes', '-r', requirements],
+      ['pip', 'install', '--python', paths.venvPython, '--require-hashes', '--no-build', '-r', requirements],
       { env, signal, timeoutMs: 60 * 60 * 1000 }
     )
     await rm(paths.cacheDir, { recursive: true, force: true }).catch(() => {})

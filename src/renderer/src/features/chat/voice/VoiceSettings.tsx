@@ -22,7 +22,7 @@ export function VoiceSettings() {
   const speak = useVoice((s) => s.speak)
   const [vocab, setVocab] = useState<string | null>(null)
   if (!status) return null
-  const { settings, installed, sizesMb, pack } = status
+  const { settings, installed, sizesMb, pack, outdated } = status
   const save = async (patch: Partial<Settings>): Promise<void> => {
     await api.voice.setSettings({ ...settings, ...patch })
     await refresh()
@@ -73,6 +73,17 @@ export function VoiceSettings() {
             <X />
           </Button>
         </span>
+      ) : (c === 'packages' || c === 'cuda') && outdated.includes(c) ? (
+        <Button
+          variant="outline"
+          size="sm"
+          disabled={busy}
+          onClick={() => void install(c)}
+          data-testid={`voice-update-${c}`}
+        >
+          <Download />
+          {t('voice.settings.update')}
+        </Button>
       ) : (
         <Button
           variant="outline"

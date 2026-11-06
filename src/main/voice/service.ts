@@ -33,6 +33,20 @@ export function initialPrompt(name: string, custom: string[]): string {
   return `${name} ơi, mình vừa build lại project Unity mà shader bị bug, arigatou nha. Từ vựng: ${words.join(', ')}.`
 }
 
+/** Lỗi do GPU / CUDA (thiếu DLL, hết VRAM, driver…) — chỉ những lỗi này mới lùi về CPU. */
+export function isGpuError(message: string): boolean {
+  return /(?:cuda|cublas|cudnn|nvrtc|cudart|gpu)|out of memory|CUDA_ERROR|cuBLAS|cuDNN/i.test(
+    message
+  )
+}
+
+/** Mã lỗi chép lời cho renderer. */
+export function sttErrorCode(message: string): string {
+  if (message.startsWith('model_missing')) return 'model_missing'
+  if (/AudioDecodeError/.test(message)) return 'bad_audio'
+  return 'stt_failed'
+}
+
 export const RECORDING_TTL_MS = 7 * 24 * 60 * 60 * 1000
 const MAX_RECORDING_BYTES = 25 * 1024 * 1024
 
@@ -94,6 +108,7 @@ export class VoiceService {
       sidecarInstalled: this.deps.sidecarInstalled(),
       pack: this.deps.installer.state,
       installed,
+      outdated: await this.deps.installer.outdated(),
       sizesMb: SIZES_MB,
       gpu,
       effectiveModel: model,
@@ -113,7 +128,12 @@ export class VoiceService {
     if (!settings.enabled) return { error: 'voice_disabled' }
     if (wav.byteLength > MAX_RECORDING_BYTES || wav.byteLength < 44) return { error: 'bad_audio' }
     const installed = await this.deps.installer.installed()
-    if (!installed.packages) return { error: 'pack_missing' }
+    if (!installed.packages)
+      return {
+        error: (await this.deps.installer.outdated()).includes('packages')
+          ? 'pack_outdated'
+          : 'pack_missing'
+      }
     await mkdir(this.deps.recordingsDir, { recursive: true })
     const recordingId = randomUUID()
     const path = join(this.deps.recordingsDir, `${recordingId}.wav`)
@@ -139,21 +159,22 @@ export class VoiceService {
       return { recordingId, text: await attempt(model, device), durationMs }
     } catch (err) {
       const message = (err as Error).message
-      if (device === 'cuda' && !message.startsWith('model_missing')) {
+      // Chỉ lùi về CPU khi lỗi thật sự do GPU/CUDA — lỗi giải mã âm thanh, lỗi thư viện… báo đúng lỗi.
+      if (device === 'cuda' && isGpuError(message)) {
         this.cudaBroken = true
         this.deps.log.warn(`Giọng nói: GPU lỗi, lùi về small trên CPU: ${message}`)
         try {
           return { recordingId, text: await attempt('small', 'cpu'), durationMs }
         } catch (err2) {
+          const m2 = (err2 as Error).message
+          this.deps.log.warn(`Giọng nói: chép lời trên CPU cũng lỗi: ${m2}`)
           return {
-            error: (err2 as Error).message.startsWith('model_missing')
-              ? 'cuda_failed_small_missing'
-              : 'stt_failed'
+            error: m2.startsWith('model_missing') ? 'cuda_failed_small_missing' : sttErrorCode(m2)
           }
         }
       }
-      this.deps.log.warn(`Giọng nói: chép lời lỗi: ${message}`)
-      return { error: message.startsWith('model_missing') ? 'model_missing' : 'stt_failed' }
+      this.deps.log.warn(`Giọng nói: chép lời lỗi (${sttErrorCode(message)}): ${message}`)
+      return { error: sttErrorCode(message) }
     }
   }
 
@@ -162,7 +183,12 @@ export class VoiceService {
     const settings = this.deps.getSettings()
     if (!settings.enabled) return { error: 'voice_disabled' }
     const installed = await this.deps.installer.installed()
-    if (!installed.packages) return { error: 'pack_missing' }
+    if (!installed.packages)
+      return {
+        error: (await this.deps.installer.outdated()).includes('packages')
+          ? 'pack_outdated'
+          : 'pack_missing'
+      }
     const rate = `${settings.rate >= 0 ? '+' : ''}${settings.rate}%`
     const piper = async (): Promise<{ audio: string } | { error: string }> => {
       if (!installed.piper) return { error: 'piper_missing' }

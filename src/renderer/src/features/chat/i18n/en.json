@@ -212,7 +212,8 @@
       "edge_failed": "Edge reading failed (offline?) and no Piper fallback is installed.",
       "tts_failed": "Reading aloud failed.",
       "voice_disabled": "Voice is turned off.",
-      "bad_audio": "Invalid recording."
+      "bad_audio": "Could not decode the recording (not a GPU problem). Try again.",
+      "pack_outdated": "The voice libraries need an update — Settings → Voice → Update (models are kept)."
     },
     "settings": {
       "heading": "Voice",
@@ -264,7 +265,8 @@
       "bargeIn": "Stop reading when you start speaking",
       "test": "Test voice",
       "sample": "Hi, I am your assistant. What can I do for you today?",
-      "privacy": "Speech recognition runs on your PC. Recordings stay on this PC and are deleted after 7 days."
+      "privacy": "Speech recognition runs on your PC. Recordings stay on this PC and are deleted after 7 days.",
+      "update": "Update (changed packages only, keeps models)"
     }
   }
 }

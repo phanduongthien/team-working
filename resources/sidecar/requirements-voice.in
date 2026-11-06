@@ -2,3 +2,6 @@
 edge-tts
 piper-tts
 faster-whisper
+# PyAV 15+ bỏ tham số metadata_errors mà faster-whisper 1.2.x vẫn truyền vào av.open.
+# (App tự giải mã WAV thành numpy nên không đi qua av.open, nhưng giữ khoá để an toàn.)
+av==14.2.0  # 14.3+ không có wheel Windows; 15+ bỏ metadata_errors

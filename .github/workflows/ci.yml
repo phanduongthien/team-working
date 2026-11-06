@@ -27,6 +27,36 @@ jobs:
       - run: npm run typecheck
       - run: npm test
 
+  voice:
+    name: Voice sidecar (chép lời thật)
+    runs-on: windows-latest
+    # Chép một file WAV mẫu bằng faster-whisper thật (model base, CPU) để bắt lỗi thư viện không tương thích.
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: resources/sidecar/requirements-voice.txt
+      - run: python -m pip install --require-hashes --only-binary :all: -r resources/sidecar/requirements-voice.txt
+      - uses: actions/cache@v4
+        with:
+          path: whisper-base
+          key: faster-whisper-base-ebe41f70d5b6dfa9166e2c581c45c9c0cfc57b66
+      - name: Tải model base (khoá commit + SHA-256)
+        shell: pwsh
+        run: |
+          $rev = 'ebe41f70d5b6dfa9166e2c581c45c9c0cfc57b66'
+          New-Item -ItemType Directory -Force whisper-base | Out-Null
+          foreach ($f in 'model.bin', 'config.json', 'tokenizer.json', 'vocabulary.txt') {
+            if (-not (Test-Path "whisper-base/$f")) { Invoke-WebRequest "https://huggingface.co/Systran/faster-whisper-base/resolve/$rev/$f" -OutFile "whisper-base/$f" }
+          }
+          $sha = (Get-FileHash whisper-base/model.bin -Algorithm SHA256).Hash.ToLower()
+          if ($sha -ne 'd01c3014881c9c6f3133c182f3d2887eb6ca1c789a7538c5c007196857a0a6a9') { Remove-Item -Recurse whisper-base; Write-Error "Sai SHA-256: $sha"; exit 1 }
+      - run: python resources/sidecar/tests/test_voice_server.py
+        env:
+          MMC_WHISPER_MODEL_DIR: whisper-base
+
   e2e:
     name: E2E smoke (Electron)
     runs-on: windows-latest

@@ -49,4 +49,5 @@
   - "Nói xong": điền vào ô nhập (mặc định) / gửi luôn. Mặc định với mọi người là điền vào ô nhập (repo public, không hard-code máy ai) — người dùng tự chọn "Gửi luôn" một lần trong Cài đặt.
   - Tin giọng nói có nhãn "🎤 nói"; Claude được báo là chữ chép lại; chỉ trêu khi đang chat vui; yêu cầu hành động → hỏi xác nhận (skill `assistant-skills/voice/SKILL.md`). Ghi âm gốc lưu `workspace/voice/`, tự xoá sau 7 ngày.
   - Đọc to: nút loa + tự đọc khi hỏi bằng giọng; đọc dần từng câu; bỏ code/đường dẫn/log/emoji/thẻ; dừng bằng Esc, Ctrl+Alt+Q (giữ phím chỉ lúc đang đọc), hoặc khi người dùng bắt đầu nói (ngắt lời, tắt được).
+  - Sửa sau test tay #11: faster-whisper 1.2.1 gọi av.open(metadata_errors=…) đã bị bỏ từ PyAV 15 → app tự giải mã WAV thành numpy (không qua av.open), khoá av==14.2.0 (14.3+ không có wheel Windows), cài với --no-build. Chỉ lùi về CPU khi lỗi thật sự do GPU/CUDA. Marker thư viện lưu SHA-256 file khoá → đổi file khoá thì hiện "Cập nhật" (chỉ tải gói thay đổi, giữ model + CUDA). CI có job chép lời thật (model base, WAV mẫu).
   - TTS: Edge (gửi chữ cho Microsoft, có ghi chú trong Cài đặt), lỗi thì Piper (vi_VN-vais1000-medium, offline).

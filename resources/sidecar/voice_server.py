@@ -61,11 +61,38 @@ def _model(model_dir, device, compute_type):
     return _whisper[key]
 
 
+class AudioDecodeError(Exception):
+    """Ghi âm không đọc được — KHÔNG phải lỗi GPU (app không được lùi về CPU vì lỗi này)."""
+
+
+def load_wav(path):
+    """WAV PCM 16-bit (app ghi ra) → numpy float32 mono 16 kHz. Không đi qua av.open của PyAV."""
+    import numpy as np  # noqa: PLC0415
+
+    try:
+        with wave.open(path, "rb") as w:
+            channels, width, rate, frames = w.getnchannels(), w.getsampwidth(), w.getframerate(), w.getnframes()
+            raw = w.readframes(frames)
+    except (wave.Error, EOFError, OSError) as exc:
+        raise AudioDecodeError(f"wav: {exc}") from exc
+    if width != 2:
+        raise AudioDecodeError(f"wav: cần PCM 16-bit, nhận {width * 8}-bit")
+    audio = np.frombuffer(raw, dtype="<i2").astype(np.float32) / 32768.0
+    if channels > 1:
+        audio = audio.reshape(-1, channels).mean(axis=1)
+    if rate != 16000:
+        # Nội suy tuyến tính — app luôn gửi 16 kHz, nhánh này chỉ để an toàn.
+        n = int(len(audio) * 16000 / rate)
+        audio = np.interp(np.linspace(0, len(audio) - 1, n), np.arange(len(audio)), audio).astype(np.float32)
+    return audio
+
+
 def stt(params):
     """Chép lời file WAV. KHÔNG khoá ngôn ngữ: người dùng nói lẫn Việt/Anh/Nhật."""
+    audio = load_wav(params["path"])
     model = _model(params["model_dir"], params.get("device", "cpu"), params.get("compute_type", "int8"))
     segments, info = model.transcribe(
-        params["path"],
+        audio,
         language=params.get("language") or None,
         initial_prompt=params.get("initial_prompt") or None,
         vad_filter=True,

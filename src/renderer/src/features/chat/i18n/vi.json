@@ -212,7 +212,8 @@
       "edge_failed": "Không đọc được qua Edge (mất mạng?) và chưa có giọng Piper dự phòng.",
       "tts_failed": "Đọc to không thành công.",
       "voice_disabled": "Giọng nói đang tắt.",
-      "bad_audio": "Ghi âm không hợp lệ."
+      "bad_audio": "Không đọc được ghi âm (không phải lỗi GPU). Thử ghi lại.",
+      "pack_outdated": "Thư viện giọng nói cần cập nhật — vào Cài đặt → Giọng nói, bấm Cập nhật (không tải lại model)."
     },
     "settings": {
       "heading": "Giọng nói",
@@ -264,7 +265,8 @@
       "bargeIn": "Đang đọc mà bạn bắt đầu nói thì dừng đọc và nghe bạn",
       "test": "Nghe thử",
       "sample": "Xin chào, mình là trợ lý của bạn. Hôm nay mình giúp gì được nè?",
-      "privacy": "Nhận giọng nói chạy trên máy bạn. Ghi âm gốc chỉ lưu trên máy, tự xoá sau 7 ngày."
+      "privacy": "Nhận giọng nói chạy trên máy bạn. Ghi âm gốc chỉ lưu trên máy, tự xoá sau 7 ngày.",
+      "update": "Cập nhật (chỉ tải gói thay đổi, giữ model)"
     }
   }
 }

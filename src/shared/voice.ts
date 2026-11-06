@@ -52,6 +52,8 @@ export type VoiceStatus = {
   sidecarInstalled: boolean
   pack: VoicePackState
   installed: Record<VoiceComponent, boolean>
+  /** Thư viện đã cài nhưng app cần phiên bản khác → bấm Cập nhật (chỉ tải gói thay đổi, giữ model). */
+  outdated: Array<'packages' | 'cuda'>
   /** Dung lượng tải (MB) từng phần — báo trước khi tải. */
   sizesMb: Record<VoiceComponent, number>
   gpu: { name: string; vramMb: number } | null

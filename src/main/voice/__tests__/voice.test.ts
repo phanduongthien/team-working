@@ -6,7 +6,14 @@ import { speakableText, speechChunks } from '@shared/speakable'
 import { DEFAULT_VOICE_SETTINGS, type VoiceComponent, type VoiceSettings } from '@shared/voice'
 import { limitEmoji } from '../../expressive/tags'
 import type { VoiceInstaller } from '../installer'
-import { RECORDING_TTL_MS, VoiceService, initialPrompt, voiceSkillPrompt } from '../service'
+import {
+  RECORDING_TTL_MS,
+  VoiceService,
+  initialPrompt,
+  isGpuError,
+  sttErrorCode,
+  voiceSkillPrompt
+} from '../service'
 
 describe('đọc to: chỉ đọc lời nói chuyện', () => {
   it('bỏ code, đường dẫn, URL, log, emoji, kaomoji, thẻ GIF', () => {
@@ -89,6 +96,7 @@ describe('VoiceService', () => {
   let installed: Record<VoiceComponent, boolean>
   const calls: { method: string; params: Record<string, unknown> }[] = []
   let fail: (method: string, params: Record<string, unknown>) => boolean
+  let outdated: Array<'packages' | 'cuda'> = []
 
   const make = (gpu: { name: string; vramMb: number } | null = null): VoiceService =>
     new VoiceService({
@@ -96,6 +104,7 @@ describe('VoiceService', () => {
       setSettings: (v) => (settings = v),
       installer: {
         installed: async () => installed,
+        outdated: async () => outdated,
         state: { state: 'idle' },
         modelDir: (c: string) => `M/${c}`,
         piperModelPath: () => 'M/piper/v.onnx'
@@ -103,7 +112,8 @@ describe('VoiceService', () => {
       sidecarInstalled: () => true,
       call: (async (method: string, params: Record<string, unknown> = {}) => {
         calls.push({ method, params })
-        if (fail(method, params)) throw new Error('boom')
+        if (fail(method, params))
+          throw new Error(method === 'stt' ? 'RuntimeError: CUDA failed with error out of memory' : 'boom')
         return method === 'stt' ? { text: 'bin bị e rơ' } : { audio: 'QUJD', mime: 'audio/mpeg' }
       }) as never,
       stop: vi.fn(),
@@ -129,6 +139,7 @@ describe('VoiceService', () => {
     }
     calls.length = 0
     fail = () => false
+    outdated = []
   })
   afterEach(() => rmSync(dir, { recursive: true, force: true }))
 
@@ -167,6 +178,38 @@ describe('VoiceService', () => {
     expect((await voice.status()).device).toBe('cpu')
   })
 
+  it('lỗi KHÔNG phải GPU (vd PyAV / giải mã) → báo đúng lỗi, không lùi về CPU', async () => {
+    installed = { ...installed, cuda: true, 'large-v3-turbo': true }
+    fail = (m) => m === 'stt'
+    const err = "TypeError: open() got an unexpected keyword argument 'metadata_errors'"
+    const voice = make({ name: 'RTX', vramMb: 8000 })
+    const deps = voice as unknown as { deps: { call: (...a: unknown[]) => Promise<unknown> } }
+    deps.deps.call = async (method: unknown, params: unknown) => {
+      calls.push({ method: String(method), params: params as Record<string, unknown> })
+      throw new Error(err)
+    }
+    expect(await voice.transcribe(wav, 900)).toEqual({ error: 'stt_failed' })
+    expect(calls.map((c) => c.params.device)).toEqual(['cuda']) // không thử lại trên CPU
+    expect((await voice.status()).device).toBe('cuda')
+    expect(isGpuError(err)).toBe(false)
+    for (const gpu of [
+      'RuntimeError: CUDA failed with error out of memory',
+      'Could not load library cudnn_ops64_9.dll',
+      'cuBLAS failed'
+    ])
+      expect(isGpuError(gpu)).toBe(true)
+    expect(sttErrorCode('AudioDecodeError: wav: file does not start with RIFF id')).toBe(
+      'bad_audio'
+    )
+  })
+
+  it('thư viện cần cập nhật → báo "pack_outdated" (không đòi tải lại model)', async () => {
+    installed.packages = false
+    outdated = ['packages']
+    expect(await make().transcribe(wav, 500)).toEqual({ error: 'pack_outdated' })
+    expect((await make().status()).outdated).toEqual(['packages'])
+  })
+
   it('đọc: Edge lỗi → Piper; chưa có Piper → báo lỗi rõ', async () => {
     fail = (m, p) => m === 'tts' && p.engine === 'edge'
     expect(await make().speak('chào')).toEqual({ audio: 'data:audio/mpeg;base64,QUJD' })
@@ -186,5 +229,50 @@ describe('VoiceService', () => {
     utimesSync(join(dir, 'old.wav'), old, old)
     expect(await voice.prune()).toBe(1)
     expect(voice.hasRecording(r.recordingId)).toBe(true)
+  })
+})
+
+describe('VoiceInstaller: cập nhật thư viện không đụng model / CUDA', () => {
+  it('file khoá đổi → packages "cần cập nhật"; cài lại chỉ chạy pip, giữ model', async () => {
+    const { VoiceInstaller } = await import('../installer')
+    const root = mkdtempSync(join(tmpdir(), 'vinst-'))
+    const req = join(root, 'req.txt')
+    const cuda = join(root, 'cuda.txt')
+    writeFileSync(req, 'av==19.0.2')
+    writeFileSync(cuda, 'nvidia-cublas-cu12==1')
+    const run = vi.fn(async () => ({ code: 0, stdout: '', stderr: '' }))
+    const fetch = vi.fn()
+    const inst = new VoiceInstaller({
+      modelsDir: join(root, 'models'),
+      sidecar: () => ({
+        installed: true,
+        paths: {
+          root,
+          uvExe: 'uv',
+          pythonDir: 'p',
+          venvDir: 'v',
+          venvPython: 'py',
+          cacheDir: join(root, 'cache'),
+          marker: 'm'
+        }
+      }),
+      requirements: { packages: req, cuda },
+      fetch,
+      run,
+      emit: vi.fn(),
+      log: { info: vi.fn(), warn: vi.fn() }
+    })
+    await inst.install('packages')
+    await inst.install('cuda')
+    expect((await inst.installed()).packages).toBe(true)
+    writeFileSync(req, 'av==14.4.0') // app sửa file khoá
+    expect((await inst.installed()).packages).toBe(false)
+    expect(await inst.outdated()).toEqual(['packages'])
+    expect((await inst.installed()).cuda).toBe(true) // CUDA không đổi → không phải cập nhật
+    await inst.install('packages')
+    expect(await inst.outdated()).toEqual([])
+    expect(fetch).not.toHaveBeenCalled() // không tải lại model nào
+    expect(run).toHaveBeenCalledTimes(3)
+    rmSync(root, { recursive: true, force: true })
   })
 })
