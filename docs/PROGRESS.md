@@ -3,59 +3,36 @@
 ## Đã xong (đã merge vào main)
 | PR | Nội dung |
 |---|---|
-| #4 | Thông báo cập nhật: hộp thoại, Bỏ qua / Để sau, bản `[critical]` + dải cam, kênh beta, sao lưu DB trước khi nâng cấp |
-| #5 | Điều khiển máy tính — chế độ CHỈ XEM: tool MCP của app, chụp màn hình, phím dừng khẩn cấp Ctrl+Alt+Q |
-| #6 | Đọc log Unity/Blender; đọc cửa sổ và cây UI qua Python sidecar (uv) |
-| #7 | Dán ảnh (Ctrl+V), kéo thả, thumbnail, tự thu nhỏ ảnh cho Claude |
-| #8 | Kết nối agent: Mizuki làm MCP server cho Claude Code / Claude Desktop (kèm cầu nối stdio), Mizuki dùng MCP server khác, Ctrl+Alt+Q dùng chung. Gồm cả bản sửa: trả `not_approved` ngay khi chờ duyệt lần đầu; lịch sử trao đổi tự làm mới (5 giây/lần và khi quay lại cửa sổ app) |
-| #10 | Chat biểu cảm (GĐ 3): emoji, GIF/sticker GIPHY, sticker trên máy, thả cảm xúc, trợ lý biểu cảm theo mức |
-| #11 | Giọng nói (GĐ 2): faster-whisper (GPU/CPU), edge-tts + Piper, đọc to từng câu, ngắt lời; sửa lỗi PyAV, CI chép lời thật |
+| #4 | Thông báo cập nhật (Bỏ qua / Để sau, bản critical, kênh beta, sao lưu DB) |
+| #5 | Điều khiển máy tính — CHỈ XEM, phím dừng khẩn cấp Ctrl+Alt+Q |
+| #6 | Đọc log Unity/Blender; cửa sổ + cây UI qua Python sidecar (uv) |
+| #7 | Dán / kéo thả ảnh vào chat |
+| #8 | Kết nối agent: Mizuki làm MCP server cho Claude Code/Desktop + dùng MCP server khác |
+| #10 | GĐ 3 — Chat biểu cảm: emoji, GIF/sticker GIPHY, sticker trên máy, thả cảm xúc, mức biểu cảm (có Tự động) |
+| #11 | GĐ 2 — Giọng nói: faster-whisper (GPU/CPU), edge-tts + Piper, đọc to từng câu, ngắt lời |
 
 ## PR đang mở
-- **GĐ 5 `feat/artifacts`** — Artifacts: panel + iframe sandbox (mmc-artifact://), doc / slides / sheet / chart / mermaid / html, phiên bản, xuất docx/pdf/pptx/xlsx/csv/json/svg, mẫu làm game. Chờ CI xanh và test tay.
+- **#12 `feat/artifacts`** — GĐ 5 Artifacts: panel sandbox, doc / slides / sheet / chart / mermaid / html, phiên bản, xuất docx/pdf/pptx/xlsx/csv/json/svg, mẫu làm game. CI xanh, **chờ test tay rồi merge**.
 
-## Lưu ý còn treo
-- ⚠️ Token "Claude Code" cũ đã lộ trong ảnh chụp màn hình: thu hồi trong trang Kết nối agent và tạo token mới (nếu chưa làm).
-- Test tay #8 với Claude Desktop, Ctrl+Alt+Q ngắt kết nối, MCP client: chưa ghi nhận kết quả. Nếu thấy lỗi thì sửa trên nhánh mới từ `main`.
+## Lỗi nhỏ — sửa ở PR sau
+- Tiêu đề cuộc chat hiện chữ thô `Tạo artifact type="doc" title=...` (lấy từ tin nhắn mẫu). Nên đặt tiêu đề theo tên mẫu / tên artifact.
 
-## Bước tiếp theo (chờ người dùng chọn — chưa bắt đầu)
-0. **Sau GĐ 5 — PR riêng: Cài skill cho Mizuki.** Thư mục skill người dùng trong %APPDATA% (định dạng SKILL.md như Claude: frontmatter name + description); trang Skills trong Cài đặt (cài từ thư mục / .zip, bật/tắt, xoá, xem nội dung; skill có sẵn của app giữ nguyên); tự chọn vài skill liên quan theo description (không nhồi hết), gọi đích danh được ("dùng skill slide-pixel"); học dần phong cách → đề xuất lưu ghi chú vào skill cá nhân "my-style", chỉ lưu khi người dùng đồng ý; skill chỉ là chữ — KHÔNG chạy script kèm skill, cài thì hiện nguồn + nội dung để duyệt. Theme slide của GĐ 5 có thể đến từ skill.
-1. Thao tác chuột/bàn phím (GĐ 1, phần điều khiển): chỉ làm khi người dùng đồng ý riêng.
-2. Gmail/Telegram (GĐ 4).
-3. A2A và mở kết nối ra LAN: chỉ có đề xuất (`docs/agents.md`), chưa code, chờ duyệt.
+## Việc tiếp theo
+1. **PR "Cài skill cho Mizuki"**
+   - Thư mục skill người dùng trong %APPDATA%, định dạng SKILL.md như Claude (frontmatter name + description).
+   - Trang Skills trong Cài đặt: cài từ thư mục / .zip (hiện nguồn + nội dung để duyệt), bật/tắt, xoá, xem. Skill có sẵn của app giữ nguyên.
+   - Tự chọn vài skill liên quan theo description (không nhồi hết), gọi đích danh được ("dùng skill slide-pixel").
+   - Học phong cách → đề xuất lưu ghi chú vào skill "my-style", chỉ lưu khi người dùng đồng ý.
+   - Skill chỉ là chữ, KHÔNG chạy script kèm skill. Skill có thể cung cấp theme slide.
+2. **GĐ 4 — Gmail / Telegram.**
+3. Để sau: thao tác chuột/bàn phím (chỉ khi người dùng đồng ý riêng); A2A + mở kết nối ra LAN (chỉ có đề xuất trong `docs/agents.md`).
 
 ## Quyết định đã duyệt
-- **Phạm vi:** tính năng cá nhân nằm trong MMC studio, mặc định TẮT với thành viên team. Mỗi người tự tạo key/OAuth riêng. Secret chỉ lưu trên máy (DPAPI), không vào repo. Thư viện nặng chỉ tải khi người dùng bật tính năng.
-- **Quy trình:** không tự merge, không tự tạo hay sửa Release, không push lên `main`. Push nhánh, chờ CI xanh rồi mới báo. E2E phải chạy được khi không có Claude CLI và không được đụng clipboard thật.
-- **Điều khiển máy tính:** bật lần đầu phải có cảnh báo. Không có Ctrl+Alt+Q thì không bật được. Mặc định chỉ xem.
-- **Runtime:** Python sidecar qua uv (khoảng 50 MB tải, 110 MB trên ổ đĩa, tải khi bật).
-- **TTS:** edge-tts, Piper làm dự phòng.
-- **Telegram:** tài khoản cá nhân qua GramJS, chỉ đọc và soạn nháp, đồng bộ thưa, có allowlist/blocklist, có nút đăng xuất và xoá session.
-- **GIF:** dùng GIPHY (Tenor đã ngừng API). **Gmail:** OAuth ở chế độ Testing hết hạn sau 7 ngày, xử lý ở GĐ 4.
-- **Kết nối agent**
-  - Agent mới phải được duyệt ở lần kết nối đầu; lần đầu server trả `not_approved` ngay ("Đang chờ người dùng duyệt trong MMC studio…"), agent thử lại sau khi được Cho phép. Có danh sách agent kèm nút thu hồi.
-  - Khi trả lời agent khác, Mizuki không có tool. Nếu sau này cấp tool thì mỗi yêu cầu phải duyệt từng lần.
-  - Giới hạn 20 yêu cầu/giờ và 1 việc cùng lúc; chạm giới hạn thì báo trong app và trả lỗi kèm thời gian chờ.
-  - MCP client duyệt từng lần gọi tool, có tuỳ chọn "luôn cho phép".
-  - LAN và A2A làm sau.
-- **Chat biểu cảm (GĐ 3)**
-  - GIPHY key: `.env` (`GIPHY_API_KEY`, chỉ bản dev, không có tiền tố VITE_) + ô nhập trong Cài đặt (DPAPI). Mỗi người key riêng.
-  - Trợ lý gửi biểu cảm bằng thẻ `[[react:😂]]`, `[[gif:từ khoá]]`, `[[sticker:từ khoá]]`, `[[sticker:local/tên]]`. Thẻ chỉ chứa TỪ KHOÁ, không bao giờ nhận URL; thẻ sai / không tìm được thì ẩn. Trả lời agent khác qua MCP: bỏ thẻ, chữ thường.
-  - Tối đa 1 GIF/sticker + 1 reaction mỗi câu trả lời, giãn cách theo mức. Emoji trong chữ không giới hạn cứng, theo mức + bắt chước người dùng; ngữ cảnh nghiêm túc/buồn được ưu tiên. Hướng dẫn kèm ví dụ: `assistant-skills/expressive/SKILL.md`.
-  - Mức: Tắt / Ít / Vừa / Nhiều / Tự động (bắt đầu Ít, mỗi bậc chờ ≥ 3 ngày, có trần, nút đặt lại). Mặc định TẮT với mọi người (không hard-code máy ai trong repo public) — người dùng tự chọn "Tự động" một lần trong Cài đặt.
-  - Hỏi lỗi kỹ thuật / làm việc nghiêm túc: tối đa 2 emoji kể cả ở mức Nhiều (code cắt bớt, không chỉ dựa vào lời nhắc).
-  - Sticker: GIPHY Stickers + thư mục local + Yêu thích (GIPHY chỉ lưu ID) + 6 sticker SVG mẫu nguyên bản.
-- **Giọng nói (GĐ 2)**
-  - STT faster-whisper trong tiến trình Python riêng (`voice_server.py`, cùng venv sidecar). Có GPU NVIDIA + đã tải CUDA → large-v3-turbo (float16); không thì small (int8, CPU); GPU lỗi → tự lùi small/CPU. Chọn được base / small / medium / large-v3-turbo. KHÔNG khoá ngôn ngữ; initial_prompt có câu mẫu lẫn Việt/Anh/Nhật + từ vựng mặc định + từ vựng riêng.
-  - Báo dung lượng trước khi tải; mỗi phần tải riêng khi người dùng bấm; model khoá commit Hugging Face + SHA-256.
-  - "Nói xong": điền vào ô nhập (mặc định) / gửi luôn. Mặc định với mọi người là điền vào ô nhập (repo public, không hard-code máy ai) — người dùng tự chọn "Gửi luôn" một lần trong Cài đặt.
-  - Tin giọng nói có nhãn "🎤 nói"; Claude được báo là chữ chép lại; chỉ trêu khi đang chat vui; yêu cầu hành động → hỏi xác nhận (skill `assistant-skills/voice/SKILL.md`). Ghi âm gốc lưu `workspace/voice/`, tự xoá sau 7 ngày.
-  - Đọc to: nút loa + tự đọc khi hỏi bằng giọng; đọc dần từng câu; bỏ code/đường dẫn/log/emoji/thẻ; dừng bằng Esc, Ctrl+Alt+Q (giữ phím chỉ lúc đang đọc), hoặc khi người dùng bắt đầu nói (ngắt lời, tắt được).
-  - Sửa sau test tay #11: faster-whisper 1.2.1 gọi av.open(metadata_errors=…) đã bị bỏ từ PyAV 15 → app tự giải mã WAV thành numpy (không qua av.open), khoá av==14.2.0 (14.3+ không có wheel Windows), cài với --no-build. Chỉ lùi về CPU khi lỗi thật sự do GPU/CUDA. Marker thư viện lưu SHA-256 file khoá → đổi file khoá thì hiện "Cập nhật" (chỉ tải gói thay đổi, giữ model + CUDA). CI có job chép lời thật (model base, WAV mẫu).
-  - TTS: Edge (gửi chữ cho Microsoft, có ghi chú trong Cài đặt), lỗi thì Piper (vi_VN-vais1000-medium, offline).
-- **Artifacts (GĐ 5)**
-  - Trợ lý tạo / viết lại bằng `<artifact type title>`, sửa nhỏ bằng `<artifact-edit>` nhiều cặp `<find>/<replace>`; find phải khớp đúng một chỗ, không thì không sửa và báo lỗi (chat có nút "Nhờ trợ lý sửa lại", trợ lý thấy lỗi ở lượt sau — không tự gửi thêm lượt). Trả lời agent khác qua MCP: bỏ khối artifact.
-  - Slide: Markdown có bố cục → pptx sửa được (pptxgenjs). Theme = màu + font + kiểu bố cục; có sẵn + file JSON trong %APPDATA%/Team Working/artifact-themes; skill sẽ cung cấp theme ở PR "Cài skill".
-  - Sandbox: iframe CHỈ `allow-scripts`; origin riêng `mmc-artifact://` (custom protocol, tiến trình riêng); CSP `default-src 'none'; connect-src 'none'`, ảnh data:/blob:; thư viện đóng gói sẵn; app chỉ nhận postMessage lệnh cố định (ready / edit / svg) đã kiểm tra nguồn + zod. E2E chứng minh không fetch / localStorage / cookie / API app / điều hướng / mở cửa sổ.
-  - Bảng: công thức bằng bộ phân tích riêng (không eval / new Function); xuất xlsx (công thức Excel), csv, json `{ items: [...] }` cho Unity; tô ô |z| ≥ 1,5 vàng, ≥ 2,5 đỏ; người dùng sửa → phiên bản mới, gửi kèm cho trợ lý ở lượt sau.
-  - Thư viện: marked, docx, pptxgenjs, exceljs, chart.js, mermaid — đều MIT.
+- **Chung:** tính năng cá nhân mặc định TẮT với thành viên team; không hard-code máy/tài khoản ai (repo public) — người dùng tự bật trong Cài đặt. Mỗi người tự tạo key/OAuth. Secret chỉ trên máy (DPAPI), không vào repo. Thư viện nặng chỉ tải khi bật.
+- **Điều khiển máy tính:** cảnh báo khi bật lần đầu; không có Ctrl+Alt+Q thì không bật; mặc định chỉ xem.
+- **Python sidecar:** uv, cài vào thư mục dữ liệu app; thư viện khoá hash, `--no-build`.
+- **Kết nối agent:** duyệt lần đầu (trả `not_approved` ngay), thu hồi được; trả lời agent khác không tool, không trí nhớ, không biểu cảm / artifact; 20 yêu cầu/giờ, 1 việc cùng lúc; MCP client duyệt từng lần gọi tool.
+- **Biểu cảm:** GIPHY (key trong .env cho dev / ô nhập DPAPI); thẻ `[[react|gif|sticker:…]]` chỉ chứa từ khoá, không URL; tối đa 1 GIF/sticker + 1 reaction mỗi câu; hỏi lỗi kỹ thuật → tối đa 2 emoji; mức Tắt/Ít/Vừa/Nhiều/Tự động (độ thân thiết tính trên máy).
+- **Giọng nói:** STT faster-whisper — GPU + CUDA → large-v3-turbo, không thì small/CPU, chỉ lùi về CPU khi lỗi GPU thật; không khoá ngôn ngữ; tự giải mã WAV (không qua `av.open`, khoá av 14.2). TTS Edge, lỗi thì Piper. "Nói xong" mặc định điền ô nhập. Ghi âm gốc giữ 7 ngày trên máy. Yêu cầu hành động từ chữ chép lời → hỏi xác nhận.
+- **Artifacts:** `<artifact>` tạo / viết lại, `<artifact-edit>` find/replace (khớp đúng một chỗ, không thì báo lỗi). iframe CHỈ `allow-scripts`, origin `mmc-artifact://`, CSP chặn mạng, thư viện đóng gói sẵn, postMessage lệnh cố định. Công thức bảng không dùng eval. Slide Markdown → pptx sửa được; theme mở rộng được (JSON, sau này từ skill).
+- **Telegram (GĐ 4):** GramJS, chỉ đọc + soạn nháp, allowlist/blocklist, đăng xuất + xoá session. **Gmail:** OAuth chế độ Testing hết hạn sau 7 ngày.
