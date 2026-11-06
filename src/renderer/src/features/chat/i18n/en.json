@@ -268,5 +268,27 @@
       "privacy": "Speech recognition runs on your PC. Recordings stay on this PC and are deleted after 7 days.",
       "update": "Update (changed packages only, keeps models)"
     }
+  },
+  "artifacts": {
+    "toggle": "Artifacts",
+    "pick": "Pick artifact",
+    "version": "Version",
+    "byUser": "edited by you",
+    "restore": "Restore this version",
+    "reload": "Stop / reload artifact",
+    "close": "Close panel",
+    "empty": "No artifacts in this conversation yet. Ask the assistant for a document, slides, a table, a chart or a diagram — or start from a template:",
+    "templates": "Start from a template (game dev)",
+    "writing": "✍️ Writing an artifact…",
+    "savedVersion": "Saved as v{{version}} — the assistant will see it next time you ask.",
+    "exported": "Exported: {{path}}",
+    "exportFailed": "Export failed ({{code}}).",
+    "retry": "Ask the assistant to retry",
+    "retryMessage": "The last edit to artifact \"{{title}}\" failed, please try again.",
+    "errors": {
+      "not_found": "Could not edit \"{{title}}\": the text to replace no longer matches.",
+      "ambiguous": "Could not edit \"{{title}}\": the text to replace matches several places.",
+      "no_artifact": "There is no artifact \"{{title}}\" to edit."
+    }
   }
 }

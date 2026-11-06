@@ -48,6 +48,14 @@ App desktop Windows (Electron + React + TypeScript) — trợ lý AI cho học t
 - Commit theo Conventional Commits (`feat:`, `fix:`, `docs:`…). Mỗi tính năng mới kèm test.
 - Thêm tính năng: dùng skill `add-feature-module`. Gọi Claude: skill `claude-bridge`. Đổi schema team: skill `supabase-migration`. Phát hành: skill `release-update`.
 
+## Quy trình làm việc (cố định — không cần nhắc lại)
+- KHÔNG tự merge PR, KHÔNG tạo / sửa Release, không push lên `main`. Người dùng tự merge.
+- Mỗi việc làm trên nhánh mới tạo từ `main` mới nhất, mở PR riêng.
+- Kiểm tra lint / typecheck / test bằng **mã thoát** của lệnh, không lọc chữ trong output.
+- Chạy e2e cả ở chế độ không có Claude CLI (bỏ `~/.local/bin` khỏi PATH; dùng `MMC_FAKE_*` cho phần cần Claude / giọng nói).
+- Push xong chờ CI xanh rồi mới báo, kèm danh sách test tay (bấm gì, phải thấy gì).
+- Trả lời người dùng ngắn gọn; tiến độ và quyết định ghi trong `docs/PROGRESS.md`.
+
 ## Bảo trì cấu hình agent
 - Khi bị người dùng sửa lỗi, hoặc mắc cùng một lỗi lần thứ hai, gợi ý chạy `/learn` để biến nó thành rule. Không tự sửa skill hay CLAUDE.md khi chưa được duyệt, vì rule sai sẽ ảnh hưởng mọi phiên sau.
 - Hook SessionStart nhắc khi có skill quá hạn review; khi đó gợi ý `/health-check`. Chi tiết: `.claude/README-maintenance.md`.

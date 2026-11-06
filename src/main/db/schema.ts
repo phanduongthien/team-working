@@ -1,3 +1,4 @@
+import type { ArtifactType, MessageArtifact } from '@shared/artifacts'
 import type { MessageVoice } from '@shared/voice'
 import type { MessageMedia, Reaction } from '@shared/expressive'
 import { sql } from 'drizzle-orm'
@@ -53,6 +54,7 @@ export const messages = sqliteTable(
     reactions: text('reactions', { mode: 'json' }).$type<Reaction[]>().notNull().default([]),
     media: text('media', { mode: 'json' }).$type<MessageMedia>(),
     voice: text('voice', { mode: 'json' }).$type<MessageVoice>(),
+    artifacts: text('artifacts', { mode: 'json' }).$type<MessageArtifact[]>().notNull().default([]),
     createdAt: integer('created_at').notNull().default(now)
   },
   (t) => [index('messages_conversation_idx').on(t.conversationId, t.createdAt)]
@@ -124,4 +126,35 @@ export const agentExchanges = sqliteTable(
     finishedAt: integer('finished_at')
   },
   (t) => [index('agent_exchanges_created_idx').on(t.createdAt), index('agent_exchanges_client_idx').on(t.clientId)]
+)
+
+/** Artifact (tài liệu, slide, bảng, biểu đồ, sơ đồ, HTML) theo hội thoại — chỉ lưu trên máy. */
+export const artifacts = sqliteTable(
+  'artifacts',
+  {
+    id: text('id').primaryKey(),
+    conversationId: text('conversation_id')
+      .notNull()
+      .references(() => conversations.id, { onDelete: 'cascade' }),
+    title: text('title').notNull(),
+    type: text('type').$type<ArtifactType>().notNull(),
+    version: integer('version').notNull().default(1),
+    updatedAt: integer('updated_at').notNull().default(now)
+  },
+  (t) => [index('artifacts_conversation_idx').on(t.conversationId, t.updatedAt)]
+)
+
+export const artifactVersions = sqliteTable(
+  'artifact_versions',
+  {
+    id: text('id').primaryKey(),
+    artifactId: text('artifact_id')
+      .notNull()
+      .references(() => artifacts.id, { onDelete: 'cascade' }),
+    version: integer('version').notNull(),
+    content: text('content').notNull(),
+    by: text('by').$type<'assistant' | 'user'>().notNull(),
+    createdAt: integer('created_at').notNull().default(now)
+  },
+  (t) => [index('artifact_versions_idx').on(t.artifactId, t.version)]
 )

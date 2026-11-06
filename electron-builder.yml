@@ -10,6 +10,8 @@ files:
   - out/**
   - package.json
   - '!**/*.{md,map}'
+  # Runtime artifact đi qua extraResources (nạp bằng mmc-artifact://), không cần nằm trong asar.
+  - '!out/artifact-runtime/**'
 extraResources:
   - from: src/main/db/migrations
     to: migrations
@@ -25,6 +27,8 @@ extraResources:
     to: sidecar
     # Test + file WAV mẫu chỉ dùng trong CI, không đóng gói.
     filter: ["**/*", "!tests/**", "!*.in"]
+  - from: out/artifact-runtime
+    to: artifact-runtime
   - from: resources/stickers
     to: stickers
     filter: ['desktop_server.py', 'requirements.txt']

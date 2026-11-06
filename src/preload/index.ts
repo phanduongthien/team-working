@@ -45,6 +45,15 @@ const api: TeamWorkingApi = {
     onPack: (listener) => subscribe(IPC.voicePackEvent, listener),
     onStop: (listener) => subscribe(IPC.voiceStopEvent, () => listener())
   },
+  artifacts: {
+    list: (conversationId) => ipcRenderer.invoke(IPC.artifactsList, conversationId),
+    versions: (id) => ipcRenderer.invoke(IPC.artifactsVersions, id),
+    content: (id, version) => ipcRenderer.invoke(IPC.artifactsContent, { id, version }),
+    saveVersion: (id, content) => ipcRenderer.invoke(IPC.artifactsSave, { id, content }),
+    restore: (id, version) => ipcRenderer.invoke(IPC.artifactsRestore, { id, version }),
+    export: (id, version, format) => ipcRenderer.invoke(IPC.artifactsExport, { artifactId: id, version, format }),
+    templates: () => ipcRenderer.invoke(IPC.artifactsTemplates)
+  },
   expressive: {
     status: () => ipcRenderer.invoke(IPC.expressiveStatus),
     setSettings: (value) => ipcRenderer.invoke(IPC.expressiveSetSettings, value),

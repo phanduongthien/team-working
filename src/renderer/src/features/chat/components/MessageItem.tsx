@@ -8,6 +8,8 @@ import { usePreferences } from '@renderer/stores/preferences'
 import { MediaView } from '../expressive/MediaView'
 import { ReactionBar, ReactionChips } from '../expressive/Reactions'
 import { SpeakButton, VoiceBadge } from '../voice/VoiceControls'
+import { ArtifactChips } from '../artifacts/ArtifactPanel'
+import { hideArtifactBlocks } from '@shared/artifacts'
 import { AttachmentChip } from './AttachmentChip'
 import { ImageThumb } from './ImageThumb'
 import { Markdown } from './Markdown'
@@ -50,7 +52,10 @@ export const MessageItem = memo(function MessageItem({ message }: { message: Mes
 
   const streaming = message.status === 'streaming'
   // Thẻ biểu cảm ([[gif:…]]) không bao giờ hiện ra màn hình — kể cả lúc đang gõ dở.
-  const text = stripExpressTags(message.content, streaming)
+  // Khối artifact không hiện trong chat (lúc đang viết: báo "đang viết artifact…").
+  const hidden = hideArtifactBlocks(message.content)
+  const writingArtifact = streaming && hidden.writing
+  const text = stripExpressTags(hidden.text, streaming)
   const waiting = streaming && !text
   return (
     <div className="group/msg flex gap-3" data-testid="message-assistant">
@@ -72,6 +77,15 @@ export const MessageItem = memo(function MessageItem({ message }: { message: Mes
         ) : (
           <Markdown text={text} />
         )}
+        {writingArtifact && (
+          <div
+            className="animate-pulse text-xs text-muted-foreground"
+            data-testid="artifact-writing"
+          >
+            {t('artifacts.writing')}
+          </div>
+        )}
+        <ArtifactChips refs={message.artifacts} />
         {message.media && <MediaView item={message.media} className={mediaSize(message.media)} />}
         {message.status === 'aborted' && (
           <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
