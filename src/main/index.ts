@@ -78,6 +78,7 @@ import { AppToolRegistry, combineToolSets } from './tools/registry'
 import { TimeRepository } from './db/timeRepository'
 import { registerAppIpc } from './ipc/app'
 import { createHandle, registerIpc } from './ipc/register'
+import { StateSync } from './services/stateSync'
 import { createElectronUpdater } from './services/updater'
 import { UpdateController } from './update/controller'
 import { registerTeamIpc } from './ipc/team'
@@ -220,6 +221,9 @@ async function bootstrap(): Promise<void> {
   const memories = new MemoryRepository(db, getOwner)
   const suggestions = new SuggestionRepository(db, getOwner)
   const settings = new SettingsRepository(db)
+  // Đồng bộ trạng thái toàn app: mọi thay đổi (IPC có `changes`, ghi settings, việc nền) → sync:changed.
+  const sync = new StateSync((topics) => mainWindow?.webContents.send(IPC.syncChanged, topics))
+  settings.onChange = (key) => sync.settingsChanged(key)
   scope = new AccountScope({ memories, conversations, settings })
   const accountScope = scope
   const interrupted = messages.markInterrupted()
@@ -523,7 +527,11 @@ async function bootstrap(): Promise<void> {
   killSwitch.onStop(() => mainWindow?.webContents.send(IPC.voiceStopEvent))
 
   // Artifact: lưu theo hội thoại; theme slide = có sẵn + file JSON người dùng thêm + theme của skill đang bật.
-  const artifacts = new ArtifactService({ db, ownsConversation: (id) => !!conversations.get(id) })
+  const artifacts = new ArtifactService({
+    db,
+    ownsConversation: (id) => !!conversations.get(id),
+    onChange: () => sync.changed('artifacts')
+  })
   const themesDir = join(userData, 'artifact-themes')
   const artifactThemes = (): Theme[] => {
     const extra: Theme[] = []
@@ -624,7 +632,8 @@ async function bootstrap(): Promise<void> {
 
   const handle = createHandle(
     (event: IpcMainInvokeEvent) => event.sender === mainWindow?.webContents,
-    log
+    log,
+    sync
   )
   const getWindow = (): BrowserWindow | null => mainWindow
   registerIpc({
@@ -702,6 +711,7 @@ async function bootstrap(): Promise<void> {
     return result
   })
   const agentExchanges = new AgentExchangeRepository(db)
+  agentExchanges.onChange = () => sync.changed('agentExchanges')
   const stale = agentExchanges.markInterrupted()
   if (stale) log.info(`Kết nối agent: đánh dấu ${stale} việc bị gián đoạn`)
   const agentHub = new AgentHub({

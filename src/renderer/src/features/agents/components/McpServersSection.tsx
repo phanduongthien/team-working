@@ -1,10 +1,11 @@
 import { Plus, Trash2, X } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { McpServerType } from '@shared/agents'
 import { Button } from '@renderer/components/ui/button'
 import { Input, Label, Select, Textarea } from '@renderer/components/ui/input'
 import { api } from '@renderer/lib/api'
+import { useSync } from '@renderer/lib/sync'
 import { parsePairs, useAgents } from '../store'
 
 const EMPTY = { name: '', type: 'stdio' as McpServerType, command: '', args: '', url: '', secrets: '' }
@@ -12,14 +13,13 @@ const EMPTY = { name: '', type: 'stdio' as McpServerType, command: '', args: '',
 /** MCP server người dùng thêm — Mizuki dùng như tool, mỗi lần gọi phải duyệt (trừ tool "luôn cho phép"). */
 export function McpServersSection() {
   const { t } = useTranslation('agents')
-  const { servers, refreshServers } = useAgents()
+  const { servers, refreshServers, patchServers } = useAgents()
   const [form, setForm] = useState(EMPTY)
   const [adding, setAdding] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
-    void refreshServers()
-  }, [refreshServers])
+  // Danh sách đổi cả khi duyệt tool "luôn cho phép" ở trang Chat → tự hỏi lại khi main báo.
+  useSync('mcpServers', refreshServers)
 
   const save = async (): Promise<void> => {
     setError(null)
@@ -60,10 +60,14 @@ export function McpServersSection() {
                   <input
                     type="checkbox"
                     checked={s.enabled}
-                    onChange={async (e) => {
-                      await api.mcp.setEnabled(s.id, e.target.checked)
-                      await refreshServers()
+                    onChange={(e) => {
+                      const enabled = e.target.checked
+                      void patchServers(
+                        (list) => list.map((x) => (x.id === s.id ? { ...x, enabled } : x)),
+                        () => api.mcp.setEnabled(s.id, enabled)
+                      )
                     }}
+                    data-testid="mcp-server-enabled"
                   />
                   <span className="font-medium">{s.name}</span>
                 </label>
@@ -73,10 +77,12 @@ export function McpServersSection() {
                   variant="ghost"
                   size="sm"
                   className="ml-auto"
-                  onClick={async () => {
-                    await api.mcp.remove(s.id)
-                    await refreshServers()
-                  }}
+                  onClick={() =>
+                    void patchServers(
+                      (list) => list.filter((x) => x.id !== s.id),
+                      () => api.mcp.remove(s.id)
+                    )
+                  }
                 >
                   <Trash2 />
                   {t('mcp.remove')}

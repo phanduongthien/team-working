@@ -33,16 +33,22 @@ export function registerAppIpc(deps: AppIpcDeps): void {
   handle(IPC.updateCheck, z.undefined(), () => updates.check(true))
   // Không chờ tải xong: tiến trình đi qua sự kiện update:state.
   handle(IPC.updateDownload, z.undefined(), () => void updates.download())
-  handle(IPC.updatePostpone, z.undefined(), () => updates.postpone())
-  handle(IPC.updateSkip, z.undefined(), () => updates.skip())
+  const U = { changes: 'update' } as const
+  handle(IPC.updatePostpone, z.undefined(), () => updates.postpone(), U)
+  handle(IPC.updateSkip, z.undefined(), () => updates.skip(), U)
   handle(IPC.updateInstall, z.undefined(), () => updates.install())
   handle(IPC.settingsGetUpdate, z.undefined(), () => ({ ...deps.getUpdateSettings(), currentVersion: app.getVersion() }))
-  handle(IPC.settingsSetUpdate, updateSettingsSchema, (next) => {
-    const previous = deps.getUpdateSettings()
-    deps.settings.set('update', next)
-    updates.settingsChanged(previous)
-    return next
-  })
+  handle(
+    IPC.settingsSetUpdate,
+    updateSettingsSchema,
+    (next) => {
+      const previous = deps.getUpdateSettings()
+      deps.settings.set('update', next)
+      updates.settingsChanged(previous)
+      return next
+    },
+    U
+  )
 
   handle(IPC.appLogError, z.string().max(4000), (message) => deps.log.error(`renderer: ${message}`))
 

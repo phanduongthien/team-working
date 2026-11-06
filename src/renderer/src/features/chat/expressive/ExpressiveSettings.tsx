@@ -1,5 +1,5 @@
 import { FolderOpen, RotateCcw } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   EXPRESS_LEVELS,
@@ -10,20 +10,30 @@ import {
 import { Button } from '@renderer/components/ui/button'
 import { Input, Label, Select } from '@renderer/components/ui/input'
 import { api } from '@renderer/lib/api'
+import { optimistic, useSyncedState } from '@renderer/lib/sync'
 
 /** Cài đặt chat biểu cảm: mức độ (có "Tự động"), key GIPHY, thư mục sticker. */
 export function ExpressiveSettings() {
   const { t } = useTranslation('chat')
-  const [status, setStatus] = useState<ExpressiveStatus | null>(null)
+  // Mức tự động đổi dần theo cuộc trò chuyện → tự hỏi lại khi main báo, khi mở trang, khi quay về app.
+  const { data: status, setData: setStatus } = useSyncedState('expressive', () => api.expressive.status())
   const [key, setKey] = useState('')
   const [keyError, setKeyError] = useState<string | null>(null)
 
-  useEffect(() => void api.expressive.status().then(setStatus), [])
   if (!status) return null
   const { settings } = status
 
-  const save = async (patch: Partial<ExpressiveStatus['settings']>): Promise<void> =>
-    setStatus(await api.expressive.setSettings({ ...settings, ...patch }))
+  // Hiện ngay, lưu sau; lỗi → hoàn tác + báo lỗi chung.
+  const save = async (patch: Partial<ExpressiveStatus['settings']>): Promise<void> => {
+    const next = { ...settings, ...patch }
+    const r = await optimistic({
+      topic: 'expressive',
+      apply: () => setStatus({ ...status, settings: next }),
+      rollback: () => setStatus(status),
+      save: () => api.expressive.setSettings(next)
+    })
+    if (r) setStatus(r)
+  }
   const saveKey = async (value: string | null): Promise<void> => {
     setKeyError(null)
     try {
@@ -45,6 +55,7 @@ export function ExpressiveSettings() {
           <Label htmlFor="express-mode">{t('expressive.settings.mode')}</Label>
           <Select
             id="express-mode"
+            data-testid="express-mode"
             value={settings.mode}
             onChange={(e) => void save({ mode: e.target.value as ExpressMode })}
           >

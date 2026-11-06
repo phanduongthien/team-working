@@ -1,3 +1,4 @@
+import type { SyncTopic } from './sync'
 import type { Artifact, ArtifactVersion, MessageArtifact } from './artifacts'
 import type { MessageVoice, SpeakChunk, TranscribeResult, VoiceComponent, VoicePackState, VoiceSettings, VoiceStatus } from './voice'
 import type { SkillDetail, SkillInfo, SkillPreviewResult, SkillSource, StyleLearnResult } from './skills'
@@ -190,6 +191,10 @@ export type PickAttachmentsResult = {
 
 /** API có kiểu mà preload expose tại `window.api`. */
 export interface TeamWorkingApi {
+  /** Đồng bộ trạng thái: main báo các mục vừa đổi → trang đang mở tự hỏi lại (xem lib/sync.ts). */
+  sync: {
+    onChanged(listener: (topics: SyncTopic[]) => void): () => void
+  }
   cli: {
     check(): Promise<CliStatus>
   }

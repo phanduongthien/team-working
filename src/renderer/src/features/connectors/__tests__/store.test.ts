@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { gmailCredentialsSchema, telegramCodeSchema, telegramCredentialsSchema } from '@shared/connectors'
-import { daysLeft, invalid, parseBlocked, toggleChat } from '../store'
+import { chatAllowed, daysLeft, invalid, parseBlocked, toggleChat } from '../store'
 
 describe('connectors store', () => {
   const chat = (id: string, sensitive = false) => ({ id, allowed: false, sensitive })
@@ -34,5 +34,18 @@ describe('connectors store', () => {
 
   it('danh sách người gửi bị chặn: tách dòng / dấu phẩy, chữ thường, bỏ trùng', () => {
     expect(parseBlocked('Sep@X.com\n bank.vn, sep@x.com;;\n')).toEqual(['sep@x.com', 'bank.vn'])
+  })
+})
+
+describe('chatAllowed — tính lại tại chỗ khi chọn chat (cập nhật lạc quan)', () => {
+  const chat = (id: string, sensitive = false, locked = false) => ({ id, allowed: false, sensitive, locked })
+  it('khớp cách main tính: block > allow > chế độ; chat nhạy cảm cần cho phép rõ; chat bị khoá giữ nguyên', () => {
+    const s = { mode: 'blocklist' as const, allow: ['3'], block: ['1'] }
+    expect(chatAllowed(s, chat('1'))).toBe(false)
+    expect(chatAllowed(s, chat('2'))).toBe(true)
+    expect(chatAllowed(s, chat('3', true))).toBe(true)
+    expect(chatAllowed(s, chat('4', true))).toBe(false)
+    expect(chatAllowed({ ...s, mode: 'allowlist' }, chat('2'))).toBe(false)
+    expect(chatAllowed({ ...s, allow: ['777000'] }, chat('777000', false, true))).toBe(false)
   })
 })

@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import { speechChunks } from '@shared/speakable'
 import type { MessageVoice, VoiceStatus } from '@shared/voice'
 import { api } from '@renderer/lib/api'
+import { coalesce, onSync } from '@renderer/lib/sync'
 import { useChat } from '../store'
 import { MicSession } from './recorder'
 
@@ -64,9 +65,7 @@ export const useVoice = create<VoiceState>((set, get) => {
     speakingId: null,
     draft: null,
 
-    async refresh() {
-      set({ status: await api.voice.status() })
-    },
+    refresh: coalesce(async () => set({ status: await api.voice.status() })),
 
     async toggleMic() {
       if (get().mic === 'recording') return finishRecording()
@@ -153,6 +152,7 @@ export const useVoice = create<VoiceState>((set, get) => {
 export function setupVoice(): () => void {
   void useVoice.getState().refresh()
   const offPack = api.voice.onPack(() => void useVoice.getState().refresh())
+  const offSync = onSync('voice', () => useVoice.getState().refresh())
   const offStop = api.voice.onStop(() => useVoice.getState().stopSpeaking())
   const onKey = (e: KeyboardEvent): void => {
     if (e.key === 'Escape' && useVoice.getState().speakingId) useVoice.getState().stopSpeaking()
@@ -177,6 +177,7 @@ export function setupVoice(): () => void {
   })
   return () => {
     offPack()
+    offSync()
     offStop()
     offChat()
     window.removeEventListener('keydown', onKey)

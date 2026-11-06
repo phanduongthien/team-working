@@ -173,5 +173,7 @@ export const IPC = {
   telegramChats: 'telegram:chats',
   telegramSetLists: 'telegram:setLists',
   draftApprovalEvent: 'draft:approvalEvent',
-  draftRespond: 'draft:respond'
+  draftRespond: 'draft:respond',
+  /** main → renderer: các mục trạng thái vừa đổi (SyncTopic[]). */
+  syncChanged: 'sync:changed'
 } as const

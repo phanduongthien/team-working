@@ -1,30 +1,28 @@
 import { RefreshCw } from 'lucide-react'
-import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { UPDATE_CHANNELS, type UpdateSettings } from '@shared/schemas'
 import { Button } from '@renderer/components/ui/button'
 import { api } from '@renderer/lib/api'
+import { optimistic, useSyncedState } from '@renderer/lib/sync'
 import { useUpdate } from '@renderer/stores/update'
-
-type State = UpdateSettings & { currentVersion: string }
 
 /** Tự kiểm tra bản mới, kênh stable/beta, nút "Kiểm tra ngay". */
 export function UpdateSection() {
   const { t } = useTranslation('settings')
-  const [settings, setSettings] = useState<State | null>(null)
+  const { data: settings, setData: setSettings } = useSyncedState('update', () => api.update.getSettings())
   const update = useUpdate((s) => s.state)
-
-  useEffect(() => {
-    void api.update.getSettings().then(setSettings)
-  }, [])
 
   if (!settings) return null
 
+  // Hiện ngay khi bấm (không đợi IPC), lưu sau; lỗi → hoàn tác + báo lỗi chung.
   const save = async (patch: Partial<UpdateSettings>): Promise<void> => {
     const next = { autoCheck: settings.autoCheck, channel: settings.channel, ...patch }
-    // Cập nhật giao diện ngay khi bấm (không đợi IPC) — ô tick không bị "giật" về giá trị cũ trên máy chậm.
-    setSettings({ ...settings, ...next })
-    await api.update.setSettings(next)
+    await optimistic({
+      topic: 'update',
+      apply: () => setSettings({ ...settings, ...next }),
+      rollback: () => setSettings(settings),
+      save: () => api.update.setSettings(next)
+    })
   }
 
   const status = (() => {
@@ -86,6 +84,7 @@ export function UpdateSection() {
           className="mt-1"
           checked={settings.autoCheck}
           onChange={(e) => void save({ autoCheck: e.target.checked })}
+          data-testid="update-auto-check"
         />
         <span>
           <span className="block text-sm font-medium">{t('update.autoCheck')}</span>

@@ -7,6 +7,7 @@ import type {
   TelegramStatus
 } from '@shared/connectors'
 import { api } from '@renderer/lib/api'
+import { coalesce, onSync, optimistic } from '@renderer/lib/sync'
 
 type ConnectorsStore = {
   gmail: GmailStatus | null
@@ -16,8 +17,20 @@ type ConnectorsStore = {
   drafts: DraftApprovalRequest[]
   loadChats(force?: boolean): Promise<string | null>
   respondDraft(id: string, approve: boolean, body?: string): Promise<void>
-  /** Hỏi lại main trạng thái Gmail + Telegram (mở trang, quay lại cửa sổ sau khi đăng nhập trên trình duyệt). */
+  /** Hỏi lại main trạng thái Gmail + Telegram (mở trang, quay lại cửa sổ, main báo đồng bộ). */
   refresh(): Promise<void>
+  /** Đổi trạng thái Gmail trên giao diện ngay, lưu sau; lỗi → hoàn tác + `onError`. */
+  patchGmail(
+    patch: (g: GmailStatus) => GmailStatus,
+    save: () => Promise<unknown>,
+    onError?: (code: string) => void
+  ): Promise<boolean>
+  /** Như patchGmail cho Telegram (danh sách chat được tính lại theo allow/block mới). */
+  patchTelegram(
+    patch: (t: TelegramStatus) => TelegramStatus,
+    save: () => Promise<unknown>,
+    onError?: (code: string) => void
+  ): Promise<boolean>
 }
 
 /**
@@ -53,7 +66,7 @@ export async function safeCall<T>(p: Promise<T>): Promise<T | { error: string }>
   }
 }
 
-export const useConnectors = create<ConnectorsStore>((set) => ({
+export const useConnectors = create<ConnectorsStore>((set, get) => ({
   gmail: null,
   telegram: null,
   chats: null,
@@ -68,13 +81,53 @@ export const useConnectors = create<ConnectorsStore>((set) => ({
     set((s) => ({ drafts: s.drafts.filter((d) => d.id !== id) }))
     await api.drafts.respond({ id, approve, body })
   },
-  async refresh() {
+  // Gộp các lần hỏi lại dồn dập (sự kiện + focus) thành một.
+  refresh: coalesce(async () => {
     const at = { ...seen }
     const [gmail, telegram] = await Promise.all([api.gmail.status(), api.telegram.status()])
     if (seen.gmail === at.gmail) set({ gmail })
     if (seen.telegram === at.telegram) applyTelegram(telegram)
+  }),
+  async patchGmail(patch, save, onError) {
+    const before = get().gmail
+    if (!before) return false
+    const ok = await optimistic({
+      topic: 'gmail',
+      apply: () => set({ gmail: patch(before) }),
+      rollback: () => set({ gmail: before }),
+      save: () => safeCall(save()),
+      onError
+    })
+    return ok !== null
+  },
+  async patchTelegram(patch, save, onError) {
+    const before = get().telegram
+    const chats = get().chats
+    if (!before) return false
+    const ok = await optimistic({
+      topic: 'telegram',
+      apply: () => {
+        const next = patch(before)
+        set({ telegram: next, chats: chats && chats.map((c) => ({ ...c, allowed: chatAllowed(next, c) })) })
+      },
+      rollback: () => set({ telegram: before, chats }),
+      save: () => safeCall(save()),
+      onError
+    })
+    return ok !== null
   }
 }))
+
+/** Chat có được trợ lý đọc theo chế độ + allow/block (khớp cách main tính; chat bị khoá giữ nguyên). */
+export function chatAllowed(
+  status: Pick<TelegramStatus, 'mode' | 'allow' | 'block'>,
+  chat: Pick<TelegramChatInfo, 'id' | 'allowed' | 'sensitive' | 'locked'>
+): boolean {
+  if (chat.locked) return chat.allowed
+  if (status.block.includes(chat.id)) return false
+  if (status.allow.includes(chat.id)) return true
+  return status.mode === 'blocklist' && !chat.sensitive
+}
 
 /** Trạng thái + hộp duyệt nháp có thể đến bất cứ lúc nào (trợ lý đang trả lời ở trang Chat). */
 export function setupConnectors(): () => void {
@@ -93,7 +146,9 @@ export function setupConnectors(): () => void {
           ? { drafts: s.drafts.filter((d) => d.id !== req.id) }
           : { drafts: [...s.drafts.filter((d) => d.id !== req.id), req] }
       )
-    )
+    ),
+    // Đổi từ chỗ khác (IPC, trợ lý dùng tool phát hiện token hết hạn…) → hỏi lại.
+    onSync(['gmail', 'telegram'], () => useConnectors.getState().refresh())
   ]
   void useConnectors.getState().refresh()
   return () => stops.forEach((stop) => stop())

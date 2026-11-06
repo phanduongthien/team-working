@@ -31,6 +31,9 @@
     "bannerDownloading": "Downloading required update {{version}} ({{percent}}%)…",
     "bannerReady": "Required update {{version}} is ready — click to restart"
   },
+  "sync": {
+    "saveFailed": "Couldn't save the change, it was undone ({{code}})."
+  },
   "errors": {
     "generic": "Something went wrong: {{message}}",
     "notFound": "Page not found"

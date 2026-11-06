@@ -6,6 +6,7 @@ import { AssistantAvatar } from '@renderer/components/AssistantAvatar'
 import { RecoveryCodeDialog, TeamSwitcher } from '@renderer/components/TeamSwitcher'
 import { ThemeToggle } from '@renderer/components/ThemeToggle'
 import { CriticalUpdateBanner, UpdateDialog } from '@renderer/components/UpdateCenter'
+import { SyncErrorToast } from '@renderer/components/SyncErrorToast'
 import { canSeeFeature } from '@renderer/features/access'
 import { useMyRole } from '@renderer/stores/team'
 import { appEnv, supabaseConfig } from '@renderer/lib/supabase'
@@ -92,6 +93,7 @@ export function AppShell({ features }: { features: FeatureDefinition[] }) {
         {features.map((f) => (f.overlay ? <f.overlay key={f.id} /> : null))}
         <RecoveryCodeDialog />
         <UpdateDialog />
+        <SyncErrorToast />
       </div>
     </div>
   )

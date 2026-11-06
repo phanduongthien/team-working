@@ -5,7 +5,7 @@ import type { ScreenPreview } from '@shared/computer'
 import { Button } from '@renderer/components/ui/button'
 import { Dialog, DialogClose, DialogContent } from '@renderer/components/ui/dialog'
 import { api } from '@renderer/lib/api'
-import { useRefreshOnFocus } from '@renderer/lib/useRefreshOnFocus'
+import { useSync } from '@renderer/lib/sync'
 import { formatHotkey, useComputer } from '../store'
 import { SidecarSection } from './SidecarSection'
 
@@ -13,7 +13,6 @@ import { SidecarSection } from './SidecarSection'
 function WarningDialog({ open, onOpenChange, hotkey }: { open: boolean; onOpenChange(open: boolean): void; hotkey: string }) {
   const { t } = useTranslation('computer')
   const setEnabled = useComputer((s) => s.setEnabled)
-  useRefreshOnFocus(useComputer((s) => s.refresh))
   const error = useComputer((s) => s.error)
   const [read, setRead] = useState(false)
   const points = t('warning.points', { returnObjects: true, hotkey }) as string[]
@@ -61,7 +60,9 @@ function WarningDialog({ open, onOpenChange, hotkey }: { open: boolean; onOpenCh
 
 export function ComputerPage() {
   const { t } = useTranslation('computer')
-  const { status, error, setEnabled, setScreenAccess, emergencyStop, clearError } = useComputer()
+  const { status, error, setEnabled, setScreenAccess, emergencyStop, clearError, refresh } = useComputer()
+  // Hỏi lại khi mở trang, khi quay về app và khi main báo đồng bộ (vd phím dừng khẩn cấp bấm ở app khác).
+  useSync(['computer', 'sidecar'], refresh)
   const [warning, setWarning] = useState(false)
   const [preview, setPreview] = useState<ScreenPreview | null>(null)
   const [previewError, setPreviewError] = useState<string | null>(null)

@@ -41,6 +41,7 @@ App desktop Windows (Electron + React + TypeScript) — trợ lý AI cho học t
 
 ## Quy tắc
 - Mọi IPC input validate bằng zod. Không bật `nodeIntegration`.
+- Đồng bộ trạng thái: tính năng có trạng thái hiện trên UI PHẢI dùng cơ chế chung (`docs/state-sync.md`) — IPC đổi trạng thái khai báo `{ changes: '<mục>' }`, việc nền gọi `sync.changed`; trang dùng `useSync` / `useSyncedState`, thao tác người dùng qua `optimistic` (hiện ngay, lỗi thì hoàn tác + báo). Không tự làm mới theo chu kỳ, không lấy trạng thái một lần rồi để đứng yên — vì người dùng thấy giao diện sai mà không biết phải bật/tắt hay mở lại trang. E2E: thao tác → UI đổi trong 1 giây.
 - Không commit secret, API key, service-role key vì repo public (app tải bản cập nhật từ Releases public) — lộ là phải xoay key. Dùng `.env.example`.
 - Không chia sẻ/đóng gói thông tin đăng nhập Claude; mỗi user dùng tài khoản của chính họ.
 - Trợ lý **đề xuất**, người dùng **duyệt**: memory mới, task do AI tạo, thay đổi file code — luôn qua bước xác nhận.

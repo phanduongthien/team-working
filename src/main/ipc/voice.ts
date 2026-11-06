@@ -19,16 +19,27 @@ const modelSchema = z.enum(['piper', ...STT_MODELS])
 
 export function registerVoiceIpc({ handle, voice, installer, setSpeaking }: VoiceIpcDeps): void {
   handle(IPC.voiceStatus, none, () => voice.status())
-  handle(IPC.voiceSetSettings, voiceSettingsSchema, (value) => voice.setSettings(value))
-  handle(IPC.voiceInstall, componentSchema, async (component) => {
-    await installer.install(component)
-    return voice.status()
-  })
-  handle(IPC.voiceCancel, none, () => installer.cancel())
-  handle(IPC.voiceRemoveModel, modelSchema, async (component) => {
-    await installer.remove(component)
-    return voice.status()
-  })
+  const V = { changes: 'voice' } as const
+  handle(IPC.voiceSetSettings, voiceSettingsSchema, (value) => voice.setSettings(value), V)
+  handle(
+    IPC.voiceInstall,
+    componentSchema,
+    async (component) => {
+      await installer.install(component)
+      return voice.status()
+    },
+    V
+  )
+  handle(IPC.voiceCancel, none, () => installer.cancel(), V)
+  handle(
+    IPC.voiceRemoveModel,
+    modelSchema,
+    async (component) => {
+      await installer.remove(component)
+      return voice.status()
+    },
+    V
+  )
   handle(
     IPC.voiceTranscribe,
     z.object({ wav: z.instanceof(Uint8Array), durationMs: z.number().int().min(0).max(600_000) }),

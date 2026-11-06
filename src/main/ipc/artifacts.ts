@@ -91,12 +91,14 @@ export function registerArtifactsIpc({
   handle(
     IPC.artifactsSave,
     z.object({ id, content: z.string().max(500_000) }),
-    ({ id: a, content }) => service.saveUserVersion(a, content)
+    ({ id: a, content }) => service.saveUserVersion(a, content),
+    { changes: 'artifacts' }
   )
   handle(
     IPC.artifactsRestore,
     z.object({ id, version: z.number().int().min(1) }),
-    ({ id: a, version }) => service.restore(a, version)
+    ({ id: a, version }) => service.restore(a, version),
+    { changes: 'artifacts' }
   )
   handle(IPC.artifactsExport, exportSchema, async ({ artifactId, version, format }) => {
     const c = service.content(artifactId, version)

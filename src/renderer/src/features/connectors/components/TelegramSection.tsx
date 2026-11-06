@@ -169,20 +169,22 @@ function Chats({ status }: { status: TelegramStatus }) {
   const { t } = useTranslation('connectors')
   const chats = useConnectors((s) => s.chats)
   const loadChats = useConnectors((s) => s.loadChats)
+  const patchTelegram = useConnectors((s) => s.patchTelegram)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     void loadChats().then(setError)
   }, [loadChats])
 
-  // Danh sách allowed tính lại tại chỗ khi đổi chế độ / chọn chat (không phải gọi Telegram lại).
+  // Hiện ngay (allowed tính lại tại chỗ), lưu sau; lỗi → hoàn tác. Không phải gọi Telegram lại.
   const setLists = async (lists: {
     mode: TelegramMode
     allow: string[]
     block: string[]
   }): Promise<void> => {
-    await api.telegram.setLists(lists)
-    await loadChats()
+    setError(null)
+    if (await patchTelegram((s) => ({ ...s, ...lists }), () => api.telegram.setLists(lists), setError))
+      await loadChats()
   }
 
   return (
@@ -268,6 +270,7 @@ function Chats({ status }: { status: TelegramStatus }) {
 export function TelegramSection({ status }: { status: TelegramStatus }) {
   const { t } = useTranslation('connectors')
   const [error, setError] = useState<string | null>(null)
+  const patchTelegram = useConnectors((s) => s.patchTelegram)
   const connected = status.connection === 'connected'
 
   return (
@@ -284,7 +287,11 @@ export function TelegramSection({ status }: { status: TelegramStatus }) {
           type="checkbox"
           className="mt-1"
           checked={status.enabled}
-          onChange={(e) => void api.telegram.setEnabled(e.target.checked)}
+          onChange={(e) => {
+            const on = e.target.checked
+            setError(null)
+            void patchTelegram((s) => ({ ...s, enabled: on }), () => api.telegram.setEnabled(on), setError)
+          }}
           data-testid="tg-enable"
         />
         <span>

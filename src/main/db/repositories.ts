@@ -429,6 +429,9 @@ export class SuggestionRepository {
 }
 
 export class SettingsRepository {
+  /** Gọi sau mỗi lần ghi (đồng bộ trạng thái: StateSync.settingsChanged). */
+  onChange?: (key: string) => void
+
   constructor(private readonly db: AppDatabase) {}
 
   /** Đọc giá trị, validate bằng zod; sai/thiếu thì trả mặc định. */
@@ -445,21 +448,28 @@ export class SettingsRepository {
       .values({ key, value, updatedAt: Date.now() })
       .onConflictDoUpdate({ target: settings.key, set: { value, updatedAt: Date.now() } })
       .run()
+    this.onChange?.(key)
     return value
   }
 }
 
 /** Lịch sử trao đổi với agent khác (Kết nối agent). */
 export class AgentExchangeRepository {
+  /** Gọi sau mỗi lần thêm / sửa — trang "Lịch sử trao đổi" cập nhật ngay, không cần hỏi định kỳ. */
+  onChange?: () => void
+
   constructor(private readonly db: AppDatabase) {}
 
   insert(e: AgentExchange): void {
     this.db.insert(agentExchanges).values(e).run()
+    this.onChange?.()
   }
 
   update(id: string, patch: Partial<AgentExchange>): void {
     const { id: _id, ...rest } = patch
-    if (Object.keys(rest).length) this.db.update(agentExchanges).set(rest).where(eq(agentExchanges.id, id)).run()
+    if (!Object.keys(rest).length) return
+    this.db.update(agentExchanges).set(rest).where(eq(agentExchanges.id, id)).run()
+    this.onChange?.()
   }
 
   get(id: string): AgentExchange | null {

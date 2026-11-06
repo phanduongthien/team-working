@@ -10,6 +10,7 @@ import {
 import { Button } from '@renderer/components/ui/button'
 import { Label, Select, Textarea } from '@renderer/components/ui/input'
 import { api } from '@renderer/lib/api'
+import { optimistic, useSync } from '@renderer/lib/sync'
 import { useVoice } from './store'
 
 const mb = (n: number): string => (n >= 1000 ? `${(n / 1024).toFixed(1)} GB` : `${n} MB`)
@@ -21,11 +22,18 @@ export function VoiceSettings() {
   const refresh = useVoice((s) => s.refresh)
   const speak = useVoice((s) => s.speak)
   const [vocab, setVocab] = useState<string | null>(null)
+  useSync('voice', refresh)
   if (!status) return null
   const { settings, installed, sizesMb, pack, outdated } = status
+  // Hiện ngay, lưu sau; lỗi → hoàn tác + báo lỗi chung.
   const save = async (patch: Partial<Settings>): Promise<void> => {
-    await api.voice.setSettings({ ...settings, ...patch })
-    await refresh()
+    const next = { ...settings, ...patch }
+    await optimistic({
+      topic: 'voice',
+      apply: () => useVoice.setState({ status: { ...status, settings: next } }),
+      rollback: () => useVoice.setState({ status }),
+      save: () => api.voice.setSettings(next)
+    })
   }
   const busy = pack.state === 'installing'
   const install = async (c: VoiceComponent): Promise<void> => {

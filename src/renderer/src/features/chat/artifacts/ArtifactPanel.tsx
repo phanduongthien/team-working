@@ -7,6 +7,7 @@ import type { MessageArtifact } from '@shared/artifacts'
 import { Button } from '@renderer/components/ui/button'
 import { Select } from '@renderer/components/ui/input'
 import { api } from '@renderer/lib/api'
+import { useSync } from '@renderer/lib/sync'
 import { useChat } from '../store'
 import { useArtifacts } from './store'
 
@@ -73,9 +74,6 @@ export function ArtifactPanel({ conversationId }: { conversationId: string | nul
   const { open, list, selected, setOpen, load, show } = useArtifacts()
   const send = useChat((s) => s.send)
   const mode = useChat((s) => s.conversations.find((c) => c.id === s.activeId)?.mode ?? 'free')
-  const lastDone = useChat((s) =>
-    conversationId ? (s.messages[conversationId] ?? []).filter((m) => m.artifacts.length).length : 0
-  )
   const [versions, setVersions] = useState<Omit<ArtifactVersion, 'content'>[]>([])
   const [reload, setReload] = useState(0)
   const [notice, setNotice] = useState<string | null>(null)
@@ -83,7 +81,9 @@ export function ArtifactPanel({ conversationId }: { conversationId: string | nul
   const [width, setWidth] = useState(520)
   const frame = useRef<HTMLIFrameElement>(null)
 
-  useEffect(() => void load(conversationId), [conversationId, lastDone, load])
+  useEffect(() => void load(conversationId), [conversationId, load])
+  // Trợ lý tạo / sửa artifact, người dùng sửa / khôi phục phiên bản → main báo → tải lại danh sách + phiên bản.
+  useSync('artifacts', () => load(conversationId))
   useEffect(() => void api.artifacts.templates().then(setTemplates), [])
   useEffect(() => {
     if (selected) void api.artifacts.versions(selected.id).then(setVersions)
