@@ -12,9 +12,7 @@ import { useChat } from '../store'
 import { ChatHeader } from './ChatHeader'
 import { CodeBar } from './CodeBar'
 import { Composer } from './Composer'
-import { PanelRight } from 'lucide-react'
 import { ArtifactPanel } from '../artifacts/ArtifactPanel'
-import { useArtifacts } from '../artifacts/store'
 import { ConversationSidebar } from './ConversationSidebar'
 import { GroupSuggestion } from './GroupSuggestion'
 import { MessageItem } from './MessageItem'
@@ -23,8 +21,6 @@ const EMPTY: never[] = []
 
 export function ChatPage() {
   const { t } = useTranslation('chat')
-  const artifactsOpen = useArtifacts((s) => s.open)
-  const setArtifactsOpen = useArtifacts((s) => s.setOpen)
   const assistant = usePreferences((s) => s.assistant)
   const cliOk = useCliStatus((s) => s.status?.state === 'ok')
   const {
@@ -96,9 +92,12 @@ export function ChatPage() {
             {t('attach.drop')}
           </div>
         )}
-        {active && messages.length > 0 && (
-          <ChatHeader key={active.id} conversation={active} busy={isStreaming} />
-        )}
+        <ChatHeader
+          key={active?.id ?? 'new'}
+          conversation={active}
+          canSuggest={messages.length > 0}
+          busy={isStreaming}
+        />
         <div className="flex-1 overflow-y-auto">
           <div className="mx-auto max-w-3xl space-y-6 px-6 py-6">
             {messages.length === 0 ? (
@@ -153,16 +152,6 @@ export function ChatPage() {
           />
           <p className="text-center text-[11px] text-muted-foreground">{t('usageNote')}</p>
         </div>
-        <Button
-          size="sm"
-          variant={artifactsOpen ? 'outline' : 'ghost'}
-          className="absolute top-2 right-3 z-20 h-7 text-xs"
-          onClick={() => setArtifactsOpen(!artifactsOpen)}
-          data-testid="artifacts-toggle"
-        >
-          <PanelRight />
-          {t('artifacts.toggle')}
-        </Button>
       </section>
       <ArtifactPanel conversationId={active?.id ?? null} />
     </div>
