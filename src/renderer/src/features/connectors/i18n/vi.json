@@ -31,23 +31,21 @@
     "setup": [
       "Mở console.cloud.google.com, tạo project mới (vd \"MMC studio cá nhân\").",
       "APIs & Services → Library → bật \"Gmail API\".",
-      "OAuth consent screen: chọn External, điền tên app + email của bạn; ở mục Test users thêm chính email Gmail của bạn.",
+      "OAuth consent screen: chọn External, điền tên app + email của bạn; ở mục Test users thêm MỌI địa chỉ Gmail bạn định kết nối (cá nhân, trường, công việc…).",
       "Credentials → Create credentials → OAuth client ID → Application type: Desktop app.",
-      "Chép Client ID và Client secret vào ô bên dưới rồi bấm Lưu, sau đó bấm Kết nối Gmail."
+      "Chép Client ID và Client secret vào ô bên dưới rồi bấm Lưu, sau đó bấm \"+ Thêm tài khoản Gmail\". Một OAuth client dùng chung cho mọi tài khoản."
     ],
     "clientId": "Client ID",
     "clientSecret": "Client secret",
-    "connect": "Kết nối Gmail",
     "reconnect": "Kết nối lại",
     "waiting": "Đang chờ bạn đăng nhập trong trình duyệt…",
-    "connectedAs": "Đang dùng {{email}}",
     "disconnect": "Ngắt kết nối",
     "preview": "Thử đọc 5 thư mới",
     "previewHelp": "Chỉ hiện tại máy, không gửi cho trợ lý. Thư gạch ngang là thư trợ lý không thấy.",
     "previewEmpty": "Hộp thư đến trống.",
     "noSubject": "(không tiêu đề)",
     "hidden": "ẩn với trợ lý",
-    "expired": "Phiên đăng nhập Google đã hết hạn (app OAuth ở chế độ Testing chỉ giữ đăng nhập 7 ngày). Bấm Kết nối lại.",
+    "expired": "Phiên đăng nhập Google của tài khoản này đã hết hạn (app OAuth ở chế độ Testing chỉ giữ đăng nhập 7 ngày). Bấm Kết nối lại.",
     "expiresIn_one": "Google sẽ yêu cầu đăng nhập lại sau khoảng {{count}} ngày (chế độ Testing).",
     "expiresIn_other": "Google sẽ yêu cầu đăng nhập lại sau khoảng {{count}} ngày (chế độ Testing).",
     "skipSensitive": "Ẩn thư nhạy cảm",
@@ -56,7 +54,14 @@
     "testingModeHelp": "Google tự đăng xuất sau 7 ngày; app sẽ nhắc bạn kết nối lại.",
     "blocked": "Người gửi bị chặn",
     "blockedPlaceholder": "sep@congty.com\nnganhang.com.vn",
-    "blockedHelp": "Mỗi dòng một địa chỉ hoặc tên miền. Thư từ đây không bao giờ đưa cho trợ lý."
+    "blockedHelp": "Mỗi dòng một địa chỉ hoặc tên miền. Thư từ đây không bao giờ đưa cho trợ lý.",
+    "addAccount": "Thêm tài khoản Gmail",
+    "testUsersHint": "Trước khi thêm: vào Google Cloud → OAuth consent screen → Test users, thêm địa chỉ Gmail đó (tối đa 100). Chưa thêm thì Google báo \"access blocked\".",
+    "accountCount_one": "{{count}} tài khoản",
+    "accountCount_other": "{{count}} tài khoản",
+    "label": "Tên gọi",
+    "accountEnabled": "Cho trợ lý đọc tài khoản này",
+    "privacy": "Lọc riêng tư của tài khoản này"
   },
   "telegram": {
     "enable": "Bật kết nối Telegram",
@@ -119,7 +124,8 @@
     "approve": {
       "gmail": "Tạo bản nháp",
       "telegram": "Lưu nháp"
-    }
+    },
+    "account": "Nháp sẽ lưu trong:"
   },
   "errors": {
     "generic": "Có lỗi: {{message}}",
@@ -145,6 +151,11 @@
     "no_account": "Số này chưa có tài khoản Telegram.",
     "no_login": "Phiên đăng nhập đã bị huỷ — bắt đầu lại từ số điện thoại.",
     "session_revoked": "Phiên Telegram đã bị đăng xuất từ thiết bị khác — đăng nhập lại.",
-    "invalid_input": "Dữ liệu nhập chưa đúng định dạng."
+    "invalid_input": "Dữ liệu nhập chưa đúng định dạng.",
+    "wrong_account": "Bạn vừa đăng nhập một tài khoản Google khác. Để thêm tài khoản mới, dùng nút \"+ Thêm tài khoản Gmail\".",
+    "label_taken": "Tên gọi này đã dùng cho tài khoản khác.",
+    "label_invalid": "Tên gọi dài 1–40 ký tự, không có dấu ngoặc kép hay < >.",
+    "account_not_found": "Không tìm thấy tài khoản (có thể vừa bị ngắt kết nối).",
+    "too_many_accounts": "Đã đủ 10 tài khoản Gmail."
   }
 }

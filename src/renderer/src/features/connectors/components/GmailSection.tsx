@@ -1,11 +1,18 @@
-import { Eye, LogIn, LogOut, Mail, TriangleAlert, X } from 'lucide-react'
+import { Eye, LogIn, LogOut, Mail, Plus, RefreshCw, TriangleAlert, X } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { gmailCredentialsSchema, type GmailPreviewItem, type GmailStatus } from '@shared/connectors'
+import {
+  gmailAccountUpdateSchema,
+  gmailCredentialsSchema,
+  type GmailAccountStatus,
+  type GmailAccountUpdate,
+  type GmailPreviewItem,
+  type GmailStatus
+} from '@shared/connectors'
 import { Button } from '@renderer/components/ui/button'
 import { Input, Label, Textarea } from '@renderer/components/ui/input'
 import { api } from '@renderer/lib/api'
-import { daysLeft, invalid, isError, safeCall } from '../store'
+import { daysLeft, invalid, isError, parseBlocked, safeCall } from '../store'
 import { ConnectionBadge, ErrorText, SetupSteps } from './shared'
 
 function Credentials({
@@ -70,79 +77,215 @@ function Credentials({
   )
 }
 
-function Options({ status }: { status: GmailStatus }) {
+/** Một tài khoản Gmail: tên gọi, cho trợ lý đọc, hạn đăng nhập, lọc riêng tư, kết nối lại / ngắt. */
+function AccountRow({ account, busy }: { account: GmailAccountStatus; busy: boolean }) {
   const { t } = useTranslation('connectors')
-  const [blocked, setBlocked] = useState(status.blockedSenders.join('\n'))
-  const save = (
-    patch: Partial<Pick<GmailStatus, 'testingMode' | 'skipSensitive'>>,
-    list = blocked
-  ): void => {
-    const blockedSenders = list
-      .split(/[\n,;]+/)
-      .map((s) => s.trim().toLowerCase())
-      .filter(Boolean)
-    void api.gmail.setOptions({
-      testingMode: status.testingMode,
-      skipSensitive: status.skipSensitive,
-      blockedSenders,
+  const [label, setLabel] = useState(account.label)
+  const [blocked, setBlocked] = useState(account.blockedSenders.join('\n'))
+  const [error, setError] = useState<string | null>(null)
+  const [preview, setPreview] = useState<GmailPreviewItem[] | null>(null)
+  const left = daysLeft(account.expiresAt)
+  const connected = account.connection === 'connected'
+
+  const run = async (fn: () => Promise<unknown>): Promise<void> => {
+    setError(null)
+    const r = await safeCall(fn())
+    if (isError(r)) setError(r.error)
+  }
+  const save = (patch: Partial<GmailAccountUpdate>): void => {
+    const input: GmailAccountUpdate = {
+      id: account.id,
+      label: label.trim(),
+      enabled: account.enabled,
+      skipSensitive: account.skipSensitive,
+      blockedSenders: parseBlocked(blocked),
       ...patch
+    }
+    const bad = invalid(gmailAccountUpdateSchema, input)
+    if (bad) {
+      setError(bad)
+      setLabel(account.label)
+      return
+    }
+    void run(async () => {
+      const r = await api.gmail.updateAccount(input)
+      if (isError(r)) setLabel(account.label)
+      return r
     })
   }
+
   return (
-    <div className="space-y-3">
-      <label className="flex items-start gap-2 text-sm">
-        <input
-          type="checkbox"
-          className="mt-1"
-          checked={status.skipSensitive}
-          onChange={(e) => save({ skipSensitive: e.target.checked })}
-          data-testid="gmail-skip-sensitive"
+    <li
+      className="space-y-3 rounded-md border p-3"
+      data-testid="gmail-account"
+      data-email={account.email}
+    >
+      <div className="flex flex-wrap items-center gap-2">
+        <Input
+          aria-label={t('gmail.label')}
+          className="h-8 w-40"
+          value={label}
+          onChange={(e) => setLabel(e.target.value)}
+          onBlur={() => label.trim() !== account.label && save({ label: label.trim() })}
+          onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
+          maxLength={40}
+          data-testid="gmail-account-label"
         />
-        <span>
-          <span className="block font-medium">{t('gmail.skipSensitive')}</span>
-          <span className="block text-xs text-muted-foreground">
-            {t('gmail.skipSensitiveHelp')}
-          </span>
+        <span className="text-sm text-muted-foreground" data-testid="gmail-email">
+          {account.email}
         </span>
-      </label>
-      <label className="flex items-start gap-2 text-sm">
-        <input
-          type="checkbox"
-          className="mt-1"
-          checked={status.testingMode}
-          onChange={(e) => save({ testingMode: e.target.checked })}
-        />
-        <span>
-          <span className="block font-medium">{t('gmail.testingMode')}</span>
-          <span className="block text-xs text-muted-foreground">{t('gmail.testingModeHelp')}</span>
+        <span className="ml-auto">
+          <ConnectionBadge state={account.connection} testId="gmail-connection" />
         </span>
-      </label>
-      <div className="space-y-1">
-        <Label htmlFor="gmail-blocked">{t('gmail.blocked')}</Label>
-        <Textarea
-          id="gmail-blocked"
-          rows={3}
-          value={blocked}
-          onChange={(e) => setBlocked(e.target.value)}
-          onBlur={() => save({})}
-          placeholder={t('gmail.blockedPlaceholder')}
-          data-testid="gmail-blocked"
-        />
-        <p className="text-xs text-muted-foreground">{t('gmail.blockedHelp')}</p>
       </div>
-    </div>
+
+      <label className="flex items-center gap-2 text-sm">
+        <input
+          type="checkbox"
+          checked={account.enabled}
+          onChange={(e) => save({ enabled: e.target.checked })}
+          data-testid="gmail-account-enabled"
+        />
+        {t('gmail.accountEnabled')}
+      </label>
+
+      {account.connection === 'expired' && (
+        <p
+          className="flex items-start gap-2 rounded-md bg-orange-500/10 p-2 text-xs text-orange-800 dark:text-orange-200"
+          role="alert"
+          data-testid="gmail-expired"
+        >
+          <TriangleAlert className="mt-0.5 size-4 shrink-0" />
+          {t('gmail.expired')}
+        </p>
+      )}
+      {connected && left !== null && (
+        <p
+          className={
+            left <= 1
+              ? 'text-xs text-orange-700 dark:text-orange-300'
+              : 'text-xs text-muted-foreground'
+          }
+          data-testid="gmail-expiry"
+        >
+          {t('gmail.expiresIn', { count: left })}
+        </p>
+      )}
+
+      <div className="flex flex-wrap items-center gap-2">
+        {account.connection === 'connecting' ? (
+          <>
+            <span className="text-sm text-muted-foreground">{t('gmail.waiting')}</span>
+            <Button size="sm" variant="outline" onClick={() => void api.gmail.cancelConnect()}>
+              <X />
+              {t('cancel')}
+            </Button>
+          </>
+        ) : (
+          <>
+            {connected && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() =>
+                  void run(async () => {
+                    const r = await api.gmail.preview(account.id)
+                    if (!isError(r)) setPreview(r)
+                    return r
+                  })
+                }
+                data-testid="gmail-preview"
+              >
+                <Eye />
+                {t('gmail.preview')}
+              </Button>
+            )}
+            <Button
+              size="sm"
+              variant={connected ? 'outline' : 'default'}
+              disabled={busy}
+              onClick={() => void run(() => api.gmail.connect(account.id))}
+              data-testid="gmail-reconnect"
+            >
+              <RefreshCw />
+              {t('gmail.reconnect')}
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => void run(() => api.gmail.disconnect(account.id))}
+              data-testid="gmail-disconnect"
+            >
+              <LogOut />
+              {t('gmail.disconnect')}
+            </Button>
+          </>
+        )}
+      </div>
+      <ErrorText error={error} />
+
+      {preview && (
+        <ul className="space-y-1 rounded-md border p-3 text-xs" data-testid="gmail-preview-list">
+          {preview.length === 0 && (
+            <li className="text-muted-foreground">{t('gmail.previewEmpty')}</li>
+          )}
+          {preview.map((m, i) => (
+            <li key={i} className={m.hidden ? 'text-muted-foreground line-through' : ''}>
+              <span className="font-medium">{m.subject || t('gmail.noSubject')}</span> — {m.from}
+              {m.hidden && <span className="ml-1 no-underline">({t('gmail.hidden')})</span>}
+            </li>
+          ))}
+          <li className="pt-1 text-muted-foreground">{t('gmail.previewHelp')}</li>
+        </ul>
+      )}
+
+      <details className="text-sm">
+        <summary className="cursor-pointer text-xs font-medium text-muted-foreground">
+          {t('gmail.privacy')}
+        </summary>
+        <div className="mt-2 space-y-3">
+          <label className="flex items-start gap-2 text-sm">
+            <input
+              type="checkbox"
+              className="mt-1"
+              checked={account.skipSensitive}
+              onChange={(e) => save({ skipSensitive: e.target.checked })}
+              data-testid="gmail-skip-sensitive"
+            />
+            <span>
+              <span className="block font-medium">{t('gmail.skipSensitive')}</span>
+              <span className="block text-xs text-muted-foreground">
+                {t('gmail.skipSensitiveHelp')}
+              </span>
+            </span>
+          </label>
+          <div className="space-y-1">
+            <Label htmlFor={`gmail-blocked-${account.id}`}>{t('gmail.blocked')}</Label>
+            <Textarea
+              id={`gmail-blocked-${account.id}`}
+              rows={3}
+              value={blocked}
+              onChange={(e) => setBlocked(e.target.value)}
+              onBlur={() => save({})}
+              placeholder={t('gmail.blockedPlaceholder')}
+              data-testid="gmail-blocked"
+            />
+            <p className="text-xs text-muted-foreground">{t('gmail.blockedHelp')}</p>
+          </div>
+        </div>
+      </details>
+    </li>
   )
 }
 
 export function GmailSection({ status }: { status: GmailStatus }) {
   const { t } = useTranslation('connectors')
   const [error, setError] = useState<string | null>(null)
-  const [preview, setPreview] = useState<GmailPreviewItem[] | null>(null)
-  const left = daysLeft(status.expiresAt)
+  const busy = status.adding || status.accounts.some((a) => a.connection === 'connecting')
 
-  const run = async (fn: () => Promise<unknown>): Promise<void> => {
+  const add = async (): Promise<void> => {
     setError(null)
-    const r = await safeCall(fn())
+    const r = await safeCall(api.gmail.connect())
     if (isError(r)) setError(r.error)
   }
 
@@ -153,7 +296,11 @@ export function GmailSection({ status }: { status: GmailStatus }) {
           <Mail className="size-4" />
           Gmail
         </h2>
-        {status.enabled && <ConnectionBadge state={status.connection} testId="gmail-connection" />}
+        {status.enabled && status.accounts.length > 0 && (
+          <span className="text-xs text-muted-foreground" data-testid="gmail-account-count">
+            {t('gmail.accountCount', { count: status.accounts.length })}
+          </span>
+        )}
       </div>
       <label className="flex items-start gap-3">
         <input
@@ -177,105 +324,59 @@ export function GmailSection({ status }: { status: GmailStatus }) {
             open={!status.configured}
           />
           <Credentials status={status} onError={setError} />
+          <label className="flex items-start gap-2 text-sm">
+            <input
+              type="checkbox"
+              className="mt-1"
+              checked={status.testingMode}
+              onChange={(e) => void api.gmail.setOptions({ testingMode: e.target.checked })}
+            />
+            <span>
+              <span className="block font-medium">{t('gmail.testingMode')}</span>
+              <span className="block text-xs text-muted-foreground">
+                {t('gmail.testingModeHelp')}
+              </span>
+            </span>
+          </label>
 
-          {status.connection === 'expired' && (
-            <p
-              className="flex items-start gap-2 rounded-md bg-orange-500/10 p-3 text-sm text-orange-800 dark:text-orange-200"
-              role="alert"
-              data-testid="gmail-expired"
-            >
-              <TriangleAlert className="mt-0.5 size-4 shrink-0" />
-              {t('gmail.expired')}
-            </p>
+          {status.accounts.length > 0 && (
+            <ul className="space-y-3" data-testid="gmail-accounts">
+              {status.accounts.map((a) => (
+                <AccountRow
+                  key={`${a.id}:${a.label}:${a.blockedSenders.join(',')}`}
+                  account={a}
+                  busy={busy}
+                />
+              ))}
+            </ul>
           )}
 
-          <div className="flex flex-wrap items-center gap-2">
-            {status.connection === 'connected' ? (
-              <>
-                <span className="text-sm" data-testid="gmail-email">
-                  {t('gmail.connectedAs', { email: status.email })}
-                </span>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() =>
-                    void run(async () => {
-                      const r = await api.gmail.preview()
-                      if (!isError(r)) setPreview(r)
-                      return r
-                    })
-                  }
-                  data-testid="gmail-preview"
-                >
-                  <Eye />
-                  {t('gmail.preview')}
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() =>
-                    void run(() => api.gmail.disconnect()).then(() => setPreview(null))
-                  }
-                  data-testid="gmail-disconnect"
-                >
-                  <LogOut />
-                  {t('gmail.disconnect')}
-                </Button>
-              </>
-            ) : status.connection === 'connecting' ? (
-              <>
+          <div className="space-y-2 rounded-md border border-dashed p-3">
+            {status.adding ? (
+              <div className="flex flex-wrap items-center gap-2" data-testid="gmail-adding">
                 <span className="text-sm text-muted-foreground">{t('gmail.waiting')}</span>
                 <Button size="sm" variant="outline" onClick={() => void api.gmail.cancelConnect()}>
                   <X />
                   {t('cancel')}
                 </Button>
-              </>
+              </div>
             ) : (
               <Button
                 size="sm"
-                disabled={!status.configured}
-                onClick={() => void run(() => api.gmail.connect())}
-                data-testid="gmail-connect"
+                variant={status.accounts.length ? 'outline' : 'default'}
+                disabled={!status.configured || busy}
+                onClick={() => void add()}
+                data-testid="gmail-add"
               >
-                <LogIn />
-                {status.connection === 'expired' ? t('gmail.reconnect') : t('gmail.connect')}
+                {status.accounts.length ? <Plus /> : <LogIn />}
+                {t('gmail.addAccount')}
               </Button>
             )}
-          </div>
-          {status.connection === 'connected' && left !== null && (
-            <p
-              className={
-                left <= 1
-                  ? 'text-xs text-orange-700 dark:text-orange-300'
-                  : 'text-xs text-muted-foreground'
-              }
-              data-testid="gmail-expiry"
-            >
-              {t('gmail.expiresIn', { count: left })}
+            <p className="text-xs text-muted-foreground" data-testid="gmail-test-users-hint">
+              {t('gmail.testUsersHint')}
             </p>
-          )}
+          </div>
           <ErrorText error={error} />
-
-          {preview && (
-            <ul
-              className="space-y-1 rounded-md border p-3 text-xs"
-              data-testid="gmail-preview-list"
-            >
-              {preview.length === 0 && (
-                <li className="text-muted-foreground">{t('gmail.previewEmpty')}</li>
-              )}
-              {preview.map((m, i) => (
-                <li key={i} className={m.hidden ? 'text-muted-foreground line-through' : ''}>
-                  <span className="font-medium">{m.subject || t('gmail.noSubject')}</span> —{' '}
-                  {m.from}
-                  {m.hidden && <span className="ml-1 no-underline">({t('gmail.hidden')})</span>}
-                </li>
-              ))}
-              <li className="pt-1 text-muted-foreground">{t('gmail.previewHelp')}</li>
-            </ul>
-          )}
-
-          <Options key={status.blockedSenders.join(',')} status={status} />
         </>
       )}
     </section>

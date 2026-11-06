@@ -26,6 +26,7 @@ import type { SidecarState } from './sidecar'
 import type {
   DraftApprovalRequest,
   DraftDecision,
+  GmailAccountUpdate,
   GmailPreviewItem,
   GmailStatus,
   TelegramChatInfo,
@@ -391,13 +392,16 @@ export interface TeamWorkingApi {
     setEnabled(enabled: boolean): Promise<GmailStatus>
     /** clientSecret bỏ trống = giữ secret đã lưu. */
     setCredentials(input: { clientId: string; clientSecret?: string }): Promise<GmailStatus | { error: string }>
-    setOptions(input: { testingMode: boolean; skipSensitive: boolean; blockedSenders: string[] }): Promise<GmailStatus>
-    /** Mở trình duyệt đăng nhập Google; chờ tới khi xong / huỷ / hết 5 phút. */
-    connect(): Promise<GmailStatus | { error: string }>
+    setOptions(input: { testingMode: boolean }): Promise<GmailStatus>
+    /** Tên gọi, bật/tắt cho trợ lý đọc, lọc riêng tư của một tài khoản. */
+    updateAccount(input: GmailAccountUpdate): Promise<GmailStatus | { error: string }>
+    /** Mở trình duyệt đăng nhập Google; chờ tới khi xong / huỷ / hết 5 phút. Không id = thêm tài khoản mới. */
+    connect(accountId?: string): Promise<GmailStatus | { error: string }>
     cancelConnect(): Promise<void>
-    disconnect(): Promise<GmailStatus | { error: string }>
-    /** 5 thư mới nhất, tại máy (không gửi cho Claude). */
-    preview(): Promise<GmailPreviewItem[] | { error: string }>
+    /** Ngắt một tài khoản: thu hồi + xoá token trên máy, bỏ khỏi danh sách. */
+    disconnect(accountId: string): Promise<GmailStatus | { error: string }>
+    /** 5 thư mới nhất của một tài khoản, tại máy (không gửi cho Claude). */
+    preview(accountId: string): Promise<GmailPreviewItem[] | { error: string }>
   }
   /** Telegram tài khoản cá nhân qua GramJS (thử nghiệm, mặc định tắt): chỉ đọc + lưu nháp sau khi duyệt. */
   telegram: {

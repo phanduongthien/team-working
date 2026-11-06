@@ -102,3 +102,15 @@ export function daysLeft(expiresAt: number | null, now = Date.now()): number | n
   if (expiresAt === null) return null
   return Math.max(0, Math.ceil((expiresAt - now) / (24 * 60 * 60 * 1000)))
 }
+
+/** Ô "Người gửi bị chặn": mỗi dòng / dấu phẩy / chấm phẩy một mục, chữ thường, bỏ trùng + rỗng. */
+export function parseBlocked(text: string): string[] {
+  return [
+    ...new Set(
+      text
+        .split(/[\n,;]+/)
+        .map((s) => s.trim().toLowerCase())
+        .filter(Boolean)
+    )
+  ]
+}

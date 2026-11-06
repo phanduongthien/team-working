@@ -184,10 +184,11 @@ const api: TeamWorkingApi = {
     setEnabled: (enabled) => ipcRenderer.invoke(IPC.gmailSetEnabled, enabled),
     setCredentials: (input) => ipcRenderer.invoke(IPC.gmailSetCredentials, input),
     setOptions: (input) => ipcRenderer.invoke(IPC.gmailSetOptions, input),
-    connect: () => ipcRenderer.invoke(IPC.gmailConnect),
+    updateAccount: (input) => ipcRenderer.invoke(IPC.gmailUpdateAccount, input),
+    connect: (accountId) => ipcRenderer.invoke(IPC.gmailConnect, accountId),
     cancelConnect: () => ipcRenderer.invoke(IPC.gmailCancelConnect),
-    disconnect: () => ipcRenderer.invoke(IPC.gmailDisconnect),
-    preview: () => ipcRenderer.invoke(IPC.gmailPreview)
+    disconnect: (accountId) => ipcRenderer.invoke(IPC.gmailDisconnect, accountId),
+    preview: (accountId) => ipcRenderer.invoke(IPC.gmailPreview, accountId)
   },
   telegram: {
     status: () => ipcRenderer.invoke(IPC.telegramStatus),

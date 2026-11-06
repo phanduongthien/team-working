@@ -67,10 +67,14 @@ test('mặc định tắt: trợ lý không có tool Gmail / Telegram', async ()
   await expect(reply).not.toContainText('KẾT QUẢ TOOL')
 })
 
-test('Gmail: nhập OAuth client, kết nối, thư OTP bị ẩn, nháp phải duyệt và sửa được', async () => {
+const gmailAccount = (email: string): ReturnType<Page['locator']> =>
+  page.locator(`[data-testid="gmail-account"][data-email="${email}"]`)
+
+test('Gmail: nhập OAuth client, thêm 2 tài khoản, đặt tên gọi, thư OTP bị ẩn', async () => {
   await goTo(page, '#/connectors', page.getByTestId('gmail-enable'))
   await page.getByTestId('gmail-enable').check()
-  await expect(page.getByTestId('gmail-connect')).toBeDisabled()
+  await expect(page.getByTestId('gmail-add')).toBeDisabled()
+  await expect(page.getByTestId('gmail-test-users-hint')).toContainText('Test users')
 
   await page.getByTestId('gmail-client-id').fill('sai-dinh-dang')
   await page.getByTestId('gmail-save').click()
@@ -80,39 +84,92 @@ test('Gmail: nhập OAuth client, kết nối, thư OTP bị ẩn, nháp phải 
   await page.getByTestId('gmail-client-secret').fill('GOCSPX-test')
   await page.getByTestId('gmail-save').click()
   await expect(page.getByTestId('gmail-client-secret')).toHaveAttribute('placeholder', /Đã lưu/)
-  await page.getByTestId('gmail-connect').click()
-  await expect(page.getByTestId('gmail-connection')).toHaveAttribute('data-state', 'connected')
-  await expect(page.getByTestId('gmail-email')).toContainText('ban@example.com')
-  await expect(page.getByTestId('gmail-expiry')).toContainText('7 ngày')
+
+  await page.getByTestId('gmail-add').click()
+  const personal = gmailAccount('ban@example.com')
+  await expect(personal.getByTestId('gmail-connection')).toHaveAttribute('data-state', 'connected')
+  await expect(personal.getByTestId('gmail-expiry')).toContainText('7 ngày')
+  await personal.getByTestId('gmail-account-label').fill('Cá nhân')
+  await personal.getByTestId('gmail-account-label').press('Enter')
+  await expect(personal.getByTestId('gmail-account-label')).toHaveValue('Cá nhân')
+
+  await page.getByTestId('gmail-add').click()
+  const school = gmailAccount('sv@truong.example.edu')
+  await expect(school.getByTestId('gmail-connection')).toHaveAttribute('data-state', 'connected')
+  await expect(page.getByTestId('gmail-account-count')).toHaveText('2 tài khoản')
+  // Tên gọi trùng (không dấu) → báo lỗi, giữ tên cũ.
+  await school.getByTestId('gmail-account-label').fill('ca nhan')
+  await school.getByTestId('gmail-account-label').press('Enter')
+  await expect(school.getByRole('alert')).toContainText('đã dùng')
+  await school.getByTestId('gmail-account-label').fill('Trường')
+  await school.getByTestId('gmail-account-label').press('Enter')
+  await expect(school.getByTestId('gmail-account-label')).toHaveValue('Trường')
 
   // Thử đọc tại máy: thư OTP hiện gạch ngang (trợ lý không thấy).
-  await page.getByTestId('gmail-preview').click()
-  const list = page.getByTestId('gmail-preview-list')
+  await personal.getByTestId('gmail-preview').click()
+  const list = personal.getByTestId('gmail-preview-list')
   await expect(list).toContainText('Lịch họp review sprint')
   await expect(list.locator('li.line-through')).toContainText('Mã OTP')
+})
+
+let schoolId = ''
+
+test('Gmail: tóm tắt gộp mọi tài khoản, hỏi đích danh chỉ đọc tài khoản đó', async () => {
+  await ask('FAKE_TOOL:gmail_search {"query":"is:unread"}')
+  const all = lastReply()
+  await expect(all).toContainText('KẾT QUẢ TOOL', { timeout: 20_000 })
+  await expect(all).toContainText('Tài khoản "Cá nhân" (ban@example.com)')
+  await expect(all).toContainText('Tài khoản "Trường" (sv@truong.example.edu)')
+  await expect(all).toContainText('Lịch họp review sprint')
+  await expect(all).toContainText('Lịch thi cuối kỳ')
+  await expect(all).not.toContainText('482913')
+
+  await ask('FAKE_TOOL:gmail_search {"account":"Trường"}')
+  const one = lastReply()
+  await expect(one).toContainText('Lịch thi cuối kỳ', { timeout: 20_000 })
+  await expect(one).not.toContainText('Lịch họp review sprint')
+  schoolId = /id=([a-z0-9]+):fake-sch-1/.exec((await one.textContent()) ?? '')?.[1] ?? ''
+  expect(schoolId).not.toBe('')
 
   await ask('FAKE_TOOL:gmail_search {}')
-  await expect(lastReply()).toContainText('KẾT QUẢ TOOL', { timeout: 20_000 })
-  await expect(lastReply()).toContainText('Lịch họp review sprint')
-  await expect(lastReply()).toContainText('1 thư bị ẩn')
-  await expect(lastReply()).not.toContainText('482913')
+  await expect(lastReply()).toContainText('1 thư bị ẩn', { timeout: 20_000 })
+})
 
-  await ask('FAKE_TOOL:gmail_draft {"reply_to_id":"fake-msg-1","body":"Dạ em sẽ có mặt"}')
+test('Gmail: nháp trả lời lưu đúng tài khoản chứa thư gốc, phải duyệt và sửa được', async () => {
+  await ask(`FAKE_TOOL:gmail_draft {"reply_to_id":"${schoolId}:fake-sch-1","body":"Dạ em đã xem"}`)
   const dialog = page.getByTestId('draft-approval')
   await expect(dialog).toBeVisible({ timeout: 20_000 })
-  await expect(page.getByTestId('draft-target')).toHaveText('lan@example.com')
-  await expect(page.getByTestId('draft-body')).toHaveValue('Dạ em sẽ có mặt')
-  await page.getByTestId('draft-body').fill('Dạ em sẽ có mặt lúc 15h')
+  await expect(page.getByTestId('draft-account')).toContainText('Nháp sẽ lưu trong: sv@truong.example.edu')
+  await expect(page.getByTestId('draft-target')).toHaveText('daotao@truong.example.edu')
+  await expect(page.getByTestId('draft-body')).toHaveValue('Dạ em đã xem')
+  await page.getByTestId('draft-body').fill('Dạ em đã xem lịch thi')
   await page.getByTestId('draft-approve').click()
   await expect(dialog).toBeHidden()
   await expect(lastReply()).toContainText('CHƯA gửi', { timeout: 20_000 })
+  await expect(lastReply()).toContainText('sv@truong.example.edu')
   await expect(lastReply()).toContainText('Người dùng đã sửa')
 
+  // Thư mới, nhiều tài khoản, không nói tài khoản nào → trợ lý phải hỏi lại, không mở hộp duyệt.
   await ask('FAKE_TOOL:gmail_draft {"to":["a@b.com"],"subject":"x","body":"y"}')
+  await expect(lastReply()).toContainText('Hỏi người dùng', { timeout: 20_000 })
+  await expect(dialog).toBeHidden()
+
+  await ask('FAKE_TOOL:gmail_draft {"to":["a@b.com"],"subject":"x","body":"y","account":"Cá nhân"}')
   await expect(dialog).toBeVisible({ timeout: 20_000 })
+  await expect(page.getByTestId('draft-account')).toContainText('ban@example.com')
   await page.getByTestId('draft-reject').click()
   await expect(lastReply()).toContainText('LỖI TOOL', { timeout: 20_000 })
   await expect(lastReply()).toContainText('từ chối')
+})
+
+test('Gmail: tắt cho trợ lý đọc một tài khoản → tài khoản đó không còn trong kết quả', async () => {
+  await goTo(page, '#/connectors', page.getByTestId('gmail-accounts'))
+  const school = gmailAccount('sv@truong.example.edu')
+  await school.getByTestId('gmail-account-enabled').uncheck()
+  await expect(school.getByTestId('gmail-account-enabled')).not.toBeChecked()
+  await ask('FAKE_TOOL:gmail_search {}')
+  await expect(lastReply()).toContainText('Lịch họp review sprint', { timeout: 20_000 })
+  await expect(lastReply()).not.toContainText('Lịch thi cuối kỳ')
 })
 
 test('Telegram: đăng nhập có mật khẩu 2 bước, chỉ đọc chat đã chọn, chat hệ thống luôn chặn', async () => {
@@ -169,8 +226,12 @@ test('đăng xuất Telegram + ngắt Gmail: xoá phiên, trợ lý mất tool',
   await page.getByTestId('tg-logout').click()
   await expect(page.getByTestId('tg-connection')).toHaveAttribute('data-state', 'disconnected')
   await expect(page.getByTestId('tg-chats')).toBeHidden()
-  await page.getByTestId('gmail-disconnect').click()
-  await expect(page.getByTestId('gmail-connection')).toHaveAttribute('data-state', 'disconnected')
+  await gmailAccount('ban@example.com').getByTestId('gmail-disconnect').click()
+  await expect(page.getByTestId('gmail-account')).toHaveCount(1)
+  await expect(gmailAccount('sv@truong.example.edu')).toBeVisible()
+  await gmailAccount('sv@truong.example.edu').getByTestId('gmail-disconnect').click()
+  await expect(page.getByTestId('gmail-accounts')).toBeHidden()
+  await expect(page.getByTestId('gmail-add')).toBeEnabled()
 
   await ask('FAKE_TOOL:telegram_chats {}')
   await expect(lastReply()).toContainText('Mizuki (giả lập) đã nhận', { timeout: 20_000 })

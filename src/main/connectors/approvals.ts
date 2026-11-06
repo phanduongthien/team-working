@@ -62,6 +62,13 @@ export class DraftApprovals {
       if (p.service === service) this.settle(id, { approve: false, reason: 'Kết nối đã tắt.' })
   }
 
+  /** Gmail: tắt / ngắt MỘT tài khoản → huỷ nháp chờ duyệt của riêng tài khoản đó. */
+  cancelAccount(accountId: string): void {
+    for (const [id, p] of this.pending)
+      if (p.account?.id === accountId)
+        this.settle(id, { approve: false, reason: 'Tài khoản đã tắt / ngắt kết nối.' })
+  }
+
   cancelAll(): void {
     for (const id of [...this.pending.keys()])
       this.settle(id, { approve: false, reason: 'Đã dừng.' })

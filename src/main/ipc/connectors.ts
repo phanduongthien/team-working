@@ -1,6 +1,9 @@
 import { z } from 'zod'
 import {
   draftDecisionSchema,
+  gmailAccountIdSchema,
+  gmailAccountUpdateSchema,
+  gmailConnectSchema,
   gmailCredentialsSchema,
   gmailOptionsSchema,
   gmailSetEnabledSchema,
@@ -46,11 +49,12 @@ export function registerConnectorsIpc({
     safe(() => gmail.setCredentials(clientId, clientSecret || undefined))
   )
   handle(IPC.gmailSetOptions, gmailOptionsSchema, (o) => gmail.setOptions(o))
-  // Chờ người dùng đăng nhập trong trình duyệt (tối đa 5 phút).
-  handle(IPC.gmailConnect, none, () => safe(() => gmail.connect()))
+  handle(IPC.gmailUpdateAccount, gmailAccountUpdateSchema, (u) => safe(() => gmail.updateAccount(u)))
+  // Chờ người dùng đăng nhập trong trình duyệt (tối đa 5 phút). Không id = thêm tài khoản mới.
+  handle(IPC.gmailConnect, gmailConnectSchema, (id) => safe(() => gmail.connect(id)))
   handle(IPC.gmailCancelConnect, none, () => gmail.cancelConnect())
-  handle(IPC.gmailDisconnect, none, () => safe(() => gmail.disconnect()))
-  handle(IPC.gmailPreview, none, () => safe(() => gmail.preview()))
+  handle(IPC.gmailDisconnect, gmailAccountIdSchema, (id) => safe(() => gmail.disconnect(id)))
+  handle(IPC.gmailPreview, gmailAccountIdSchema, (id) => safe(() => gmail.preview(id)))
 
   handle(IPC.telegramStatus, none, () => telegram.status())
   handle(IPC.telegramSetEnabled, z.boolean(), (on) => telegram.setEnabled(on))
