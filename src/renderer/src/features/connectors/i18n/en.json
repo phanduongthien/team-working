@@ -1,0 +1,150 @@
+{
+  "title": "Gmail & Telegram",
+  "experimental": "Experimental",
+  "description": "Let the assistant read your own email and messages to summarize, remind and draft replies. Read + drafts only — the assistant never sends anything for you.",
+  "save": "Save",
+  "saved": "Saved",
+  "savedSecret": "Saved (leave empty to keep)",
+  "cancel": "Cancel",
+  "privacy": {
+    "title": "Privacy",
+    "points": [
+      "You create your own OAuth client (Google) and api_id (Telegram) — the app never shares keys.",
+      "Secrets, tokens and sessions stay on this computer, encrypted by Windows (DPAPI).",
+      "The assistant reads only when a question needs it, at most 60 times/hour per service; reading doesn't mark anything as read.",
+      "Every draft is shown to you to review / edit first; you send it yourself in Gmail / Telegram.",
+      "Verification-code, bank and sensitive chats are hidden by default; Telegram service messages (login codes) are always blocked."
+    ]
+  },
+  "state": {
+    "disconnected": "Not connected",
+    "connecting": "Waiting for sign-in",
+    "connected": "Connected",
+    "expired": "Expired — reconnect",
+    "code_sent": "Waiting for code",
+    "password_needed": "Waiting for 2FA password"
+  },
+  "gmail": {
+    "enable": "Enable Gmail connection",
+    "enableHelp": "The assistant searches and reads mail and proposes reply drafts. Turn off any time.",
+    "setupTitle": "How to create an OAuth client (once, ~5 min)",
+    "setup": [
+      "Open console.cloud.google.com and create a new project (e.g. \"MMC studio personal\").",
+      "APIs & Services → Library → enable \"Gmail API\".",
+      "OAuth consent screen: choose External, fill in app name + your email; under Test users add your own Gmail address.",
+      "Credentials → Create credentials → OAuth client ID → Application type: Desktop app.",
+      "Paste the Client ID and Client secret below, click Save, then click Connect Gmail."
+    ],
+    "clientId": "Client ID",
+    "clientSecret": "Client secret",
+    "connect": "Connect Gmail",
+    "reconnect": "Reconnect",
+    "waiting": "Waiting for you to sign in in the browser…",
+    "connectedAs": "Using {{email}}",
+    "disconnect": "Disconnect",
+    "preview": "Try reading 5 latest",
+    "previewHelp": "Shown locally only, not sent to the assistant. Struck-through mail is hidden from the assistant.",
+    "previewEmpty": "Inbox is empty.",
+    "noSubject": "(no subject)",
+    "hidden": "hidden from assistant",
+    "expired": "Your Google sign-in expired (OAuth apps in Testing mode only stay signed in for 7 days). Click Reconnect.",
+    "expiresIn_one": "Google will ask you to sign in again in about {{count}} day (Testing mode).",
+    "expiresIn_other": "Google will ask you to sign in again in about {{count}} days (Testing mode).",
+    "skipSensitive": "Hide sensitive mail",
+    "skipSensitiveHelp": "Verification / OTP codes, password resets, bank and payment mail are never given to the assistant.",
+    "testingMode": "OAuth app is in Testing mode",
+    "testingModeHelp": "Google signs you out after 7 days; the app will remind you to reconnect.",
+    "blocked": "Blocked senders",
+    "blockedPlaceholder": "boss@company.com\nmybank.com",
+    "blockedHelp": "One address or domain per line. Mail from these is never given to the assistant."
+  },
+  "telegram": {
+    "enable": "Enable Telegram connection",
+    "enableHelp": "Sign in with your Telegram account. The assistant only reads chats you allow and saves draft messages.",
+    "setupTitle": "How to get api_id / api_hash (once)",
+    "setup": [
+      "Open my.telegram.org and sign in with your Telegram phone number.",
+      "Choose \"API development tools\" and create an app (any name, platform: Desktop).",
+      "Paste api_id and api_hash below and click Save.",
+      "Enter your phone number → Telegram sends a code to your Telegram app → enter it (and your 2FA password if set)."
+    ],
+    "phone": "Phone number",
+    "phoneHelp": "International format, e.g. +84 912 345 678.",
+    "code": "Login code",
+    "codeHelp": "Telegram just sent a code to your Telegram app (or SMS). Never share this code.",
+    "password": "Two-step verification password",
+    "passwordHelp": "Your account has two-step verification. The password is only used to sign in and is not stored.",
+    "sendCode": "Send code",
+    "signIn": "Sign in",
+    "connectedAs": "Using {{name}}",
+    "logout": "Log out + delete session",
+    "mode": "Assistant may read",
+    "modes": {
+      "allowlist": "Only chats I pick",
+      "blocklist": "All chats except blocked"
+    },
+    "modeHelp": {
+      "allowlist": "Tick the chats the assistant may read. None by default.",
+      "blocklist": "Untick to block. Sensitive chats (bank, wallet, OTP) are blocked by default — tick to allow."
+    },
+    "refresh": "Refresh",
+    "noChats": "No chats.",
+    "sensitive": "sensitive",
+    "sensitiveHelp": "Looks like a bank / wallet / verification-code chat.",
+    "locked": "always blocked",
+    "lockedHelp": "Telegram service messages contain login codes — never readable by the assistant.",
+    "kinds": {
+      "user": "person",
+      "bot": "bot",
+      "group": "group",
+      "channel": "channel"
+    }
+  },
+  "draft": {
+    "title": {
+      "gmail": "Assistant proposes an email draft",
+      "telegram": "Assistant proposes a Telegram draft"
+    },
+    "target": {
+      "gmail": "To:",
+      "telegram": "Chat:"
+    },
+    "subject": "Subject:",
+    "replyTo": "Replying to: {{subject}}",
+    "hint": {
+      "gmail": "Edit if needed. The draft is only saved to Gmail → Drafts; open Gmail to send it yourself.",
+      "telegram": "Edit if needed. The text is only saved into the chat's input box (replacing any old draft); press send yourself in Telegram."
+    },
+    "reject": "Reject",
+    "approve": {
+      "gmail": "Create draft",
+      "telegram": "Save draft"
+    }
+  },
+  "errors": {
+    "generic": "Error: {{message}}",
+    "not_configured": "Enter and save the details above first.",
+    "client_secret_required": "Client secret is required.",
+    "client_id_invalid": "Client ID must look like …apps.googleusercontent.com.",
+    "access_denied": "You declined access in the browser.",
+    "cancelled": "Sign-in cancelled.",
+    "timeout": "Sign-in not finished within 5 minutes — try again.",
+    "port_in_use": "Sign-in port 47823 is busy (maybe a team sign-in is running). Try again later.",
+    "state_mismatch": "Sign-in response didn't match — try again.",
+    "no_refresh_token": "Google didn't return a long-lived token. Remove the app at myaccount.google.com/permissions and reconnect.",
+    "busy": "Already connecting, please wait.",
+    "not_connected": "Not connected.",
+    "api_hash_required": "api_hash is required.",
+    "api_hash_invalid": "api_hash must be 32 characters 0-9, a-f.",
+    "api_invalid": "Wrong api_id / api_hash — check my.telegram.org.",
+    "logout_first": "Log out of Telegram before changing api_id.",
+    "phone_invalid": "Invalid phone number.",
+    "code_invalid": "Wrong code.",
+    "code_expired": "Code expired — send a new one.",
+    "password_invalid": "Wrong two-step password.",
+    "no_account": "This number has no Telegram account.",
+    "no_login": "Sign-in was cancelled — start again from the phone number.",
+    "session_revoked": "Your Telegram session was logged out from another device — sign in again.",
+    "invalid_input": "Input is not in the right format."
+  }
+}

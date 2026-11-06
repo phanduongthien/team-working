@@ -2,6 +2,7 @@ import { contextBridge, ipcRenderer, type IpcRendererEvent } from 'electron'
 import { IPC } from '@shared/ipc'
 import type { ComputerStatus } from '@shared/computer'
 import type { SidecarState } from '@shared/sidecar'
+import type { DraftApprovalRequest, GmailStatus, TelegramStatus } from '@shared/connectors'
 import type { AgentNotice, AgentServerStatus, McpApprovalRequest } from '@shared/agents'
 import type {
   ChatStreamPayload,
@@ -176,6 +177,35 @@ const api: TeamWorkingApi = {
     cancel: () => ipcRenderer.invoke(IPC.sidecarCancel),
     uninstall: () => ipcRenderer.invoke(IPC.sidecarUninstall),
     check: () => ipcRenderer.invoke(IPC.sidecarCheck)
+  },
+  gmail: {
+    status: () => ipcRenderer.invoke(IPC.gmailStatus),
+    onStatus: (listener) => subscribe<GmailStatus>(IPC.gmailStatusEvent, listener),
+    setEnabled: (enabled) => ipcRenderer.invoke(IPC.gmailSetEnabled, enabled),
+    setCredentials: (input) => ipcRenderer.invoke(IPC.gmailSetCredentials, input),
+    setOptions: (input) => ipcRenderer.invoke(IPC.gmailSetOptions, input),
+    connect: () => ipcRenderer.invoke(IPC.gmailConnect),
+    cancelConnect: () => ipcRenderer.invoke(IPC.gmailCancelConnect),
+    disconnect: () => ipcRenderer.invoke(IPC.gmailDisconnect),
+    preview: () => ipcRenderer.invoke(IPC.gmailPreview)
+  },
+  telegram: {
+    status: () => ipcRenderer.invoke(IPC.telegramStatus),
+    onStatus: (listener) => subscribe<TelegramStatus>(IPC.telegramStatusEvent, listener),
+    setEnabled: (enabled) => ipcRenderer.invoke(IPC.telegramSetEnabled, enabled),
+    setCredentials: (input) => ipcRenderer.invoke(IPC.telegramSetCredentials, input),
+    sendCode: (phone) => ipcRenderer.invoke(IPC.telegramSendCode, phone),
+    signIn: (code) => ipcRenderer.invoke(IPC.telegramSignIn, code),
+    password: (password) => ipcRenderer.invoke(IPC.telegramPassword, password),
+    cancelLogin: () => ipcRenderer.invoke(IPC.telegramCancelLogin),
+    logout: () => ipcRenderer.invoke(IPC.telegramLogout),
+    chats: (force) => ipcRenderer.invoke(IPC.telegramChats, force),
+    setLists: (input) => ipcRenderer.invoke(IPC.telegramSetLists, input)
+  },
+  drafts: {
+    onApproval: (listener) =>
+      subscribe<DraftApprovalRequest | { id: string; closed: true }>(IPC.draftApprovalEvent, listener),
+    respond: (decision) => ipcRenderer.invoke(IPC.draftRespond, decision)
   },
   ideas: {
     format: (input) => ipcRenderer.invoke(IPC.ideasFormat, input)

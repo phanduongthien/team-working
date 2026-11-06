@@ -11,15 +11,16 @@
 | #10 | GĐ 3 — Chat biểu cảm: emoji, GIF/sticker GIPHY, sticker trên máy, thả cảm xúc, mức biểu cảm (có Tự động) |
 | #11 | GĐ 2 — Giọng nói: faster-whisper (GPU/CPU), edge-tts + Piper, đọc to từng câu, ngắt lời |
 | #12 | GĐ 5 — Artifacts: panel sandbox, doc / slides / sheet / chart / mermaid / html, phiên bản, xuất docx/pdf/pptx/xlsx/csv/json/svg, mẫu làm game |
+| #13 | Cài skill cho Mizuki (thư mục / .zip, tự chọn theo câu hỏi, my-style) |
 
 ## PR đang mở
-- **#13 `feat/user-skills`** — Cài skill cho Mizuki: Cài đặt → Skill (thư mục / .zip, xem trước rồi mới cài), tự chọn skill theo câu hỏi, gọi đích danh, my-style (đề xuất → duyệt), theme slide từ skill dùng được trong artifacts. Chờ CI + test tay.
+- **`feat/gmail-telegram`** — GĐ 4: Gmail (OAuth PKCE + REST, đọc + tạo nháp) và Telegram (GramJS, đọc + lưu nháp), mặc định tắt; allowlist/blocklist, ẩn thư/chat nhạy cảm, mọi nháp qua hộp duyệt (sửa được), 60 lần/giờ, đăng xuất + xoá phiên. Chi tiết: `docs/connectors.md`. Chờ CI + test tay (cần tạo OAuth client Google + api_id Telegram thật).
 
 ## Lỗi nhỏ — sửa ở PR sau
 - Tiêu đề cuộc chat hiện chữ thô `Tạo artifact type="doc" title=...` (lấy từ tin nhắn mẫu). Nên đặt tiêu đề theo tên mẫu / tên artifact.
 
 ## Việc tiếp theo
-1. **GĐ 4 — Gmail / Telegram.**
+1. Sau khi test tay GĐ 4: sửa lỗi tiêu đề chat từ tin nhắn mẫu (mục trên).
 2. Để sau: thao tác chuột/bàn phím (chỉ khi người dùng đồng ý riêng); A2A + mở kết nối ra LAN (chỉ có đề xuất trong `docs/agents.md`).
 
 ## Quyết định đã duyệt
@@ -31,4 +32,4 @@
 - **Giọng nói:** STT faster-whisper — GPU + CUDA → large-v3-turbo, không thì small/CPU, chỉ lùi về CPU khi lỗi GPU thật; không khoá ngôn ngữ; tự giải mã WAV (không qua `av.open`, khoá av 14.2). TTS Edge, lỗi thì Piper. "Nói xong" mặc định điền ô nhập. Ghi âm gốc giữ 7 ngày trên máy. Yêu cầu hành động từ chữ chép lời → hỏi xác nhận.
 - **Artifacts:** `<artifact>` tạo / viết lại, `<artifact-edit>` find/replace (khớp đúng một chỗ, không thì báo lỗi). iframe CHỈ `allow-scripts`, origin `mmc-artifact://`, CSP chặn mạng, thư viện đóng gói sẵn, postMessage lệnh cố định. Công thức bảng không dùng eval. Slide Markdown → pptx sửa được; theme mở rộng được (JSON, sau này từ skill).
 - **Skill:** SKILL.md kiểu Claude, lưu `%APPDATA%/Team Working/skills`; chỉ giữ .md/.txt/.json (script, nhị phân bị bỏ — không bao giờ chạy); ≤100 file, 2 MB; chặn zip-slip; trùng tên skill có sẵn → từ chối. Xem trước (nguồn + nội dung + file bị bỏ) rồi mới cài. Mỗi câu: my-style + skill gọi đích danh (≤3) + tối đa 2 skill tự chọn theo description (điểm ≥3), phần skill ≤5000 ký tự; skill khác chỉ liệt kê tên. my-style: trợ lý đề xuất, người dùng chọn/sửa rồi mới lưu.
-- **Telegram (GĐ 4):** GramJS, chỉ đọc + soạn nháp, allowlist/blocklist, đăng xuất + xoá session. **Gmail:** OAuth chế độ Testing hết hạn sau 7 ngày.
+- **Gmail / Telegram (GĐ 4):** chỉ đọc + soạn nháp, không có hàm gửi; mọi nháp qua hộp duyệt (sửa được, 10 phút không trả lời = từ chối). Mỗi người tự tạo OAuth client Desktop / api_id; secret + token + session DPAPI. Gmail: PKCE + state qua loopback 47823, scope readonly + compose, REST bằng fetch; Testing hết hạn 7 ngày → `expired`, trợ lý chỉ nhận lời nhắc kết nối lại; ẩn thư nhạy cảm (mặc định bật) + chặn người gửi/tên miền. Telegram: GramJS nạp động, allowlist mặc định (rỗng), blocklist tự chặn chat nhạy cảm, 777000 luôn chặn; danh sách chat cache 15 phút, Làm mới ≤1 lần/phút, không đồng bộ nền; FLOOD_WAIT báo lại, không ngủ. 60 lần gọi tool/giờ mỗi dịch vụ.

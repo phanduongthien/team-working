@@ -1,7 +1,7 @@
 import { createServer, type Server } from 'node:http'
 import { APP_NAME, OAUTH_CALLBACK_PORT } from '@shared/appConfig'
 
-export type OAuthResult = { code: string } | { error: string }
+export type OAuthResult = { code: string; state?: string } | { error: string }
 
 const TIMEOUT_MS = 5 * 60 * 1000
 
@@ -25,7 +25,8 @@ export function parseCallback(requestUrl: string): OAuthResult | null {
   const url = new URL(requestUrl, `http://127.0.0.1:${OAUTH_CALLBACK_PORT}`)
   if (url.pathname !== '/auth/callback') return null
   const code = url.searchParams.get('code')
-  if (code) return { code }
+  const state = url.searchParams.get('state')
+  if (code) return state ? { code, state } : { code }
   const error = url.searchParams.get('error_description') ?? url.searchParams.get('error')
   return { error: error ?? 'missing_code' }
 }

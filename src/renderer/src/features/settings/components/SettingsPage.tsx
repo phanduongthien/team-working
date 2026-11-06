@@ -1,4 +1,4 @@
-import { Bug, Check, Monitor, Network, Upload } from 'lucide-react'
+import { Bug, Check, Mail, Monitor, Network, Upload } from 'lucide-react'
 import { useState, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router'
@@ -287,6 +287,12 @@ export function SettingsPage() {
             <Link to="/agents" data-testid="open-agents">
               <Network />
               {t('experimental.agents')}
+            </Link>
+          </Button>
+          <Button variant="outline" asChild>
+            <Link to="/connectors" data-testid="open-connectors">
+              <Mail />
+              {t('experimental.connectors')}
             </Link>
           </Button>
         </Section>
