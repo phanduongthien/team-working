@@ -1,5 +1,5 @@
 import { spawn, type ChildProcess } from 'node:child_process'
-import { mkdtempSync, rmSync } from 'node:fs'
+import { mkdtempSync, readFileSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { basename, join } from 'node:path'
 import {
@@ -10,6 +10,9 @@ import {
   type Page
 } from '@playwright/test'
 import { goTo, waitForStartup } from './helpers'
+
+// Phiên bản đang chạy lấy từ package.json — không ghi cứng (mỗi lần phát hành đều đổi).
+const APP_VERSION = (JSON.parse(readFileSync(join(__dirname, '..', '..', 'package.json'), 'utf8')) as { version: string }).version
 
 // Luồng cập nhật chạy với server giả lập cục bộ (không đụng GitHub Releases thật).
 // Không bấm "Khởi động lại" — bước cài thật chỉ thử thủ công (docs/release.md).
@@ -170,7 +173,7 @@ test('Cài đặt → Cập nhật: tắt tự kiểm tra → mở app không h�
   await expect(page.getByTestId('update-dialog')).toBeVisible({ timeout: 30_000 })
   await page.getByTestId('update-dialog').getByRole('button', { name: 'Để sau' }).click()
   await openSettings()
-  await expect(page.getByText('Đang dùng phiên bản 0.3.0')).toBeVisible()
+  await expect(page.getByText(`Đang dùng phiên bản ${APP_VERSION}`)).toBeVisible()
   const auto = page.getByLabel('Tự động kiểm tra bản mới')
   await expect(auto).toBeChecked()
   await auto.uncheck()
