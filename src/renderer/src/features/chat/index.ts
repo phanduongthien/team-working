@@ -6,6 +6,7 @@ import { ChatPage } from './components/ChatPage'
 import { CodeApprovalOverlay } from './components/CodeApprovalOverlay'
 import { useChat } from './store'
 import { setupVoice } from './voice/store'
+import { setupRecent } from './expressive/recentStore'
 import en from './i18n/en.json'
 import vi from './i18n/vi.json'
 
@@ -24,10 +25,13 @@ export const chatFeature: FeatureDefinition = {
     // Thanh bên: tiêu đề AI đặt, gợi ý nhóm, thay đổi từ nơi khác → cập nhật ngay.
     const offSidebar = onSync('conversations', () => useChat.getState().refreshSidebar())
     const offVoice = setupVoice()
+    // Emoji / GIF / sticker gần đây: nạp sẵn để bộ chọn mở đúng tab ngay lần đầu.
+    const offRecent = setupRecent()
     return () => {
       offChat()
       offSidebar()
       offVoice()
+      offRecent()
     }
   },
   overlay: CodeApprovalOverlay

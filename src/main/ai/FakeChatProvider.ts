@@ -31,6 +31,22 @@ export class FakeChatProvider implements AIProvider {
       yield { type: 'done' }
       return
     }
+    // Trích ghi nhớ: tin có FAKE_MEMORIES:<n> → n đề xuất (xoay vòng loại, đề xuất thứ 2 rất dài) để e2e kiểm tra danh sách gọn.
+    if (req.systemPrompt.includes('memory_suggestions')) {
+      const n = Math.min(20, Number(/FAKE_MEMORIES:(\d+)/.exec(req.prompt)?.[1] ?? 0))
+      const cats = ['skill', 'project', 'preference', 'goal']
+      const items = Array.from({ length: n }, (_, i) => ({
+        action: 'add',
+        category: cats[i % cats.length],
+        content:
+          i === 1
+            ? `Ghi nhớ dài số ${i + 1}: ` + 'đang làm đồ án game Unity nhiều màn chơi, cần nhắc deadline và cách tối ưu hiệu năng. '.repeat(5)
+            : `Ghi nhớ số ${i + 1}`
+      }))
+      yield { type: 'text', delta: '```json\n' + JSON.stringify({ type: 'memory_suggestions', items }) + '\n```' }
+      yield { type: 'done' }
+      return
+    }
     // Đặt tiêu đề / gợi ý nhóm (model rẻ): tiêu đề "Chủ đề: <3 từ đầu>"; FAKE_GROUP:<n> trong tin → nhóm thứ n
     // trong danh sách được gửi (dùng số để tên nhóm không lọt vào so khớp từ khoá).
     if (req.systemPrompt.startsWith(ORGANIZE_MARKER)) {

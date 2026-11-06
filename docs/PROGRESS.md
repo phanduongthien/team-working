@@ -15,12 +15,17 @@
 | #14 | GĐ 4 — Gmail & Telegram chỉ đọc + soạn nháp (mặc định tắt) |
 | #15 | Gmail nhiều tài khoản (một OAuth client, token riêng từng tài khoản, tên gọi, nháp đúng tài khoản) |
 | #16 | Đồng bộ trạng thái toàn app (`sync:changed` + `useSync` + `optimistic`) |
+| #17 | Sắp xếp cuộc trò chuyện (ghim, nhóm, gợi ý nhóm, nhánh, tiêu đề tự động, tìm kiếm) — phát hành 0.4.0-beta.1 |
 
 ## PR đang mở
-- **`feat/conversation-organize`** — Sắp xếp cuộc trò chuyện ở thanh bên: ghim, nhóm (tạo / đổi tên / xoá / thu gọn, kéo thả), gợi ý nhóm (từ khoá → Haiku), tách nhánh từ một tin (thụt dưới cuộc gốc), tiêu đề ngắn tự động (Haiku), tìm theo tên nhóm + trích đoạn khi khớp nội dung tin (test tay: tìm "unity" ra cả cuộc mà câu trả lời của Mizuki có nhắc Unity — đúng, không phải lỗi lọc), thu gọn tạm trong lúc tìm. Sửa lỗi tiêu đề `Tạo artifact type=…` (cả tiêu đề cũ). Dữ liệu trên máy (migration 0010), sync mục `conversations`. E2E `conversations.spec.ts`. Chờ CI + test tay.
+- **`fix/beta2-toolbar-emoji-recent`** (cho 0.4.0-beta.2) — 3 việc:
+  1. **Thanh trên khung chat:** nút Artifacts bỏ định vị tuyệt đối, vào chung thanh flex với tiêu đề + Gợi ý ghi nhớ; khung hẹp (container query, < 42rem) chỉ còn biểu tượng + tooltip; tiêu đề dài cắt bằng …. E2E `chat-header.spec.ts` đo khung ở 900 / 1100 / 1280px và khi mở panel Artifacts (ảnh `test-results/chat-header-*.png`).
+  2. **Tab 🕘 Gần đây trong bộ chọn emoji:** tối đa 40 emoji, mới dùng xếp đầu; đầy thì loại mục có điểm thấp nhất (số lần dùng × ½ mỗi 7 ngày không dùng) → emoji hay dùng giữ lâu hơn. Mở bộ chọn: có gần đây → tab Gần đây, chưa có → mặt cười (chỉ chọn lúc mở, chọn emoji không làm tab nhảy). Bỏ dòng "Dùng gần đây" ở tab mặt cười. Tính: chọn trong bộ chọn (ngay), gõ thẳng trong tin (lúc gửi, trừ cái đã chọn để không tính trùng), thả cảm xúc (main). GIF / sticker: dải "Gần đây" riêng (18 mục mỗi loại), main ghi khi gửi. "Xoá gần đây" bấm hai lần (4 giây). Lưu settings `expressiveRecent` trên máy, sync mục `expressiveRecent`; emoji cũ trong localStorage chuyển sang một lần.
+  3. **Đề xuất chờ duyệt (trang Trí nhớ):** mục thu gọn được (bấm tiêu đề, có số, nhớ trạng thái — localStorage vì chỉ là cách xem); dòng gọn một dòng + nhãn loại + ✓ / ✕, bấm dòng mở ô sửa tự giãn (`field-sizing: content`, không thanh cuộn); 5 dòng đầu + "Xem thêm N"; lọc theo loại; tick / Chọn tất cả → Đồng ý / Bỏ qua đã chọn (IPC `memory:resolveMany`, bỏ qua đề xuất đã duyệt nơi khác); "Đồng ý tất cả" bấm hai lần. Duyệt lạc quan, sync mục `memory`. E2E `memory-suggestions.spec.ts` (FakeChat `FAKE_MEMORIES:<n>`).
+  - Kèm: sửa e2e `update.spec.ts` ghi cứng "0.3.0" (hỏng từ khi nâng lên 0.4.0-beta.1) → đọc từ package.json.
 
 ## Việc tiếp theo
-1. Test tay sắp xếp cuộc trò chuyện (PR đang mở).
+1. Test tay PR beta.2 → người dùng merge → phát hành 0.4.0-beta.2.
 2. Để sau: thao tác chuột/bàn phím (chỉ khi người dùng đồng ý riêng); A2A + mở kết nối ra LAN (chỉ có đề xuất trong `docs/agents.md`).
 
 ## Quyết định đã duyệt

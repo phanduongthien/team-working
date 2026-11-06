@@ -73,3 +73,43 @@ export function stripExpressTags(text: string, streaming = false): string {
     .replace(/\n{3,}/g, '\n\n')
     .trim()
 }
+
+/* ---------- Gần đây (emoji / GIF / sticker) — chỉ lưu trên máy ---------- */
+
+export const RECENT_KINDS = ['emoji', 'gif', 'sticker'] as const
+export type RecentKind = (typeof RECENT_KINDS)[number]
+
+const PICTO = /\p{Extended_Pictographic}|\p{Regional_Indicator}/u
+
+/** Một "ký tự" (grapheme) có phải emoji không — gồm cả chuỗi ZWJ, màu da, cờ. */
+export const isEmoji = (s: string): boolean =>
+  s.length > 0 && s.length <= 40 && PICTO.test(s) && !/[\p{L}\p{N}\s]/u.test(s)
+
+/** Tách các emoji trong một đoạn chữ, giữ thứ tự xuất hiện (có thể trùng). */
+export function extractEmojis(text: string): string[] {
+  if (!PICTO.test(text)) return []
+  const seg = new Intl.Segmenter(undefined, { granularity: 'grapheme' })
+  return Array.from(seg.segment(text), (s) => s.segment).filter(isEmoji)
+}
+
+export const emojiSchema = z.string().min(1).max(40).refine(isEmoji, 'not_emoji')
+export const recentUseSchema = z.object({ emoji: z.array(emojiSchema).min(1).max(100) })
+export const recentKindSchema = z.enum(RECENT_KINDS)
+
+/** Một mục đã dùng: `key` = emoji, hoặc `<source>:<id>` với GIF/sticker. */
+export const recentEntrySchema = z.object({
+  key: z.string().min(1).max(220),
+  count: z.number().int().min(1),
+  last: z.number()
+})
+export type RecentEntry = z.infer<typeof recentEntrySchema>
+export const recentStoreSchema = z.object({
+  emoji: z.array(recentEntrySchema),
+  gif: z.array(recentEntrySchema),
+  sticker: z.array(recentEntrySchema)
+})
+export type RecentStore = z.infer<typeof recentStoreSchema>
+export const EMPTY_RECENT: RecentStore = { emoji: [], gif: [], sticker: [] }
+
+/** Danh sách để hiển thị — mới dùng xếp đầu. */
+export type ExpressiveRecent = { emoji: string[]; gif: MediaItem[]; sticker: MediaItem[] }

@@ -23,7 +23,17 @@
     "current": "Hiện tại: {{content}}",
     "accept": "Đồng ý",
     "reject": "Bỏ qua",
-    "acceptAll": "Đồng ý tất cả"
+    "acceptAll": "Đồng ý tất cả",
+    "acceptAllConfirm": "Bấm lần nữa để ghi nhớ cả {{count}} đề xuất",
+    "acceptSelected": "Đồng ý đã chọn ({{count}})",
+    "rejectSelected": "Bỏ qua đã chọn ({{count}})",
+    "selectAll": "Chọn tất cả",
+    "select": "Chọn: {{content}}",
+    "showMore": "Xem thêm {{count}} đề xuất",
+    "collapse": "Thu gọn",
+    "category": "Loại",
+    "filter": "Lọc theo loại",
+    "all": "Tất cả"
   },
   "profile": {
     "heading": "Hồ sơ cá nhân",

@@ -1,9 +1,10 @@
-import { Download } from 'lucide-react'
+import { ChevronDown, Download } from 'lucide-react'
 import { useEffect, useState, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@renderer/components/ui/button'
 import { api } from '@renderer/lib/api'
 import { useAuth } from '@renderer/stores/auth'
+import { cn } from '@renderer/lib/utils'
 import { usePreferences } from '@renderer/stores/preferences'
 import { useMemory } from '../store'
 import { BackupSection } from './BackupSection'
@@ -11,25 +12,72 @@ import { MemoryList } from './MemoryList'
 import { ProfileForm } from './ProfileForm'
 import { SuggestionList } from './SuggestionList'
 
+/** Trạng thái thu gọn của một mục — chỉ là cách xem trên máy này, lưu localStorage. */
+function useCollapsed(key: string): [boolean, (v: boolean) => void] {
+  const storageKey = `mmc.memory.collapsed.${key}`
+  const [collapsed, setCollapsed] = useState(() => localStorage.getItem(storageKey) === '1')
+  return [
+    collapsed,
+    (v) => {
+      setCollapsed(v)
+      if (v) localStorage.setItem(storageKey, '1')
+      else localStorage.removeItem(storageKey)
+    }
+  ]
+}
+
 function Section({
   title,
   description,
   badge,
+  collapseKey,
+  testId,
   children
 }: {
   title: string
   description?: string
   badge?: number
+  /** Có → bấm tiêu đề để thu gọn / mở rộng, nhớ trạng thái. */
+  collapseKey?: string
+  testId?: string
   children: ReactNode
 }) {
+  const [collapsed, setCollapsed] = useCollapsed(collapseKey ?? '')
+  const isCollapsed = !!collapseKey && collapsed
+  const heading = (
+    <>
+      {title}
+      {badge !== undefined && (badge > 0 || !!collapseKey) && (
+        <span className="rounded-full bg-primary px-2 text-xs text-primary-foreground" data-testid="section-count">
+          {badge}
+        </span>
+      )}
+    </>
+  )
   return (
-    <section className="rounded-lg border bg-card p-5">
-      <h2 className="flex items-center gap-2 font-semibold">
-        {title}
-        {!!badge && <span className="rounded-full bg-primary px-2 text-xs text-primary-foreground">{badge}</span>}
+    <section className="rounded-lg border bg-card p-5" data-testid={testId}>
+      <h2 className="font-semibold">
+        {collapseKey ? (
+          <button
+            type="button"
+            className="flex w-full items-center gap-2 text-left"
+            aria-expanded={!isCollapsed}
+            onClick={() => setCollapsed(!collapsed)}
+            data-testid="section-toggle"
+          >
+            <ChevronDown className={cn('size-4 shrink-0 transition-transform', isCollapsed && '-rotate-90')} />
+            {heading}
+          </button>
+        ) : (
+          <span className="flex items-center gap-2">{heading}</span>
+        )}
       </h2>
-      {description && <p className="mt-1 text-sm text-muted-foreground">{description}</p>}
-      <div className="mt-4">{children}</div>
+      {!isCollapsed && (
+        <>
+          {description && <p className="mt-1 text-sm text-muted-foreground">{description}</p>}
+          <div className="mt-4">{children}</div>
+        </>
+      )}
     </section>
   )
 }
@@ -70,7 +118,7 @@ export function MemoryPage() {
         </div>
         {exported && <p className="text-sm text-muted-foreground break-all">{t('exported', { path: exported })}</p>}
 
-        <Section title={t('suggestions.heading')} badge={pending}>
+        <Section title={t('suggestions.heading')} badge={pending} collapseKey="suggestions" testId="suggestions-section">
           <SuggestionList />
         </Section>
         <Section title={t('profile.heading')} description={t('profile.description')}>

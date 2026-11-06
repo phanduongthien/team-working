@@ -128,6 +128,8 @@ import {
   DEFAULT_EXPRESSIVE_SETTINGS,
   expressiveSettingsSchema,
   mediaRefSchema,
+  EMPTY_RECENT,
+  recentStoreSchema,
   stripExpressTags
 } from '@shared/expressive'
 
@@ -445,6 +447,8 @@ async function bootstrap(): Promise<void> {
     setStats: (value) => settings.set('expressiveStats', value),
     getFavorites: () => settings.get('expressiveFavorites', z.array(mediaRefSchema), []),
     setFavorites: (list) => settings.set('expressiveFavorites', list),
+    getRecent: () => settings.get('expressiveRecent', recentStoreSchema, EMPTY_RECENT),
+    setRecent: (value) => settings.set('expressiveRecent', value),
     giphy,
     giphyKeySource,
     stickers,

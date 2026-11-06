@@ -50,6 +50,9 @@ export type ChatServiceDeps = {
   expressive?: {
     onUserMessage(input: { text: string; media: boolean; mode: string }): TurnPlan
     onUserReaction(): void
+    /** Gần đây: emoji thả cảm xúc, GIF / sticker đã gửi. */
+    recordEmoji?(emojis: string[]): void
+    recordMedia?(item: MessageMedia): void
     promptFor(plan: TurnPlan): Promise<string>
     finalize(raw: string, plan: TurnPlan): Promise<FinalizedReply>
   }
@@ -215,6 +218,7 @@ export class ChatService {
     })
     const plan =
       this.deps.expressive?.onUserMessage({ text, media: !!media, mode: conversation.mode }) ?? null
+    if (media) this.deps.expressive?.recordMedia?.(media)
     const assistantMessage = messages.insert({
       conversationId,
       role: 'assistant',
@@ -295,6 +299,7 @@ export class ChatService {
       ...(emoji ? [{ emoji, by: 'user' as const }] : [])
     ]
     messages.update(messageId, { reactions })
+    if (emoji) this.deps.expressive?.recordEmoji?.([emoji])
     if (emoji && message.role === 'assistant') {
       const list = [
         ...(this.notes.get(message.conversationId) ?? []),

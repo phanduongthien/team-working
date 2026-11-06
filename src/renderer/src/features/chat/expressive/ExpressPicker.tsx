@@ -8,6 +8,7 @@ import { cn } from '@renderer/lib/utils'
 import { EmojiPanel } from './EmojiPanel'
 import { GiphySearch, MediaGrid, PoweredByGiphy } from './MediaGrid'
 import { refOf } from './mediaRef'
+import { RecentMedia } from './RecentMedia'
 import { useDismiss } from './useDismiss'
 
 type Tab = 'emoji' | 'gif' | 'sticker' | 'favorites'
@@ -46,6 +47,7 @@ function StickerTab({
   useEffect(() => void api.expressive.stickers().then(setLocal), [])
   return (
     <div className="flex h-full flex-col gap-2">
+      <RecentMedia kind="sticker" onPick={onPick} />
       <div className="flex gap-1 text-xs">
         {(['local', 'giphy'] as const).map((s) => (
           <button
@@ -165,12 +167,17 @@ export function ExpressPicker({
           <div className="min-h-0 flex-1">
             {tab === 'emoji' && <EmojiPanel onPick={onEmoji} />}
             {tab === 'gif' && (
-              <GiphySearch
-                kind="gif"
-                favorites={fav.refs}
-                onPick={send}
-                onToggleFavorite={fav.toggle}
-              />
+              <div className="flex h-full flex-col gap-2">
+                <RecentMedia kind="gif" onPick={send} />
+                <div className="min-h-0 flex-1">
+                  <GiphySearch
+                    kind="gif"
+                    favorites={fav.refs}
+                    onPick={send}
+                    onToggleFavorite={fav.toggle}
+                  />
+                </div>
+              </div>
             )}
             {tab === 'sticker' && (
               <StickerTab favorites={fav.refs} onPick={send} onToggleFavorite={fav.toggle} />

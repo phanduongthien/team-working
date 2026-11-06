@@ -347,6 +347,8 @@ describe('ExpressiveService.finalize', () => {
       setStats: (s) => (stats = s),
       getFavorites: () => [],
       setFavorites: vi.fn(),
+      getRecent: () => ({ emoji: [], gif: [], sticker: [] }),
+      setRecent: vi.fn(),
       giphy,
       giphyKeySource: () => 'user',
       stickers,

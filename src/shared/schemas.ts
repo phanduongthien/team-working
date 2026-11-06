@@ -193,6 +193,9 @@ export const suggestionResolveSchema = z.object({
   category: memoryCategorySchema.optional()
 })
 
+/** Duyệt hàng loạt (Đồng ý / Bỏ qua đã chọn, Đồng ý tất cả). */
+export const suggestionResolveManySchema = z.array(suggestionResolveSchema).min(1).max(500)
+
 /** Định dạng JSON mà skill memory-keeper trả về. */
 export const memorySuggestionsOutputSchema = z.object({
   type: z.literal('memory_suggestions'),

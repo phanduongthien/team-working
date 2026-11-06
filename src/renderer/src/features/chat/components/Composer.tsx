@@ -7,9 +7,10 @@ import { Button } from '@renderer/components/ui/button'
 import { Select, Textarea } from '@renderer/components/ui/input'
 import { ScreenAccessToggle } from '@renderer/features/computer/components/ScreenAccessToggle'
 import { usePreferences } from '@renderer/stores/preferences'
-import type { MediaItem } from '@shared/expressive'
+import { extractEmojis, type MediaItem } from '@shared/expressive'
 import { pasteKind, useDraft } from '../draft'
 import { ExpressPicker } from '../expressive/ExpressPicker'
+import { useRecent } from '../expressive/recentStore'
 import { useVoice } from '../voice/store'
 import { MicButton, VoiceError } from '../voice/VoiceControls'
 import type { MessageVoice } from '@shared/voice'
@@ -57,8 +58,13 @@ export function Composer({
     []
   )
 
+  // Emoji chọn trong bộ chọn: tính vào Gần đây ngay (như bàn phím điện thoại) và nhớ lại để lúc gửi không tính trùng.
+  const recordEmoji = useRecent((s) => s.recordEmoji)
+  const picked = useRef<string[]>([])
   // Emoji chèn vào đúng vị trí con trỏ.
   const insertEmoji = (emoji: string): void => {
+    recordEmoji([emoji])
+    picked.current.push(emoji)
     const el = box.current
     const start = el?.selectionStart ?? text.length
     const end = el?.selectionEnd ?? text.length
@@ -77,6 +83,16 @@ export function Composer({
     // Có file đính kèm thì gửi như tin thường (tin giọng nói chỉ gồm chữ).
     const voice = items.length === 0 ? (pendingVoice.current ?? undefined) : undefined
     pendingVoice.current = null
+    // Emoji gõ thẳng (vd bảng emoji Win + .) cũng tính vào Gần đây — trừ những cái đã tính lúc chọn.
+    const left = [...picked.current]
+    const typed = extractEmojis(text).filter((e) => {
+      const i = left.indexOf(e)
+      if (i < 0) return true
+      left.splice(i, 1)
+      return false
+    })
+    picked.current = []
+    recordEmoji(typed)
     onSend(
       text.trim(),
       items.map((a) => a.id),

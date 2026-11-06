@@ -62,6 +62,8 @@ describe('ChatService + biểu cảm', () => {
       setStats: (s) => (stats = s),
       getFavorites: () => [],
       setFavorites: vi.fn(),
+      getRecent: () => ({ emoji: [], gif: [], sticker: [] }),
+      setRecent: vi.fn(),
       giphy: { hasKey: () => true, pick: async () => GIF } as unknown as GiphyClient,
       giphyKeySource: () => 'user',
       stickers: {

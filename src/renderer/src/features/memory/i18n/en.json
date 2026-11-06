@@ -23,7 +23,17 @@
     "current": "Current: {{content}}",
     "accept": "Accept",
     "reject": "Dismiss",
-    "acceptAll": "Accept all"
+    "acceptAll": "Accept all",
+    "acceptAllConfirm": "Click again to remember all {{count}} suggestions",
+    "acceptSelected": "Accept selected ({{count}})",
+    "rejectSelected": "Dismiss selected ({{count}})",
+    "selectAll": "Select all",
+    "select": "Select: {{content}}",
+    "showMore": "Show {{count}} more suggestions",
+    "collapse": "Collapse",
+    "category": "Category",
+    "filter": "Filter by category",
+    "all": "All"
   },
   "profile": {
     "heading": "Personal profile",

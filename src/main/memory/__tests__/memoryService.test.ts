@@ -137,6 +137,18 @@ describe('MemoryService', () => {
     expect(() => s.resolve({ id: junk.id, accept: true })).toThrow('suggestion_not_found')
   })
 
+  it('duyệt hàng loạt: bỏ qua đề xuất đã duyệt ở nơi khác, không hỏng cả lượt', () => {
+    sugg.insertMany(
+      ['A', 'B', 'C'].map((content) => ({ conversationId: null, action: 'add' as const, targetMemoryId: null, content, category: 'skill' as const }))
+    )
+    const [a, b, c] = sugg.pending()
+    const s = service()
+    s.resolve({ id: a.id, accept: false })
+    expect(s.resolveMany([a, b, c].map((x) => ({ id: x.id, accept: true })))).toBe(2)
+    expect(mems.list().map((m) => m.content).sort()).toEqual(['B', 'C'])
+    expect(sugg.pending()).toEqual([])
+  })
+
   it('tự đề xuất khi rời hội thoại chỉ khi bật và có ≥2 tin mới của người dùng', async () => {
     const conv = convs.create('free')
     msgs.insert({ conversationId: conv.id, role: 'user', content: 'một' })
