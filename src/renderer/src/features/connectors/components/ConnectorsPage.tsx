@@ -1,5 +1,6 @@
 import { ShieldCheck } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
+import { useRefreshOnFocus } from '@renderer/lib/useRefreshOnFocus'
 import { useConnectors } from '../store'
 import { GmailSection } from './GmailSection'
 import { TelegramSection } from './TelegramSection'
@@ -8,6 +9,9 @@ export function ConnectorsPage() {
   const { t } = useTranslation('connectors')
   const gmail = useConnectors((s) => s.gmail)
   const telegram = useConnectors((s) => s.telegram)
+  const refresh = useConnectors((s) => s.refresh)
+  // Không chỉ dựa vào sự kiện từ main: hỏi lại khi mở trang và khi quay về app (vd sau khi đăng nhập Google).
+  useRefreshOnFocus(refresh)
   const points = t('privacy.points', { returnObjects: true }) as string[]
 
   return (

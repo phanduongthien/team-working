@@ -154,7 +154,7 @@ export class GmailService {
     if (!enabled) this.deps.approvals.cancelService('gmail')
     this.update({ enabled })
     this.deps.log.info(`Gmail: ${enabled ? 'bật' : 'tắt'}`)
-    return this.changed()
+    return this.publish()
   }
 
   async setCredentials(clientId: string, clientSecret?: string): Promise<GmailStatus> {
@@ -165,12 +165,12 @@ export class GmailService {
       for (const a of s.accounts) await this.disconnect(a.id)
     if (clientSecret) this.deps.clientSecret.set(clientSecret)
     this.update({ clientId })
-    return this.changed()
+    return this.publish()
   }
 
   setOptions(o: Pick<GmailSettings, 'testingMode'>): GmailStatus {
     this.update({ testingMode: o.testingMode })
-    return this.changed()
+    return this.publish()
   }
 
   /** Tên gọi, bật/tắt cho trợ lý đọc, lọc riêng tư — của từng tài khoản. */
@@ -187,7 +187,7 @@ export class GmailService {
       skipSensitive: u.skipSensitive,
       blockedSenders: [...new Set(u.blockedSenders)]
     })
-    return this.changed()
+    return this.publish()
   }
 
   /** Không có id = thêm tài khoản mới; có id = kết nối lại tài khoản đó (giữ tên gọi + cài đặt). */
@@ -200,7 +200,7 @@ export class GmailService {
     if (!target && before.accounts.length >= MAX_GMAIL_ACCOUNTS)
       throw new Error('too_many_accounts')
     this.connecting = { accountId: target?.id ?? null }
-    this.changed()
+    this.publish()
     try {
       const auth = await this.deps.backend.authorize(target?.email)
       if (target && !sameEmail(target.email, auth.email)) {
@@ -232,7 +232,7 @@ export class GmailService {
     } finally {
       this.connecting = null
     }
-    return this.changed()
+    return this.publish()
   }
 
   cancelConnect(): void {
@@ -247,7 +247,7 @@ export class GmailService {
     const s = this.deps.getSettings()
     this.update({ accounts: s.accounts.filter((a) => a.id !== accountId) })
     this.deps.log.info(`Gmail: đã ngắt tài khoản ${accountId}, xoá token trên máy`)
-    return this.changed()
+    return this.publish()
   }
 
   /** "Thử đọc" trong trang cài đặt: 5 thư mới nhất của một tài khoản, tại máy — không gửi cho Claude. */
@@ -470,7 +470,7 @@ export class GmailService {
     } catch (err) {
       if (err instanceof GmailAuthExpired) {
         this.deps.log.warn('Gmail: refresh token hết hạn / bị thu hồi — cần kết nối lại')
-        this.changed()
+        this.publish()
       }
       throw err
     }
@@ -529,7 +529,8 @@ export class GmailService {
     this.deps.setSettings({ ...this.deps.getSettings(), ...patch })
   }
 
-  private changed(): GmailStatus {
+  /** Phát trạng thái hiện tại cho renderer. IPC gọi sau MỌI thao tác (kể cả khi lỗi) — xem ipc/connectors.ts. */
+  publish(): GmailStatus {
     const s = this.status()
     this.deps.emit(s)
     return s

@@ -11,6 +11,8 @@ type ComputerStore = {
   setScreenAccess(on: boolean): Promise<boolean>
   emergencyStop(): Promise<void>
   clearError(): void
+  /** Hỏi lại main trạng thái (mở trang, quay lại cửa sổ). */
+  refresh(): Promise<void>
 }
 
 const isError = (r: unknown): r is { error: string } => typeof r === 'object' && r !== null && 'error' in r
@@ -40,15 +42,18 @@ export const useComputer = create<ComputerStore>((set) => ({
   async emergencyStop() {
     await api.computer.emergencyStop()
   },
-  clearError: () => set({ error: null })
+  clearError: () => set({ error: null }),
+  async refresh() {
+    const [status, sidecar] = await Promise.all([api.computer.status(), api.sidecar.state()])
+    set({ status, sidecar })
+  }
 }))
 
 /** Nghe trạng thái từ main (dừng khẩn cấp bằng phím tắt có thể xảy ra bất cứ lúc nào). */
 export function setupComputer(): () => void {
   const stopStatus = api.computer.onStatus((status) => useComputer.setState({ status }))
   const stopSidecar = api.sidecar.onState((sidecar) => useComputer.setState({ sidecar }))
-  void api.computer.status().then((status) => useComputer.setState({ status }))
-  void api.sidecar.state().then((sidecar) => useComputer.setState({ sidecar }))
+  void useComputer.getState().refresh()
   return () => {
     stopStatus()
     stopSidecar()

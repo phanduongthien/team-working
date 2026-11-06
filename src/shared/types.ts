@@ -389,15 +389,15 @@ export interface TeamWorkingApi {
   gmail: {
     status(): Promise<GmailStatus>
     onStatus(listener: (status: GmailStatus) => void): () => void
-    setEnabled(enabled: boolean): Promise<GmailStatus>
+    setEnabled(enabled: boolean): Promise<GmailStatus | { error: string }>
     /** clientSecret bỏ trống = giữ secret đã lưu. */
     setCredentials(input: { clientId: string; clientSecret?: string }): Promise<GmailStatus | { error: string }>
-    setOptions(input: { testingMode: boolean }): Promise<GmailStatus>
+    setOptions(input: { testingMode: boolean }): Promise<GmailStatus | { error: string }>
     /** Tên gọi, bật/tắt cho trợ lý đọc, lọc riêng tư của một tài khoản. */
     updateAccount(input: GmailAccountUpdate): Promise<GmailStatus | { error: string }>
     /** Mở trình duyệt đăng nhập Google; chờ tới khi xong / huỷ / hết 5 phút. Không id = thêm tài khoản mới. */
     connect(accountId?: string): Promise<GmailStatus | { error: string }>
-    cancelConnect(): Promise<void>
+    cancelConnect(): Promise<void | { error: string }>
     /** Ngắt một tài khoản: thu hồi + xoá token trên máy, bỏ khỏi danh sách. */
     disconnect(accountId: string): Promise<GmailStatus | { error: string }>
     /** 5 thư mới nhất của một tài khoản, tại máy (không gửi cho Claude). */
@@ -407,7 +407,7 @@ export interface TeamWorkingApi {
   telegram: {
     status(): Promise<TelegramStatus>
     onStatus(listener: (status: TelegramStatus) => void): () => void
-    setEnabled(enabled: boolean): Promise<TelegramStatus>
+    setEnabled(enabled: boolean): Promise<TelegramStatus | { error: string }>
     /** apiHash bỏ trống = giữ hash đã lưu. */
     setCredentials(input: { apiId: number; apiHash?: string }): Promise<TelegramStatus | { error: string }>
     sendCode(phone: string): Promise<TelegramStatus | { error: string }>
@@ -418,7 +418,7 @@ export interface TeamWorkingApi {
     logout(): Promise<TelegramStatus | { error: string }>
     /** force = tải lại ngay (tối đa 1 lần/phút); mặc định dùng bản lưu tạm 15 phút. */
     chats(force?: boolean): Promise<TelegramChatInfo[] | { error: string }>
-    setLists(input: { mode: TelegramMode; allow: string[]; block: string[] }): Promise<TelegramStatus>
+    setLists(input: { mode: TelegramMode; allow: string[]; block: string[] }): Promise<TelegramStatus | { error: string }>
   }
   /** Bản nháp trợ lý đề xuất (Gmail / Telegram) chờ người dùng duyệt. */
   drafts: {

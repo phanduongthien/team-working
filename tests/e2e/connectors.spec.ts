@@ -172,6 +172,36 @@ test('Gmail: tắt cho trợ lý đọc một tài khoản → tài khoản đó
   await expect(lastReply()).not.toContainText('Lịch thi cuối kỳ')
 })
 
+test('Gmail: thêm / đổi tên / đăng nhập lỗi / ngắt kết nối → danh sách cập nhật ngay, không cần bật/tắt', async () => {
+  await goTo(page, '#/connectors', page.getByTestId('gmail-accounts'))
+  await expect(page.getByTestId('gmail-account')).toHaveCount(2)
+
+  await page.getByTestId('gmail-add').click()
+  const work = gmailAccount('cv@congty.example.com')
+  await expect(work.getByTestId('gmail-connection')).toHaveAttribute('data-state', 'connected')
+  await expect(page.getByTestId('gmail-account-count')).toHaveText('3 tài khoản')
+
+  await work.getByTestId('gmail-account-label').fill('Công việc')
+  await work.getByTestId('gmail-account-label').press('Enter')
+  await expect(work.getByTestId('gmail-account-label')).toHaveValue('Công việc')
+
+  // Đăng nhập lỗi (hộp thư giả hết tài khoản → access_denied): báo lỗi, KHÔNG kẹt "Đang chờ đăng nhập".
+  await page.getByTestId('gmail-add').click()
+  await expect(page.getByTestId('gmail-section').getByText('từ chối cấp quyền')).toBeVisible()
+  await expect(page.getByTestId('gmail-adding')).toBeHidden()
+  await expect(page.getByTestId('gmail-add')).toBeEnabled()
+
+  await work.getByTestId('gmail-disconnect').click()
+  await expect(page.getByTestId('gmail-account')).toHaveCount(2)
+  await expect(page.getByTestId('gmail-account-count')).toHaveText('2 tài khoản')
+
+  // Rời trang rồi quay lại: trang hỏi lại main, vẫn đúng.
+  await goTo(page, '#/settings', page.getByTestId('open-connectors'))
+  await page.getByTestId('open-connectors').click()
+  await expect(page.getByTestId('gmail-account')).toHaveCount(2)
+  await expect(gmailAccount('sv@truong.example.edu').getByTestId('gmail-account-label')).toHaveValue('Trường')
+})
+
 test('Telegram: đăng nhập có mật khẩu 2 bước, chỉ đọc chat đã chọn, chat hệ thống luôn chặn', async () => {
   await goTo(page, '#/connectors', page.getByTestId('tg-enable'))
   await page.getByTestId('tg-enable').check()

@@ -16,7 +16,22 @@ type ConnectorsStore = {
   drafts: DraftApprovalRequest[]
   loadChats(force?: boolean): Promise<string | null>
   respondDraft(id: string, approve: boolean, body?: string): Promise<void>
+  /** Hỏi lại main trạng thái Gmail + Telegram (mở trang, quay lại cửa sổ sau khi đăng nhập trên trình duyệt). */
+  refresh(): Promise<void>
 }
+
+/**
+ * Đếm sự kiện trạng thái đã nhận: kết quả status() chỉ ghi vào store nếu không có sự kiện nào đến
+ * trong lúc chờ — tránh bản cũ đè lên bản mới hơn.
+ */
+const seen = { gmail: 0, telegram: 0 }
+
+const applyTelegram = (telegram: TelegramStatus): void =>
+  // Đăng xuất → bỏ danh sách chat đang hiện.
+  useConnectors.setState((s) => ({
+    telegram,
+    chats: telegram.connection === 'connected' ? s.chats : null
+  }))
 
 export const isError = (r: unknown): r is { error: string } =>
   typeof r === 'object' && r !== null && 'error' in r
@@ -52,19 +67,25 @@ export const useConnectors = create<ConnectorsStore>((set) => ({
   async respondDraft(id, approve, body) {
     set((s) => ({ drafts: s.drafts.filter((d) => d.id !== id) }))
     await api.drafts.respond({ id, approve, body })
+  },
+  async refresh() {
+    const at = { ...seen }
+    const [gmail, telegram] = await Promise.all([api.gmail.status(), api.telegram.status()])
+    if (seen.gmail === at.gmail) set({ gmail })
+    if (seen.telegram === at.telegram) applyTelegram(telegram)
   }
 }))
 
 /** Trạng thái + hộp duyệt nháp có thể đến bất cứ lúc nào (trợ lý đang trả lời ở trang Chat). */
 export function setupConnectors(): () => void {
   const stops = [
-    api.gmail.onStatus((gmail) => useConnectors.setState({ gmail })),
+    api.gmail.onStatus((gmail) => {
+      seen.gmail++
+      useConnectors.setState({ gmail })
+    }),
     api.telegram.onStatus((telegram) => {
-      // Đăng xuất → bỏ danh sách chat đang hiện.
-      useConnectors.setState((s) => ({
-        telegram,
-        chats: telegram.connection === 'connected' ? s.chats : null
-      }))
+      seen.telegram++
+      applyTelegram(telegram)
     }),
     api.drafts.onApproval((req) =>
       useConnectors.setState((s) =>
@@ -74,8 +95,7 @@ export function setupConnectors(): () => void {
       )
     )
   ]
-  void api.gmail.status().then((gmail) => useConnectors.setState({ gmail }))
-  void api.telegram.status().then((telegram) => useConnectors.setState({ telegram }))
+  void useConnectors.getState().refresh()
   return () => stops.forEach((stop) => stop())
 }
 

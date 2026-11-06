@@ -5,6 +5,7 @@ import type { ScreenPreview } from '@shared/computer'
 import { Button } from '@renderer/components/ui/button'
 import { Dialog, DialogClose, DialogContent } from '@renderer/components/ui/dialog'
 import { api } from '@renderer/lib/api'
+import { useRefreshOnFocus } from '@renderer/lib/useRefreshOnFocus'
 import { formatHotkey, useComputer } from '../store'
 import { SidecarSection } from './SidecarSection'
 
@@ -12,6 +13,7 @@ import { SidecarSection } from './SidecarSection'
 function WarningDialog({ open, onOpenChange, hotkey }: { open: boolean; onOpenChange(open: boolean): void; hotkey: string }) {
   const { t } = useTranslation('computer')
   const setEnabled = useComputer((s) => s.setEnabled)
+  useRefreshOnFocus(useComputer((s) => s.refresh))
   const error = useComputer((s) => s.error)
   const [read, setRead] = useState(false)
   const points = t('warning.points', { returnObjects: true, hotkey }) as string[]

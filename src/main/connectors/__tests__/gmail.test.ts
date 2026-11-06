@@ -1,13 +1,20 @@
 import { describe, expect, it, vi } from 'vitest'
 import {
   DEFAULT_GMAIL_SETTINGS,
+  DEFAULT_TELEGRAM_SETTINGS,
   defaultAccountLabel,
   GMAIL_LEGACY_ACCOUNT_ID,
   gmailAccountUpdateSchema,
   gmailSettingsSchema,
   type DraftApprovalRequest,
-  type GmailSettings
+  type GmailSettings,
+  type GmailStatus
 } from '@shared/connectors'
+import { IPC } from '@shared/ipc'
+import { registerConnectorsIpc } from '../../ipc/connectors'
+import type { HandleFn } from '../../ipc/register'
+import { FakeTelegramBackend } from '../telegram/fake'
+import { TelegramService } from '../telegram/service'
 import { RateLimiter } from '../../agents/rateLimiter'
 import { AppToolRegistry } from '../../tools/registry'
 import { DraftApprovals } from '../approvals'
@@ -273,9 +280,9 @@ describe('chuyển cài đặt Gmail một-tài-khoản → danh sách', () => {
   })
 
   it('chưa kết nối → danh sách rỗng; mặc định hợp lệ', () => {
-    expect(
-      gmailSettingsSchema.parse({ ...v1, email: null, connectedAt: null }).accounts
-    ).toEqual([])
+    expect(gmailSettingsSchema.parse({ ...v1, email: null, connectedAt: null }).accounts).toEqual(
+      []
+    )
     expect(gmailSettingsSchema.parse(DEFAULT_GMAIL_SETTINGS)).toEqual(DEFAULT_GMAIL_SETTINGS)
     expect(defaultAccountLabel('nguyen.van-a+x@gmail.com')).toBe('nguyen.van-ax')
   })
@@ -310,6 +317,7 @@ function gmailService(initial?: GmailSettings) {
   }
   const backend = new FakeGmailBackend()
   const { approvals, events, lastRequest } = approvalsWithLog()
+  const emitted: GmailStatus[] = []
   let n = 0
   const service = new GmailService({
     getSettings: () => settings,
@@ -318,7 +326,7 @@ function gmailService(initial?: GmailSettings) {
     clientSecret: memSecret('secret'),
     approvals,
     limiter: new RateLimiter(() => 60),
-    emit: () => undefined,
+    emit: (st) => void emitted.push(st),
     log,
     now: () => 1_000_000,
     newId: () => `acc${++n}`
@@ -345,6 +353,7 @@ function gmailService(initial?: GmailSettings) {
     lastRequest,
     addThree,
     account,
+    emitted,
     settings: () => settings
   }
 }
@@ -557,12 +566,12 @@ describe('GmailService — nhiều tài khoản', () => {
     expect(() => g.service.updateAccount({ ...g.account('Công việc'), label: 'truong' })).toThrow(
       'label_taken'
     )
-    expect(() =>
-      g.service.updateAccount({ ...g.account('Công việc'), id: 'khongco' })
-    ).toThrow('account_not_found')
-    expect(gmailAccountUpdateSchema.safeParse({ ...g.account('Trường'), label: 'a"b' }).success).toBe(
-      false
+    expect(() => g.service.updateAccount({ ...g.account('Công việc'), id: 'khongco' })).toThrow(
+      'account_not_found'
     )
+    expect(
+      gmailAccountUpdateSchema.safeParse({ ...g.account('Trường'), label: 'a"b' }).success
+    ).toBe(false)
     expect(normalizeLabel('  Trường  Đại học ')).toBe('truong dai hoc')
   })
 
@@ -572,5 +581,57 @@ describe('GmailService — nhiều tài khoản', () => {
     await g.service.setCredentials('khac.apps.googleusercontent.com')
     expect(g.service.status().accounts).toEqual([])
     expect(g.backend.hasToken('acc1')).toBe(false)
+  })
+})
+
+describe('IPC Gmail — luôn phát trạng thái cho trang cài đặt', () => {
+  function ipc() {
+    const g = gmailService()
+    const handlers = new Map<string, (input: unknown) => unknown>()
+    const handle: HandleFn = (channel, _schema, fn) =>
+      void handlers.set(channel, fn as (input: unknown) => unknown)
+    const telegram = new TelegramService({
+      getSettings: () => ({ ...DEFAULT_TELEGRAM_SETTINGS }),
+      setSettings: () => undefined,
+      backend: new FakeTelegramBackend(),
+      apiHash: memSecret(),
+      approvals: g.approvals,
+      limiter: new RateLimiter(() => 60),
+      emit: () => undefined,
+      log
+    })
+    registerConnectorsIpc({ handle, gmail: g.service, telegram, approvals: g.approvals })
+    const invoke = (channel: string, input?: unknown) => handlers.get(channel)!(input)
+    return { ...g, invoke }
+  }
+
+  it('đăng nhập Google lỗi / bị huỷ → vẫn phát trạng thái (không kẹt "Đang chờ đăng nhập")', async () => {
+    const g = ipc()
+    vi.spyOn(g.backend, 'authorize').mockRejectedValueOnce(new Error('cancelled'))
+    const r = await g.invoke(IPC.gmailConnect, undefined)
+    expect(r).toEqual({ error: 'cancelled' })
+    expect(g.emitted.at(-1)).toMatchObject({ adding: false, accounts: [] })
+  })
+
+  it('thêm, đổi tên (kể cả bị từ chối), ngắt kết nối → mỗi lần đều phát trạng thái mới', async () => {
+    const g = ipc()
+    await g.invoke(IPC.gmailConnect, undefined)
+    const id = g.emitted.at(-1)!.accounts[0].id
+    /** Gọi IPC và kiểm tra có ít nhất một lần phát trạng thái mới. */
+    const emits = async (channel: string, input?: unknown): Promise<GmailStatus> => {
+      const before = g.emitted.length
+      await g.invoke(channel, input)
+      expect(g.emitted.length).toBeGreaterThan(before)
+      return g.emitted.at(-1)!
+    }
+    const renamed = await emits(IPC.gmailUpdateAccount, {
+      ...g.emitted.at(-1)!.accounts[0],
+      label: 'Cá nhân'
+    })
+    expect(renamed.accounts[0].label).toBe('Cá nhân')
+    // Bị từ chối (id lạ) vẫn phát → UI trả về đúng trạng thái thật.
+    await emits(IPC.gmailUpdateAccount, { ...renamed.accounts[0], id: 'khongco' })
+    expect((await emits(IPC.gmailDisconnect, id)).accounts).toEqual([])
+    await emits(IPC.gmailCancelConnect)
   })
 })
