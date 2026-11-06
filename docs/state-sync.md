@@ -32,6 +32,8 @@ Mục tiêu: mọi trang cập nhật giao diện ngay, không phải bật/tắ
 | Gmail | Sự kiện + focus (PR #15) | Bật/tắt, đổi tên, tuỳ chọn chờ IPC; hàng tài khoản dựng lại theo tên (mất thông báo lỗi) | `onSync('gmail')`, `patchGmail` lạc quan, hàng giữ theo id |
 | Telegram | Sự kiện + focus (PR #15) | Bật/tắt, chọn chat chờ IPC | `onSync('telegram')`, `patchTelegram` lạc quan (danh sách chat tính lại tại chỗ) |
 | Thanh bên chat (PR sắp xếp) | Tải lại sau khi gửi / trả lời xong; ghim chờ IPC | Tiêu đề AI đặt / gợi ý nhóm nền không hiện | `onSync('conversations')` ở `setup` của chat; ghim / đổi tên / chuyển nhóm / thu gọn lạc quan; main báo sau gửi, sau lượt chạy, sau khi đặt tiêu đề |
+| Emoji / GIF / sticker gần đây (beta.2) | localStorage, chỉ emoji chọn trong bộ chọn | Thả cảm xúc / gửi GIF / gõ emoji không tính | Settings `expressiveRecent` → mục `expressiveRecent`; store nạp lúc mở app + `onSync`; chọn / xoá lạc quan |
+| Đề xuất ghi nhớ (beta.2) | Sự kiện `memory:event` + tải lại sau khi duyệt | Duyệt chờ IPC xong mới mất dòng | IPC trí nhớ khai báo `memory`; `onSync('memory')`; duyệt (kể cả hàng loạt) lạc quan |
 | Panel Artifacts | Tải lại khi số tin có artifact đổi | Khôi phục / sửa phiên bản từ nơi khác không hiện; trợ lý sửa artifact cũ không đổi số tin | `useSync('artifacts')`, main báo khi tạo / thêm phiên bản |
 
 ## Thêm tính năng mới
