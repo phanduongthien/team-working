@@ -21,6 +21,15 @@ export type ToolDefinition = { name: string; description: string; inputSchema: R
 
 const NAME = /^[a-z][a-z0-9_]{0,40}$/
 
+export type ToolSet = { names: string[]; context: string }
+
+/** Gộp tool + hướng dẫn của nhiều tính năng (màn hình, Gmail, Telegram…) cho một lượt chat; không có gì → null. */
+export function combineToolSets(sets: (ToolSet | null)[]): ToolSet | null {
+  const present = sets.filter((s): s is ToolSet => s !== null && (s.names.length > 0 || s.context.length > 0))
+  if (present.length === 0) return null
+  return { names: present.flatMap((s) => s.names), context: present.map((s) => s.context).filter(Boolean).join('\n\n') }
+}
+
 export const errorResult = (text: string): ToolResult => ({ content: [{ type: 'text', text }], isError: true })
 
 /**

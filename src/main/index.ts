@@ -16,7 +16,15 @@ import {
 } from 'electron'
 import { is } from '@electron-toolkit/utils'
 import { z } from 'zod'
-import { APP_NAME, LEGACY_USER_DATA_DIR } from '@shared/appConfig'
+import { APP_NAME, LEGACY_USER_DATA_DIR, OAUTH_REDIRECT_URL } from '@shared/appConfig'
+import {
+  DEFAULT_GMAIL_SETTINGS,
+  DEFAULT_TELEGRAM_SETTINGS,
+  gmailSettingsSchema,
+  telegramSettingsSchema,
+  type GmailSettings,
+  type TelegramSettings
+} from '@shared/connectors'
 import { IPC } from '@shared/ipc'
 import {
   DEFAULT_AI_SETTINGS,
@@ -66,7 +74,7 @@ import { SidecarInstaller } from './sidecar/installer'
 import { extractZip, runProcess } from './sidecar/process'
 import { registerComputerIpc } from './ipc/computer'
 import { ToolBridge } from './tools/bridge'
-import { AppToolRegistry } from './tools/registry'
+import { AppToolRegistry, combineToolSets } from './tools/registry'
 import { TimeRepository } from './db/timeRepository'
 import { registerAppIpc } from './ipc/app'
 import { createHandle, registerIpc } from './ipc/register'
@@ -75,6 +83,15 @@ import { UpdateController } from './update/controller'
 import { registerTeamIpc } from './ipc/team'
 import { emitApproval, registerWorkIpc } from './ipc/work'
 import { OAuthLoopback } from './services/oauthLoopback'
+import { RateLimiter } from './agents/rateLimiter'
+import { DraftApprovals } from './connectors/approvals'
+import { FakeGmailBackend } from './connectors/gmail/fake'
+import { GoogleGmailBackend } from './connectors/gmail/google'
+import { GmailService } from './connectors/gmail/service'
+import { FakeTelegramBackend } from './connectors/telegram/fake'
+import { GramJsBackend } from './connectors/telegram/gramjs'
+import { TelegramService } from './connectors/telegram/service'
+import { registerConnectorsIpc } from './ipc/connectors'
 import { AccountScope } from './memory/accountScope'
 import { MemoryService } from './memory/memoryService'
 import { AttachmentStore } from './services/attachments'
@@ -326,6 +343,70 @@ async function bootstrap(): Promise<void> {
   computer.registerTools(tools)
   app.on('will-quit', () => globalShortcut.unregisterAll())
 
+  // Gmail / Telegram (GĐ 4): chỉ đọc + soạn nháp, mặc định tắt. Mỗi người tự tạo OAuth client / api_id;
+  // secret, token, session chỉ nằm trên máy (DPAPI). Bản giả chỉ cho e2e ở bản chưa đóng gói.
+  const secretsDir = join(userData, 'secrets')
+  const draftApprovals = new DraftApprovals({
+    emit: (req) => mainWindow?.webContents.send(IPC.draftApprovalEvent, req),
+    log
+  })
+  const connectorLimiter = new RateLimiter(() => 60)
+  const gmailOAuth = new OAuthLoopback()
+  app.on('before-quit', () => {
+    gmailOAuth.cancel()
+    draftApprovals.cancelAll()
+  })
+  const gmailClientSecret = new SecretStore(secretsDir, safeStorage, 'gmail-client-secret.bin')
+  const getGmailSettings = (): GmailSettings => settings.get('gmail', gmailSettingsSchema, DEFAULT_GMAIL_SETTINGS)
+  const gmail = new GmailService({
+    getSettings: getGmailSettings,
+    setSettings: (value) => settings.set('gmail', value),
+    backend:
+      !app.isPackaged && process.env.MMC_FAKE_GMAIL === '1'
+        ? new FakeGmailBackend()
+        : new GoogleGmailBackend({
+            fetch: (url, init) => net.fetch(url, init),
+            openExternal: (url) => shell.openExternal(url),
+            waitForCode: (open) => gmailOAuth.waitForCode(open),
+            cancelWait: () => gmailOAuth.cancel(),
+            redirectUri: OAUTH_REDIRECT_URL,
+            clientId: () => getGmailSettings().clientId,
+            clientSecret: () => gmailClientSecret.get(),
+            tokens: new SecretStore(secretsDir, safeStorage, 'gmail-refresh-token.bin')
+          }),
+    clientSecret: gmailClientSecret,
+    approvals: draftApprovals,
+    limiter: connectorLimiter,
+    emit: (status) => mainWindow?.webContents.send(IPC.gmailStatusEvent, status),
+    log
+  })
+  gmail.registerTools(tools)
+  const telegramApiHash = new SecretStore(secretsDir, safeStorage, 'telegram-api-hash.bin')
+  const getTelegramSettings = (): TelegramSettings =>
+    settings.get('telegram', telegramSettingsSchema, DEFAULT_TELEGRAM_SETTINGS)
+  const telegramBackend =
+    !app.isPackaged && process.env.MMC_FAKE_TELEGRAM === '1'
+      ? new FakeTelegramBackend()
+      : new GramJsBackend({
+          apiId: () => getTelegramSettings().apiId,
+          apiHash: () => telegramApiHash.get(),
+          session: new SecretStore(secretsDir, safeStorage, 'telegram-session.bin'),
+          appVersion: app.getVersion(),
+          log
+        })
+  const telegram = new TelegramService({
+    getSettings: getTelegramSettings,
+    setSettings: (value) => settings.set('telegram', value),
+    backend: telegramBackend,
+    apiHash: telegramApiHash,
+    approvals: draftApprovals,
+    limiter: connectorLimiter,
+    emit: (status) => mainWindow?.webContents.send(IPC.telegramStatusEvent, status),
+    log
+  })
+  telegram.registerTools(tools)
+  app.on('before-quit', () => void telegramBackend.cancelLogin())
+
   // Chat biểu cảm: GIF/sticker GIPHY (key: .env khi dev, hoặc người dùng dán — mã hoá DPAPI), sticker local, độ thân thiết trên máy.
   const giphyUserKey = new SecretStore(join(userData, 'secrets'), safeStorage, 'giphy-api-key.bin')
   // .env chỉ đọc ở bản chưa đóng gói (không có tiền tố VITE_ → không bao giờ nằm trong bộ cài).
@@ -462,7 +543,7 @@ async function bootstrap(): Promise<void> {
 
   // Claude giả chỉ cho test e2e ở bản chưa đóng gói.
   const fakeChat =
-    !app.isPackaged && process.env.MMC_FAKE_CHAT === '1' ? new FakeChatProvider() : null
+    !app.isPackaged && process.env.MMC_FAKE_CHAT === '1' ? new FakeChatProvider((name, input, conversationId) => tools.call(name, input, { conversationId })) : null
 
   const providers: Record<AiProviderId, AIProvider> = {
     'claude-cli': new ClaudeCliProvider(
@@ -521,8 +602,9 @@ async function bootstrap(): Promise<void> {
     onRunEnd: (conversationId) => {
       approvals.cancelConversation(conversationId)
       mcpApprovals.cancelConversation(conversationId)
+      draftApprovals.cancelConversation(conversationId)
     },
-    appToolsFor: () => computer.toolsFor(),
+    appToolsFor: () => combineToolSets([computer.toolsFor(), gmail.toolsFor(), telegram.toolsFor()]),
     expressive,
     voicePrompt: async (tease) => {
       const skill = await loadSkill(skillsDir, 'voice')
@@ -713,6 +795,7 @@ async function bootstrap(): Promise<void> {
       voiceClient.stop()
     }
   })
+  registerConnectorsIpc({ handle, gmail, telegram, approvals: draftApprovals })
   registerWorkIpc({
     handle,
     conversations,

@@ -2,6 +2,7 @@ import { agentsFeature } from './agents'
 import { chatFeature } from './chat'
 import { claudeCheckFeature } from './claude-check'
 import { computerFeature } from './computer'
+import { connectorsFeature } from './connectors'
 import { dashboardFeature } from './dashboard'
 import { feedbackFeature } from './feedback'
 import { ideasFeature } from './ideas'
@@ -34,5 +35,6 @@ export const features: FeatureDefinition[] = [
   claudeCheckFeature,
   computerFeature,
   agentsFeature,
+  connectorsFeature,
   settingsFeature
 ]

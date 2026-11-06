@@ -106,7 +106,8 @@
     "heading": "Tính năng thử nghiệm",
     "description": "Các tính năng mới, mặc định tắt. Chỉ bật khi bạn đã đọc kỹ hướng dẫn.",
     "computer": "Điều khiển máy tính (xem màn hình)",
-    "agents": "Kết nối agent (Claude Code, Claude Desktop, MCP)"
+    "agents": "Kết nối agent (Claude Code, Claude Desktop, MCP)",
+    "connectors": "Gmail & Telegram (đọc + soạn nháp)"
   },
   "skills": {
     "heading": "Skill",

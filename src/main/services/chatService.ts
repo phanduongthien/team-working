@@ -117,10 +117,11 @@ export function withAppTools(
   conversationId: string,
   tools: { names: string[]; context: string } | null
 ): RunOptions {
-  if (!tools || tools.names.length === 0) return options
+  if (!tools || (tools.names.length === 0 && !tools.context)) return options
   return {
     ...options,
-    appTools: { conversationId, names: tools.names },
+    // Chỉ có hướng dẫn, không có tool (vd Gmail hết hạn đăng nhập) → không mở cầu nối tool.
+    ...(tools.names.length > 0 ? { appTools: { conversationId, names: tools.names } } : {}),
     context: options.context
       ? `${options.context}
 

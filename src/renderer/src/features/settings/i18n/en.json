@@ -106,7 +106,8 @@
     "heading": "Experimental features",
     "description": "New features, off by default. Only enable them after reading the instructions.",
     "computer": "Computer control (screen viewing)",
-    "agents": "Agent connections (Claude Code, Claude Desktop, MCP)"
+    "agents": "Agent connections (Claude Code, Claude Desktop, MCP)",
+    "connectors": "Gmail & Telegram (read + drafts)"
   },
   "skills": {
     "heading": "Skills",

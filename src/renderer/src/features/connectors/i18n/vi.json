@@ -1,0 +1,150 @@
+{
+  "title": "Gmail & Telegram",
+  "experimental": "Thử nghiệm",
+  "description": "Cho trợ lý đọc email và tin nhắn của chính bạn để tóm tắt, nhắc việc, soạn trả lời. Chỉ đọc + soạn nháp — trợ lý không bao giờ gửi thay bạn.",
+  "save": "Lưu",
+  "saved": "Đã lưu",
+  "savedSecret": "Đã lưu (để trống = giữ nguyên)",
+  "cancel": "Huỷ",
+  "privacy": {
+    "title": "Riêng tư",
+    "points": [
+      "Bạn tự tạo OAuth client (Google) và api_id (Telegram) — app không dùng chung key với ai.",
+      "Secret, token và phiên đăng nhập chỉ nằm trên máy này, mã hoá bằng Windows (DPAPI).",
+      "Trợ lý chỉ đọc khi câu hỏi cần, tối đa 60 lần/giờ mỗi dịch vụ; đọc không đánh dấu đã đọc.",
+      "Bản nháp luôn hiện để bạn xem / sửa trước; bạn tự gửi trong Gmail / Telegram.",
+      "Thư mã xác minh, ngân hàng và chat nhạy cảm được ẩn sẵn; tin nhắn hệ thống Telegram (mã đăng nhập) luôn bị chặn."
+    ]
+  },
+  "state": {
+    "disconnected": "Chưa kết nối",
+    "connecting": "Đang chờ đăng nhập",
+    "connected": "Đã kết nối",
+    "expired": "Hết hạn — cần kết nối lại",
+    "code_sent": "Chờ nhập mã",
+    "password_needed": "Chờ mật khẩu 2 bước"
+  },
+  "gmail": {
+    "enable": "Bật kết nối Gmail",
+    "enableHelp": "Trợ lý tìm và đọc thư, đề xuất bản nháp trả lời. Tắt bất cứ lúc nào.",
+    "setupTitle": "Cách tạo OAuth client (một lần, ~5 phút)",
+    "setup": [
+      "Mở console.cloud.google.com, tạo project mới (vd \"MMC studio cá nhân\").",
+      "APIs & Services → Library → bật \"Gmail API\".",
+      "OAuth consent screen: chọn External, điền tên app + email của bạn; ở mục Test users thêm chính email Gmail của bạn.",
+      "Credentials → Create credentials → OAuth client ID → Application type: Desktop app.",
+      "Chép Client ID và Client secret vào ô bên dưới rồi bấm Lưu, sau đó bấm Kết nối Gmail."
+    ],
+    "clientId": "Client ID",
+    "clientSecret": "Client secret",
+    "connect": "Kết nối Gmail",
+    "reconnect": "Kết nối lại",
+    "waiting": "Đang chờ bạn đăng nhập trong trình duyệt…",
+    "connectedAs": "Đang dùng {{email}}",
+    "disconnect": "Ngắt kết nối",
+    "preview": "Thử đọc 5 thư mới",
+    "previewHelp": "Chỉ hiện tại máy, không gửi cho trợ lý. Thư gạch ngang là thư trợ lý không thấy.",
+    "previewEmpty": "Hộp thư đến trống.",
+    "noSubject": "(không tiêu đề)",
+    "hidden": "ẩn với trợ lý",
+    "expired": "Phiên đăng nhập Google đã hết hạn (app OAuth ở chế độ Testing chỉ giữ đăng nhập 7 ngày). Bấm Kết nối lại.",
+    "expiresIn_one": "Google sẽ yêu cầu đăng nhập lại sau khoảng {{count}} ngày (chế độ Testing).",
+    "expiresIn_other": "Google sẽ yêu cầu đăng nhập lại sau khoảng {{count}} ngày (chế độ Testing).",
+    "skipSensitive": "Ẩn thư nhạy cảm",
+    "skipSensitiveHelp": "Thư mã xác minh / OTP, đặt lại mật khẩu, ngân hàng, thanh toán không đưa cho trợ lý.",
+    "testingMode": "App OAuth đang ở chế độ Testing",
+    "testingModeHelp": "Google tự đăng xuất sau 7 ngày; app sẽ nhắc bạn kết nối lại.",
+    "blocked": "Người gửi bị chặn",
+    "blockedPlaceholder": "sep@congty.com\nnganhang.com.vn",
+    "blockedHelp": "Mỗi dòng một địa chỉ hoặc tên miền. Thư từ đây không bao giờ đưa cho trợ lý."
+  },
+  "telegram": {
+    "enable": "Bật kết nối Telegram",
+    "enableHelp": "Đăng nhập bằng tài khoản Telegram của bạn. Trợ lý chỉ đọc các chat bạn cho phép và lưu tin nháp.",
+    "setupTitle": "Cách lấy api_id / api_hash (một lần)",
+    "setup": [
+      "Mở my.telegram.org, đăng nhập bằng số điện thoại Telegram.",
+      "Chọn \"API development tools\", tạo app (tên tuỳ ý, platform: Desktop).",
+      "Chép api_id và api_hash vào ô bên dưới rồi bấm Lưu.",
+      "Nhập số điện thoại → Telegram gửi mã vào app Telegram của bạn → nhập mã (và mật khẩu 2 bước nếu có)."
+    ],
+    "phone": "Số điện thoại",
+    "phoneHelp": "Dạng quốc tế, vd +84 912 345 678.",
+    "code": "Mã đăng nhập",
+    "codeHelp": "Telegram vừa gửi mã vào app Telegram (hoặc SMS). Đừng chia sẻ mã này cho ai.",
+    "password": "Mật khẩu xác minh 2 bước",
+    "passwordHelp": "Tài khoản của bạn bật xác minh 2 bước. Mật khẩu chỉ dùng để đăng nhập, không được lưu.",
+    "sendCode": "Gửi mã",
+    "signIn": "Đăng nhập",
+    "connectedAs": "Đang dùng {{name}}",
+    "logout": "Đăng xuất + xoá phiên",
+    "mode": "Trợ lý được đọc",
+    "modes": {
+      "allowlist": "Chỉ chat tôi chọn",
+      "blocklist": "Mọi chat, trừ chat bị chặn"
+    },
+    "modeHelp": {
+      "allowlist": "Đánh dấu chat trợ lý được đọc. Mặc định không chat nào.",
+      "blocklist": "Bỏ đánh dấu để chặn. Chat nhạy cảm (ngân hàng, ví, mã OTP) bị chặn sẵn — đánh dấu nếu muốn cho đọc."
+    },
+    "refresh": "Làm mới",
+    "noChats": "Không có chat nào.",
+    "sensitive": "nhạy cảm",
+    "sensitiveHelp": "Có vẻ là chat ngân hàng / ví / mã xác minh.",
+    "locked": "luôn chặn",
+    "lockedHelp": "Tin nhắn hệ thống của Telegram chứa mã đăng nhập — không bao giờ cho trợ lý đọc.",
+    "kinds": {
+      "user": "người",
+      "bot": "bot",
+      "group": "nhóm",
+      "channel": "kênh"
+    }
+  },
+  "draft": {
+    "title": {
+      "gmail": "Trợ lý đề xuất bản nháp email",
+      "telegram": "Trợ lý đề xuất tin nháp Telegram"
+    },
+    "target": {
+      "gmail": "Gửi tới:",
+      "telegram": "Chat:"
+    },
+    "subject": "Tiêu đề:",
+    "replyTo": "Trả lời thư: {{subject}}",
+    "hint": {
+      "gmail": "Sửa nội dung nếu cần. Bản nháp chỉ được lưu vào Gmail → Thư nháp; bạn tự mở Gmail để gửi.",
+      "telegram": "Sửa nội dung nếu cần. Tin chỉ được lưu vào ô soạn tin của chat (thay nháp cũ nếu có); bạn tự bấm gửi trong Telegram."
+    },
+    "reject": "Từ chối",
+    "approve": {
+      "gmail": "Tạo bản nháp",
+      "telegram": "Lưu nháp"
+    }
+  },
+  "errors": {
+    "generic": "Có lỗi: {{message}}",
+    "not_configured": "Hãy nhập và lưu thông tin ở trên trước.",
+    "client_secret_required": "Cần nhập Client secret.",
+    "client_id_invalid": "Client ID phải có dạng …apps.googleusercontent.com.",
+    "access_denied": "Bạn đã từ chối cấp quyền trong trình duyệt.",
+    "cancelled": "Đã huỷ đăng nhập.",
+    "timeout": "Quá 5 phút chưa đăng nhập xong — thử lại.",
+    "port_in_use": "Cổng đăng nhập 47823 đang bận (có thể đang đăng nhập team). Thử lại sau.",
+    "state_mismatch": "Phản hồi đăng nhập không khớp — thử lại.",
+    "no_refresh_token": "Google không trả token lâu dài. Vào myaccount.google.com/permissions gỡ quyền của app rồi kết nối lại.",
+    "busy": "Đang kết nối, chờ chút.",
+    "not_connected": "Chưa kết nối.",
+    "api_hash_required": "Cần nhập api_hash.",
+    "api_hash_invalid": "api_hash phải gồm 32 ký tự 0-9, a-f.",
+    "api_invalid": "api_id / api_hash không đúng — kiểm tra lại trên my.telegram.org.",
+    "logout_first": "Đăng xuất Telegram trước khi đổi api_id.",
+    "phone_invalid": "Số điện thoại không hợp lệ.",
+    "code_invalid": "Mã không đúng.",
+    "code_expired": "Mã đã hết hạn — gửi lại mã.",
+    "password_invalid": "Mật khẩu 2 bước không đúng.",
+    "no_account": "Số này chưa có tài khoản Telegram.",
+    "no_login": "Phiên đăng nhập đã bị huỷ — bắt đầu lại từ số điện thoại.",
+    "session_revoked": "Phiên Telegram đã bị đăng xuất từ thiết bị khác — đăng nhập lại.",
+    "invalid_input": "Dữ liệu nhập chưa đúng định dạng."
+  }
+}

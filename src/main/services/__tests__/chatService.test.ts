@@ -286,7 +286,11 @@ describe('tool của app (xem màn hình)', () => {
   it('withAppTools: không có tool → giữ nguyên; có tool → thêm tool và nối hướng dẫn vào ngữ cảnh', () => {
     const base = runOptions({ mode: 'code', cwd: 'C:\\p', codeWrite: false, conversationId: 'c1', workspaceDir: 'C:\\ws' })
     expect(withAppTools(base, 'c1', null)).toBe(base)
-    expect(withAppTools(base, 'c1', { names: [], context: 'x' })).toBe(base)
+    expect(withAppTools(base, 'c1', { names: [], context: '' })).toBe(base)
+    // Chỉ có hướng dẫn (vd Gmail hết hạn): nối ngữ cảnh, không mở cầu nối tool.
+    const onlyContext = withAppTools(base, 'c1', { names: [], context: 'GMAIL HẾT HẠN' })
+    expect(onlyContext.appTools).toBeUndefined()
+    expect(onlyContext.context).toBe(`${base.context}\n\nGMAIL HẾT HẠN`)
     const next = withAppTools(base, 'c1', { names: ['screenshot'], context: 'XEM MÀN HÌNH' })
     expect(next.appTools).toEqual({ conversationId: 'c1', names: ['screenshot'] })
     expect(next.context).toBe(`${base.context}\n\nXEM MÀN HÌNH`)

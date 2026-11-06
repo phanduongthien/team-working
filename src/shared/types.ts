@@ -23,6 +23,15 @@ import type {
 } from './agents'
 import type { ComputerStatus, ScreenPreview } from './computer'
 import type { SidecarState } from './sidecar'
+import type {
+  DraftApprovalRequest,
+  DraftDecision,
+  GmailPreviewItem,
+  GmailStatus,
+  TelegramChatInfo,
+  TelegramMode,
+  TelegramStatus
+} from './connectors'
 import type { CsvHeaders, TimeEntry } from './timesheet'
 import type { UpdateState } from './update'
 import type {
@@ -374,6 +383,43 @@ export interface TeamWorkingApi {
     uninstall(): Promise<SidecarState | { error: string }>
     /** Thử đọc danh sách cửa sổ tại máy (không gửi cho Claude). */
     check(): Promise<{ windows: number; python: string } | { error: string }>
+  }
+  /** Gmail cá nhân (thử nghiệm, mặc định tắt): chỉ đọc + tạo nháp sau khi duyệt. Secret không bao giờ về renderer. */
+  gmail: {
+    status(): Promise<GmailStatus>
+    onStatus(listener: (status: GmailStatus) => void): () => void
+    setEnabled(enabled: boolean): Promise<GmailStatus>
+    /** clientSecret bỏ trống = giữ secret đã lưu. */
+    setCredentials(input: { clientId: string; clientSecret?: string }): Promise<GmailStatus | { error: string }>
+    setOptions(input: { testingMode: boolean; skipSensitive: boolean; blockedSenders: string[] }): Promise<GmailStatus>
+    /** Mở trình duyệt đăng nhập Google; chờ tới khi xong / huỷ / hết 5 phút. */
+    connect(): Promise<GmailStatus | { error: string }>
+    cancelConnect(): Promise<void>
+    disconnect(): Promise<GmailStatus | { error: string }>
+    /** 5 thư mới nhất, tại máy (không gửi cho Claude). */
+    preview(): Promise<GmailPreviewItem[] | { error: string }>
+  }
+  /** Telegram tài khoản cá nhân qua GramJS (thử nghiệm, mặc định tắt): chỉ đọc + lưu nháp sau khi duyệt. */
+  telegram: {
+    status(): Promise<TelegramStatus>
+    onStatus(listener: (status: TelegramStatus) => void): () => void
+    setEnabled(enabled: boolean): Promise<TelegramStatus>
+    /** apiHash bỏ trống = giữ hash đã lưu. */
+    setCredentials(input: { apiId: number; apiHash?: string }): Promise<TelegramStatus | { error: string }>
+    sendCode(phone: string): Promise<TelegramStatus | { error: string }>
+    signIn(code: string): Promise<TelegramStatus | { error: string }>
+    password(password: string): Promise<TelegramStatus | { error: string }>
+    cancelLogin(): Promise<TelegramStatus | { error: string }>
+    /** Đăng xuất phía Telegram + xoá session trên máy. */
+    logout(): Promise<TelegramStatus | { error: string }>
+    /** force = tải lại ngay (tối đa 1 lần/phút); mặc định dùng bản lưu tạm 15 phút. */
+    chats(force?: boolean): Promise<TelegramChatInfo[] | { error: string }>
+    setLists(input: { mode: TelegramMode; allow: string[]; block: string[] }): Promise<TelegramStatus>
+  }
+  /** Bản nháp trợ lý đề xuất (Gmail / Telegram) chờ người dùng duyệt. */
+  drafts: {
+    onApproval(listener: (req: DraftApprovalRequest | { id: string; closed: true }) => void): () => void
+    respond(decision: DraftDecision): Promise<boolean>
   }
   ideas: {
     /** Trợ lý chuẩn hóa ý tưởng/báo lỗi thành GitHub issue (bản nháp để người dùng sửa). */

@@ -11,7 +11,8 @@ export default defineConfig({
     envPrefix: ['MAIN_VITE_', 'VITE_SUPABASE_URL'],
     resolve: { alias: shared },
     build: {
-      rollupOptions: { external: ['better-sqlite3', 'electron-updater'] }
+      // GramJS (telegram) nạp động khi bật Telegram; để nguyên trong node_modules thay vì gộp vào bundle.
+      rollupOptions: { external: ['better-sqlite3', 'electron-updater', /^telegram(\/|$)/] }
     }
   },
   preload: {
