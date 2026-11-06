@@ -4,6 +4,29 @@
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-11-06
+
+> Các tính năng cá nhân (điều khiển máy tính, kết nối agent, giọng nói, Gmail/Telegram) đều **mặc định tắt**, ai cần thì tự bật trong Cài đặt → Tính năng thử nghiệm. Dữ liệu chat được tự sao lưu lần đầu chạy bản mới.
+
+### Tóm tắt
+- **Thông báo cập nhật mới**: từ bản sau, app hiện số phiên bản và nội dung thay đổi, bạn chọn Cập nhật ngay / Để sau / Bỏ qua; có kênh beta để thử bản mới sớm.
+- **Dán ảnh bằng Ctrl+V** và kéo thả ảnh, file vào khung chat.
+- **Chat biểu cảm**: emoji (có tab 🕘 Gần đây), GIF và sticker, thả cảm xúc cho từng tin nhắn; trợ lý biểu cảm theo mức bạn chọn.
+- **Artifacts**: tài liệu, slide, bảng cân bằng chỉ số, biểu đồ, sơ đồ trong panel cạnh khung chat; xuất docx, pdf, pptx, xlsx, csv, json.
+- **Sắp xếp cuộc trò chuyện**: ghim, nhóm, tách nhánh, tiêu đề tự động, tìm kiếm có trích đoạn.
+- **Cài skill** cho trợ lý và ghi chú phong cách riêng (my-style).
+- **Trí nhớ gọn hơn**: đề xuất ghi nhớ hiện thành từng dòng, duyệt hàng loạt, lọc theo loại.
+- **Giao diện luôn đúng trạng thái**: bật/tắt, đổi tên hiện ngay, không phải mở lại trang.
+- Thử nghiệm (mặc định tắt): **điều khiển máy tính** chế độ chỉ xem (phím dừng Ctrl+Alt+Q), **kết nối agent** qua MCP, **giọng nói**, **Gmail (nhiều tài khoản) và Telegram** chỉ đọc và soạn nháp.
+- Windows SmartScreen có thể cảnh báo vì bộ cài chưa có chữ ký số: bấm "More info" → "Run anyway".
+
+### Thay đổi so với 0.4.0-beta.1
+- Sửa: nút "Gợi ý ghi nhớ" và "Artifacts" ở thanh trên khung chat không còn đè lên nhau; cửa sổ hẹp thì thu thành biểu tượng (có chú thích), tiêu đề dài được cắt "…".
+- Bộ chọn emoji có tab 🕘 **Gần đây** (tối đa 40, emoji hay dùng được giữ lâu hơn, tính cả cảm xúc thả vào tin nhắn); tab GIF / Sticker có dải "Gần đây"; nút "Xoá gần đây" bấm hai lần.
+- Trang "Mizuki nhớ gì về tôi": mục đề xuất chờ duyệt thu gọn được, mỗi đề xuất một dòng (bấm để sửa, ô sửa tự giãn), "Xem thêm", lọc theo loại, chọn nhiều rồi Đồng ý / Bỏ qua; "Đồng ý tất cả" phải bấm hai lần.
+
+Chi tiết đầy đủ từng tính năng: xem mục 0.4.0-beta.1 trong CHANGELOG.md.
+
 ## [0.4.0-beta.1] - 2026-11-06
 
 > Bản thử nghiệm (beta): chỉ máy chọn kênh beta nhận được. Các tính năng cá nhân (điều khiển máy tính, kết nối agent, giọng nói, Gmail/Telegram) đều **mặc định tắt**, ai cần thì tự bật trong Cài đặt → Tính năng thử nghiệm.
