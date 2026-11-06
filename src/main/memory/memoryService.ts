@@ -148,6 +148,17 @@ export class MemoryService {
     this.emitCount()
   }
 
+  /** Duyệt nhiều đề xuất: đề xuất đã được duyệt ở nơi khác (không còn chờ) thì bỏ qua, không làm hỏng cả lượt. */
+  resolveMany(inputs: ResolveInput[]): number {
+    let done = 0
+    for (const input of inputs) {
+      if (!this.deps.suggestions.getPending(input.id)) continue
+      this.resolve(input)
+      done++
+    }
+    return done
+  }
+
   /** Đề xuất một memory (vd "cần ôn: …" sau quiz) vào hàng chờ duyệt — không tự lưu. */
   suggest(content: string, category: MemoryCategory): void {
     const exists = this.deps.memories.list().some((m) => m.content.trim().toLowerCase() === content.trim().toLowerCase())

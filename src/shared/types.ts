@@ -10,6 +10,8 @@ import type {
   MediaRef,
   MediaSearchResult,
   MessageMedia,
+  ExpressiveRecent,
+  RecentKind,
   Reaction
 } from './expressive'
 import type { ChatEvent, ChatMode, ChatUsage, CliStatus } from './ai'
@@ -318,6 +320,11 @@ export interface TeamWorkingApi {
     openStickersFolder(): Promise<void>
     favorites(): Promise<{ refs: MediaRef[]; items: MediaItem[] }>
     toggleFavorite(ref: MediaRef): Promise<MediaRef[]>
+    /** Emoji / GIF / sticker dùng gần đây (chỉ trên máy), mới dùng xếp đầu. */
+    recent(): Promise<ExpressiveRecent>
+    /** Ghi nhận emoji vừa dùng (chọn trong bộ chọn, gõ trong tin). Cảm xúc / GIF / sticker main tự ghi. */
+    recordEmoji(emoji: string[]): Promise<void>
+    clearRecent(kind: RecentKind): Promise<void>
   }
   memory: {
     getProfile(): Promise<UserProfile>
@@ -333,6 +340,10 @@ export interface TeamWorkingApi {
       content?: string
       category?: MemoryCategory
     }): Promise<void>
+    /** Duyệt nhiều đề xuất một lần; trả về số đề xuất đã xử lý (đề xuất không còn chờ thì bỏ qua). */
+    resolveMany(
+      items: { id: string; accept: boolean; content?: string; category?: MemoryCategory }[]
+    ): Promise<number>
     extract(conversationId: string): Promise<ExtractResult>
     /** Báo đã rời một cuộc trò chuyện — main tự đề xuất memory nếu được bật và có đủ tin mới. */
     conversationLeft(conversationId: string): Promise<void>

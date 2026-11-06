@@ -1,6 +1,11 @@
 import { shell } from 'electron'
 import { z } from 'zod'
-import { expressiveSettingsSchema, mediaRefSchema } from '@shared/expressive'
+import {
+  expressiveSettingsSchema,
+  mediaRefSchema,
+  recentKindSchema,
+  recentUseSchema
+} from '@shared/expressive'
 import { IPC } from '@shared/ipc'
 import { expressiveSearchSchema, giphyKeySchema } from '@shared/schemas'
 import type { ExpressiveService } from '../expressive/service'
@@ -49,4 +54,8 @@ export function registerExpressiveIpc({ handle, expressive, giphyKey }: Expressi
     items: await expressive.favorites()
   }))
   handle(IPC.expressiveToggleFavorite, mediaRefSchema, (ref) => expressive.toggleFavorite(ref), E)
+  const R = { changes: 'expressiveRecent' } as const
+  handle(IPC.expressiveRecent, none, () => expressive.recent())
+  handle(IPC.expressiveUseRecent, recentUseSchema, ({ emoji }) => expressive.recordEmoji(emoji), R)
+  handle(IPC.expressiveClearRecent, recentKindSchema, (kind) => expressive.clearRecent(kind), R)
 }

@@ -91,7 +91,10 @@ const api: TeamWorkingApi = {
     stickerData: (id) => ipcRenderer.invoke(IPC.expressiveStickerData, id),
     openStickersFolder: () => ipcRenderer.invoke(IPC.expressiveOpenStickers),
     favorites: () => ipcRenderer.invoke(IPC.expressiveFavorites),
-    toggleFavorite: (ref) => ipcRenderer.invoke(IPC.expressiveToggleFavorite, ref)
+    toggleFavorite: (ref) => ipcRenderer.invoke(IPC.expressiveToggleFavorite, ref),
+    recent: () => ipcRenderer.invoke(IPC.expressiveRecent),
+    recordEmoji: (emoji) => ipcRenderer.invoke(IPC.expressiveUseRecent, { emoji }),
+    clearRecent: (kind) => ipcRenderer.invoke(IPC.expressiveClearRecent, kind)
   },
   chat: {
     send: (conversationId, text, attachmentIds = []) =>
@@ -117,6 +120,7 @@ const api: TeamWorkingApi = {
     remove: (id) => ipcRenderer.invoke(IPC.memoryRemove, id),
     suggestions: () => ipcRenderer.invoke(IPC.memorySuggestions),
     resolve: (input) => ipcRenderer.invoke(IPC.memoryResolve, input),
+    resolveMany: (items) => ipcRenderer.invoke(IPC.memoryResolveMany, items),
     extract: (conversationId) => ipcRenderer.invoke(IPC.memoryExtract, conversationId),
     conversationLeft: (conversationId) =>
       ipcRenderer.invoke(IPC.memoryConversationLeft, conversationId),

@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import type { MemoryCategory, UserProfile } from '@shared/schemas'
 import type { Memory, MemoryEventPayload, MemorySuggestion } from '@shared/types'
 import { api } from '@renderer/lib/api'
+import { optimistic } from '@renderer/lib/sync'
 import { pushProfileIfSignedIn, syncProfile } from '@renderer/stores/assistantSync'
 import { scheduleBackup } from './backup'
 
@@ -21,12 +22,31 @@ type MemoryState = {
   update(id: string, content: string, category: MemoryCategory): Promise<void>
   remove(id: string): Promise<void>
   resolve(id: string, accept: boolean, edits?: { content?: string; category?: MemoryCategory }): Promise<void>
+  /** Duyệt nhiều đề xuất (Đồng ý / Bỏ qua đã chọn, Đồng ý tất cả) — các dòng biến mất ngay. */
+  resolveMany(ids: string[], accept: boolean): Promise<void>
   saveProfile(profile: UserProfile): Promise<UserProfile>
   /** Đổi tài khoản: main đổi phạm vi trí nhớ, đồng bộ hồ sơ, tải lại. */
   switchAccount(uid: string | null): Promise<void>
   /** Tăng khi hồ sơ có thể đã đổi từ bên ngoài (đổi tài khoản / đồng bộ) → form tải lại. */
   profileVersion: number
   handleEvent(payload: MemoryEventPayload): void
+}
+
+/** Ẩn ngay các đề xuất đang duyệt + giảm số đếm; lỗi → hiện lại (optimistic báo lỗi chung). */
+async function resolveOptimistic(ids: string[], accept: boolean, save: () => Promise<unknown>): Promise<void> {
+  const prev = useMemory.getState()
+  const drop = new Set(ids)
+  const result = await optimistic({
+    topic: 'memory',
+    apply: () =>
+      useMemory.setState((s) => {
+        const suggestions = s.suggestions.filter((x) => !drop.has(x.id))
+        return { suggestions, pendingCount: Math.max(0, s.pendingCount - (s.suggestions.length - suggestions.length)) }
+      }),
+    rollback: () => useMemory.setState({ suggestions: prev.suggestions, pendingCount: prev.pendingCount }),
+    save: async () => (await save(), true)
+  })
+  if (result && accept) scheduleBackup()
 }
 
 export const useMemory = create<MemoryState>((set, get) => ({
@@ -74,9 +94,12 @@ export const useMemory = create<MemoryState>((set, get) => ({
   },
 
   async resolve(id, accept, edits = {}) {
-    await api.memory.resolve({ id, accept, ...edits })
-    await get().loadAll()
-    if (accept) scheduleBackup()
+    await resolveOptimistic([id], accept, () => api.memory.resolve({ id, accept, ...edits }))
+  },
+
+  async resolveMany(ids, accept) {
+    if (ids.length === 0) return
+    await resolveOptimistic(ids, accept, () => api.memory.resolveMany(ids.map((id) => ({ id, accept }))))
   },
 
   async saveProfile(profile) {

@@ -6,7 +6,11 @@ import {
   type MediaKind,
   type MediaRef,
   type MediaSearchResult,
-  type MessageMedia
+  type MessageMedia,
+  type ExpressiveRecent,
+  type RecentKind,
+  type RecentStore,
+  isEmoji
 } from '@shared/expressive'
 import {
   afterReply,
@@ -22,6 +26,7 @@ import {
 } from './affinity'
 import { GiphyError, type GiphyClient } from './giphy'
 import type { StickerLibrary } from './stickers'
+import { RECENT_MAX, recordUse } from './recent'
 import { limitEmoji, parseExpressTags } from './tags'
 
 export type ExpressiveDeps = {
@@ -31,6 +36,8 @@ export type ExpressiveDeps = {
   setStats(value: AffinityStats): void
   getFavorites(): MediaRef[]
   setFavorites(list: MediaRef[]): void
+  getRecent(): RecentStore
+  setRecent(value: RecentStore): void
   giphy: GiphyClient
   /** Nguồn key GIPHY đang dùng: .env (chỉ bản dev) hay key người dùng dán (DPAPI). */
   giphyKeySource(): 'env' | 'user' | null
@@ -196,5 +203,68 @@ export class ExpressiveService {
       : [ref, ...list].slice(0, MAX_FAVORITES)
     this.deps.setFavorites(next)
     return next
+  }
+
+  /* ---------- Gần đây (chỉ trên máy; ghi settings → tự báo sync 'expressiveRecent') ---------- */
+
+  /** GIF / sticker đã gửi gần đây: nhớ thông tin trong bộ nhớ để không phải hỏi lại GIPHY mỗi lần mở. */
+  private readonly mediaCache = new Map<string, MediaItem>()
+  private static mediaKey = (m: MediaRef): string => `${m.source}:${m.id}`
+
+  private recentStore(): RecentStore {
+    return this.deps.getRecent()
+  }
+
+  /** Emoji đã dùng (gõ trong tin, chọn trong bộ chọn, thả cảm xúc) — theo thứ tự dùng. */
+  recordEmoji(input: string[]): void {
+    const emojis = input.filter(isEmoji)
+    if (emojis.length === 0) return
+    const store = this.recentStore()
+    this.deps.setRecent({ ...store, emoji: recordUse(store.emoji, emojis, this.now(), RECENT_MAX.emoji) })
+  }
+
+  /** Người dùng gửi một GIF / sticker (đã được main lấy lại thông tin). */
+  recordMedia(item: MediaItem): void {
+    const key = ExpressiveService.mediaKey(item)
+    this.mediaCache.set(key, item)
+    const store = this.recentStore()
+    this.deps.setRecent({
+      ...store,
+      [item.kind]: recordUse(store[item.kind], [key], this.now(), RECENT_MAX[item.kind])
+    })
+  }
+
+  clearRecent(kind: RecentKind): void {
+    this.deps.setRecent({ ...this.recentStore(), [kind]: [] })
+  }
+
+  async recent(): Promise<ExpressiveRecent> {
+    const store = this.recentStore()
+    const media = async (kind: 'gif' | 'sticker'): Promise<MediaItem[]> => {
+      const refs = store[kind].map((e) => {
+        const i = e.key.indexOf(':')
+        return { kind, source: e.key.slice(0, i) as MediaRef['source'], id: e.key.slice(i + 1), key: e.key }
+      })
+      for (const r of refs)
+        if (r.source === 'local' && !this.mediaCache.has(r.key)) {
+          const item = this.deps.stickers.get(r.id)
+          if (item) this.mediaCache.set(r.key, item)
+        }
+      const missing = refs.filter((r) => r.source === 'giphy' && !this.mediaCache.has(r.key))
+      if (missing.length && this.deps.giphy.hasKey()) {
+        try {
+          for (const item of await this.deps.giphy.byIds(kind, missing.map((r) => r.id)))
+            this.mediaCache.set(ExpressiveService.mediaKey(item), item)
+        } catch (err) {
+          this.deps.log.warn(`Không tải được ${kind} gần đây từ GIPHY: ${(err as Error).message}`)
+        }
+      }
+      return refs.map((r) => this.mediaCache.get(r.key)).filter((x): x is MediaItem => !!x)
+    }
+    return {
+      emoji: store.emoji.map((e) => e.key),
+      gif: await media('gif'),
+      sticker: await media('sticker')
+    }
   }
 }

@@ -76,9 +76,13 @@ const openPicker = async (tab: string): Promise<void> => {
   await picker().getByRole('tab', { name: tab }).click()
 }
 
-test('emoji: tìm không dấu, chèn vào ô nhập, có mục dùng gần đây', async () => {
+const groupTab = (name: string) => picker().getByRole('tab', { name })
+
+test('emoji: tìm không dấu, chèn vào ô nhập; chưa có gần đây → mở tab mặt cười; chọn xong tab không nhảy', async () => {
   await goTo(page, '#/', box())
   await openPicker('Emoji')
+  await expect(groupTab('Mặt cười & cảm xúc')).toHaveAttribute('aria-selected', 'true')
+  await expect(picker().getByTestId('emoji-tab-recent')).toBeVisible() // tab 🕘 luôn ở đầu
   await picker()
     .getByLabel(/Tìm emoji/)
     .fill('cuoi')
@@ -87,7 +91,15 @@ test('emoji: tìm không dấu, chèn vào ô nhập, có mục dùng gần đâ
   await picker()
     .getByLabel(/Tìm emoji/)
     .fill('')
-  await expect(picker().getByTestId('emoji-recent').getByRole('button')).toHaveCount(1)
+  await expect(groupTab('Mặt cười & cảm xúc')).toHaveAttribute('aria-selected', 'true')
+  // Bỏ dòng "Đã dùng gần đây" nhỏ ở tab mặt cười — đã có tab riêng.
+  await expect(picker().getByTestId('emoji-recent')).toHaveCount(0)
+  await picker().getByTestId('emoji-tab-recent').click()
+  await expect(picker().getByTestId('emoji-recent').getByRole('button')).toHaveCount(1, { timeout: 1_000 })
+  await page.keyboard.press('Escape')
+  // Mở lại: đã có gần đây → mở sẵn tab Gần đây.
+  await page.getByTestId('express-button').click()
+  await expect(picker().getByTestId('emoji-tab-recent')).toHaveAttribute('aria-selected', 'true')
   await page.keyboard.press('Escape')
   await box().fill('')
 })
@@ -185,4 +197,40 @@ test('sticker local: Mizuki đáp lại bằng sticker trên máy; gửi sticker
     page.getByTestId('message-user').last().getByTestId('message-media').locator('img')
   ).toHaveAttribute('src', /^data:image.svg.xml/)
   await expect(page.getByRole('button', { name: 'Gửi' })).toBeVisible({ timeout: 20_000 })
+})
+
+test('Gần đây: emoji gõ tay + thả cảm xúc đều tính, mới nhất đầu; GIF / sticker có mục riêng; xoá phải bấm hai lần', async () => {
+  // Gõ thẳng emoji (như bảng Win + .) rồi gửi → tính vào Gần đây.
+  await box().fill('xong rồi 🎉')
+  await box().press('Enter')
+  await expect(page.getByTestId('message-assistant').last()).toContainText('xong rồi', { timeout: 20_000 })
+  await expect(page.getByRole('button', { name: 'Gửi' })).toBeVisible({ timeout: 20_000 })
+
+  await page.getByTestId('express-button').click()
+  await picker().getByRole('tab', { name: 'Emoji' }).click()
+  await expect(picker().getByTestId('emoji-tab-recent')).toHaveAttribute('aria-selected', 'true')
+  const recent = picker().getByTestId('emoji-recent').getByRole('button')
+  await expect(recent.first()).toHaveText('🎉', { timeout: 1_000 })
+  await expect(picker().getByTestId('emoji-recent')).toContainText('😂') // thả cảm xúc ở test trước
+  await page.screenshot({ path: 'test-results/emoji-recent.png' })
+
+  await picker().getByRole('tab', { name: 'GIF' }).click()
+  await expect(picker().getByTestId('recent-gif').getByTestId('recent-media-item')).toHaveCount(1)
+  await picker().getByRole('tab', { name: 'Sticker' }).click()
+  await expect(picker().getByTestId('recent-sticker').getByRole('button', { name: 'Gửi vui' })).toBeVisible()
+
+  // Xoá emoji gần đây: lần đầu chỉ hỏi lại.
+  await picker().getByRole('tab', { name: 'Emoji' }).click()
+  const clear = picker().getByTestId('clear-recent-emoji')
+  await clear.click()
+  await expect(clear).toHaveText('Bấm lần nữa để xoá')
+  await expect(recent).not.toHaveCount(0)
+  await clear.click()
+  await expect(picker().getByTestId('emoji-recent')).toHaveCount(0, { timeout: 1_000 })
+  await expect(picker()).toContainText('Chưa dùng emoji nào')
+  await page.keyboard.press('Escape')
+  // Chưa có gần đây → lần mở sau về tab mặt cười.
+  await page.getByTestId('express-button').click()
+  await expect(groupTab('Mặt cười & cảm xúc')).toHaveAttribute('aria-selected', 'true')
+  await page.keyboard.press('Escape')
 })

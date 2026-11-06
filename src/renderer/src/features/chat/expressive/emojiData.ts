@@ -52,25 +52,4 @@ export function searchEmojis(list: EmojiEntry[], query: string, limit = 120): Em
   return list.filter((e) => words.every((w) => e.search.includes(w))).slice(0, limit)
 }
 
-const RECENT_KEY = 'mmc.recentEmojis'
-const RECENT_MAX = 24
-
-export function recentEmojis(): string[] {
-  try {
-    const v = JSON.parse(localStorage.getItem(RECENT_KEY) ?? '[]') as unknown
-    return Array.isArray(v)
-      ? v.filter((x): x is string => typeof x === 'string').slice(0, RECENT_MAX)
-      : []
-  } catch {
-    return []
-  }
-}
-
-export function pushRecentEmoji(emoji: string): void {
-  localStorage.setItem(
-    RECENT_KEY,
-    JSON.stringify([emoji, ...recentEmojis().filter((e) => e !== emoji)].slice(0, RECENT_MAX))
-  )
-}
-
 export const QUICK_REACTIONS = ['❤️', '😂', '😮', '😢', '👍', '🙏']

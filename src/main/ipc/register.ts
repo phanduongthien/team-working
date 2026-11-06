@@ -28,6 +28,7 @@ import {
   memoryCreateSchema,
   memoryUpdateSchema,
   suggestionResolveSchema,
+  suggestionResolveManySchema,
   userProfileSchema
 } from '@shared/schemas'
 import { checkClaudeCli } from '../ai/claudeCli'
@@ -264,6 +265,7 @@ export function registerIpc(deps: IpcDeps): void {
   )
 
   // ---- Trí nhớ ----
+  const mem = { changes: 'memory' } as const
   handle(deps, IPC.memoryGetProfile, none, () => deps.memory.getProfile())
   handle(deps, IPC.memorySetProfile, userProfileSchema, (p) => deps.memory.setProfile(p))
   handle(deps, IPC.memoryList, z.string().trim().max(200).optional(), (query) =>
@@ -271,15 +273,16 @@ export function registerIpc(deps: IpcDeps): void {
   )
   handle(deps, IPC.memoryCreate, memoryCreateSchema, ({ content, category }) =>
     deps.memories.create(content, category)
-  )
+  , mem)
   handle(deps, IPC.memoryUpdate, memoryUpdateSchema, ({ id, content, category }) => {
     const updated = deps.memories.update(id, content, category)
     if (!updated) throw new Error('memory_not_found')
     return updated
-  })
-  handle(deps, IPC.memoryRemove, idSchema, (id) => deps.memories.remove(id))
+  }, mem)
+  handle(deps, IPC.memoryRemove, idSchema, (id) => deps.memories.remove(id), mem)
   handle(deps, IPC.memorySuggestions, none, () => deps.suggestions.pending())
-  handle(deps, IPC.memoryResolve, suggestionResolveSchema, (input) => deps.memory.resolve(input))
+  handle(deps, IPC.memoryResolve, suggestionResolveSchema, (input) => deps.memory.resolve(input), mem)
+  handle(deps, IPC.memoryResolveMany, suggestionResolveManySchema, (items) => deps.memory.resolveMany(items), mem)
   handle(deps, IPC.memoryExtract, idSchema, (conversationId) => deps.memory.extract(conversationId))
   handle(deps, IPC.memoryConversationLeft, idSchema, (conversationId) => {
     // Chạy nền, không chặn UI; bỏ qua nếu hội thoại vẫn đang chờ phản hồi.
