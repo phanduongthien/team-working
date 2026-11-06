@@ -1,5 +1,5 @@
 import { Loader2, Paperclip, Send, Square } from 'lucide-react'
-import { useRef, useState, type ClipboardEvent, type KeyboardEvent } from 'react'
+import { useEffect, useRef, useState, type ClipboardEvent, type KeyboardEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 import { CHAT_MODES, type ChatMode } from '@shared/ai'
 import { MAX_ATTACHMENTS } from '@shared/schemas'
@@ -10,6 +10,9 @@ import { usePreferences } from '@renderer/stores/preferences'
 import type { MediaItem } from '@shared/expressive'
 import { pasteKind, useDraft } from '../draft'
 import { ExpressPicker } from '../expressive/ExpressPicker'
+import { useVoice } from '../voice/store'
+import { MicButton, VoiceError } from '../voice/VoiceControls'
+import type { MessageVoice } from '@shared/voice'
 import { AttachmentChip } from './AttachmentChip'
 import { ImageThumb } from './ImageThumb'
 
@@ -19,7 +22,8 @@ type Props = {
   streaming: boolean
   /** Không gửi được (vd chưa có Claude CLI). Vẫn cho soạn chữ và đính kèm sẵn. */
   disabled: boolean
-  onSend(text: string, attachmentIds: string[]): void
+  /** voice: chữ do máy chép lại từ giọng nói (đánh dấu "🎤 nói"). */
+  onSend(text: string, attachmentIds: string[], voice?: MessageVoice): void
   /** Gửi ngay GIF / sticker đã chọn. */
   onSendMedia(media: MediaItem): void
   onStop(): void
@@ -38,6 +42,20 @@ export function Composer({
   const name = usePreferences((s) => s.assistant.name)
   const [text, setText] = useState('')
   const box = useRef<HTMLTextAreaElement>(null)
+  // Chế độ "điền vào ô nhập": chữ chép lời vào ô để bạn sửa; gửi đi vẫn đánh dấu là giọng nói.
+  const pendingVoice = useRef<MessageVoice | null>(null)
+  useEffect(
+    () =>
+      useVoice.subscribe((s) => {
+        if (!s.draft) return
+        const d = s.takeDraft()
+        if (!d) return
+        pendingVoice.current = d.voice
+        setText((prev) => (prev.trim() ? `${prev.trim()} ${d.text}` : d.text))
+        requestAnimationFrame(() => box.current?.focus())
+      }),
+    []
+  )
 
   // Emoji chèn vào đúng vị trí con trỏ.
   const insertEmoji = (emoji: string): void => {
@@ -56,9 +74,13 @@ export function Composer({
 
   const submit = (): void => {
     if (!canSend) return
+    // Có file đính kèm thì gửi như tin thường (tin giọng nói chỉ gồm chữ).
+    const voice = items.length === 0 ? (pendingVoice.current ?? undefined) : undefined
+    pendingVoice.current = null
     onSend(
       text.trim(),
-      items.map((a) => a.id)
+      items.map((a) => a.id),
+      voice
     )
     setText('')
     clear()
@@ -119,6 +141,7 @@ export function Composer({
           ))}
         </ul>
       )}
+      <VoiceError />
       <Textarea
         ref={box}
         aria-label={t('placeholder', { name })}
@@ -155,6 +178,7 @@ export function Composer({
           >
             <Paperclip />
           </Button>
+          <MicButton disabled={streaming || disabled} />
           <ExpressPicker
             disabled={streaming || disabled}
             onEmoji={insertEmoji}

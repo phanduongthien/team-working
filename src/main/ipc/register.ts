@@ -54,6 +54,8 @@ export type IpcDeps = {
   chat: ChatService
   /** GIF / sticker người dùng chọn (theo id) → thông tin đầy đủ do main tra lại. */
   resolveMedia(ref: MediaRef): Promise<MessageMedia | null>
+  /** Ghi âm gốc của tin giọng nói có tồn tại không. */
+  hasRecording?(id: string): boolean
   /** Test e2e (bản chưa đóng gói + MMC_FAKE_CHAT): coi như đã có Claude CLI. */
   fakeCli?: boolean
   memory: MemoryService
@@ -129,10 +131,12 @@ export function registerIpc(deps: IpcDeps): void {
     deps,
     IPC.chatSend,
     chatSendSchema,
-    async ({ conversationId, text, attachmentIds, media }) => {
+    async ({ conversationId, text, attachmentIds, media, voice }) => {
       const resolved = media ? await deps.resolveMedia(media) : null
       if (media && !resolved) throw new Error('media_not_found')
-      return deps.chat.send(conversationId, text, deps.attachments.take(attachmentIds), resolved)
+      // Tin giọng nói: chỉ nhận id ghi âm do chính main đã lưu.
+      if (voice && !deps.hasRecording?.(voice.recordingId)) throw new Error('recording_not_found')
+      return deps.chat.send(conversationId, text, deps.attachments.take(attachmentIds), resolved, voice ?? null)
     }
   )
   handle(deps, IPC.chatReact, chatReactSchema, ({ messageId, emoji }) =>

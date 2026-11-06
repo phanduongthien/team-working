@@ -7,6 +7,7 @@ import { AssistantAvatar } from '@renderer/components/AssistantAvatar'
 import { usePreferences } from '@renderer/stores/preferences'
 import { MediaView } from '../expressive/MediaView'
 import { ReactionBar, ReactionChips } from '../expressive/Reactions'
+import { SpeakButton, VoiceBadge } from '../voice/VoiceControls'
 import { AttachmentChip } from './AttachmentChip'
 import { ImageThumb } from './ImageThumb'
 import { Markdown } from './Markdown'
@@ -41,6 +42,7 @@ export const MessageItem = memo(function MessageItem({ message }: { message: Mes
             </div>
           )}
         </div>
+        <VoiceBadge message={message} />
         <ReactionChips message={message} align="end" />
       </div>
     )
@@ -86,6 +88,7 @@ export const MessageItem = memo(function MessageItem({ message }: { message: Mes
           </div>
         )}
         <div className="flex items-center gap-2">
+          <SpeakButton message={message} />
           <ReactionChips message={message} align="start" />
           <ReactionBar message={message} align="start" />
         </div>

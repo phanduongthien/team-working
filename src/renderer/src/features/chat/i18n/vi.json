@@ -187,5 +187,86 @@
       },
       "openStickers": "Mở thư mục sticker"
     }
+  },
+  "voice": {
+    "record": "Nói (bấm lần nữa để dừng; nói xong im 1,5 giây cũng tự dừng)",
+    "stopRecording": "Dừng ghi âm",
+    "transcribing": "Đang chép lời…",
+    "badge": "🎤 nói",
+    "playOriginal": "Nghe lại ghi âm gốc",
+    "stopOriginal": "Dừng nghe",
+    "playOriginalHint": "Ghi âm gốc chỉ lưu trên máy, tự xoá sau 7 ngày",
+    "speak": "Đọc to",
+    "stopSpeaking": "Dừng đọc",
+    "stopSpeakingHint": "Dừng đọc (Esc hoặc Ctrl+Alt+Q)",
+    "dismiss": "Đóng",
+    "errors": {
+      "generic": "Giọng nói gặp lỗi ({{code}}).",
+      "mic_denied": "Không mở được micro — kiểm tra quyền micro của Windows (Cài đặt → Quyền riêng tư → Micro).",
+      "nothing_heard": "Không nghe thấy gì, thử nói lại gần micro hơn.",
+      "pack_missing": "Chưa tải gói giọng nói — vào Cài đặt → Giọng nói.",
+      "model_missing": "Chưa tải model nhận giọng nói đang chọn — vào Cài đặt → Giọng nói.",
+      "cuda_failed_small_missing": "GPU không chạy được và chưa tải model small dự phòng — vào Cài đặt → Giọng nói.",
+      "stt_failed": "Chép lời không thành công, thử lại.",
+      "piper_missing": "Chưa tải giọng đọc offline (Piper) — vào Cài đặt → Giọng nói.",
+      "edge_failed": "Không đọc được qua Edge (mất mạng?) và chưa có giọng Piper dự phòng.",
+      "tts_failed": "Đọc to không thành công.",
+      "voice_disabled": "Giọng nói đang tắt.",
+      "bad_audio": "Không đọc được ghi âm (không phải lỗi GPU). Thử ghi lại.",
+      "pack_outdated": "Thư viện giọng nói cần cập nhật — vào Cài đặt → Giọng nói, bấm Cập nhật (không tải lại model)."
+    },
+    "settings": {
+      "heading": "Giọng nói",
+      "description": "Nói chuyện với {{name}} bằng giọng và nghe {{name}} đọc câu trả lời. Mặc định tắt; thư viện và model chỉ tải khi bạn bấm.",
+      "enable": "Bật giọng nói",
+      "enableHelp": "Hiện nút micro trong khung chat và nút loa trên câu trả lời.",
+      "needSidecar": "Cần cài Python sidecar trước (Cài đặt → Thử nghiệm → Điều khiển máy tính → Python sidecar).",
+      "downloads": "Tải về (dung lượng báo trước, lưu trong thư mục dữ liệu app)",
+      "gpu": "Tìm thấy GPU NVIDIA: {{name}} ({{vram}}). Nhận giọng nói chạy trên GPU nếu tải thư viện CUDA.",
+      "noGpu": "Không thấy GPU NVIDIA — nhận giọng nói chạy trên CPU.",
+      "parts": {
+        "packages": "Thư viện giọng nói (edge-tts, Piper, faster-whisper)",
+        "cuda": "Thư viện CUDA cho GPU NVIDIA",
+        "model": "Model nhận giọng nói: {{model}}",
+        "fallback": "Model small dự phòng (khi GPU lỗi)",
+        "piper": "Giọng đọc offline tiếng Việt (Piper, dự phòng khi mất mạng)"
+      },
+      "installed": "Đã tải",
+      "installing": "Đang cài…",
+      "download": "Tải ({{size}})",
+      "cancel": "Huỷ",
+      "remove": "Xoá {{name}}",
+      "errors": {
+        "network": "Không tải được — kiểm tra mạng rồi thử lại. ({{message}})",
+        "checksum": "File tải về sai mã kiểm tra nên đã bị xoá để an toàn. Thử lại sau.",
+        "failed": "Cài không thành công: {{message}}",
+        "busy": "Đang tải phần khác — vui lòng đợi.",
+        "sidecar_missing": "Cần cài Python sidecar trước."
+      },
+      "sttModel": "Model nhận giọng nói",
+      "auto": "Tự động (GPU: large-v3-turbo, CPU: small)",
+      "using": "Đang dùng: {{model}} trên {{device}}. Không khoá ngôn ngữ — nói lẫn Việt / Anh / Nhật được.",
+      "afterSpeech": "Nói xong",
+      "fill": "Điền vào ô nhập để sửa trước khi gửi",
+      "send": "Gửi luôn",
+      "vocabulary": "Từ vựng riêng",
+      "vocabularyHelp": "Tên riêng, thuật ngữ hay nói (cách nhau bằng dấu phẩy) — giúp nhận đúng. Đã có sẵn: Unity, Blender, After Effects, DaVinci Resolve, build, bug, script, prefab, shader, arigatou, kawaii, sugoi…",
+      "engine": "Giọng đọc",
+      "edge": "Edge (tự nhiên, cần mạng; lỗi thì dùng Piper)",
+      "piper": "Piper (offline, riêng tư)",
+      "voice": "Giọng Edge",
+      "voices": {
+        "vi-VN-HoaiMyNeural": "Hoài My (nữ)",
+        "vi-VN-NamMinhNeural": "Nam Minh (nam)"
+      },
+      "rate": "Tốc độ ({{rate}}%)",
+      "edgePrivacy": "Edge: phần chữ cần đọc được gửi tới dịch vụ đọc của Microsoft. Chọn Piper nếu muốn mọi thứ ở trên máy.",
+      "autoRead": "Tự đọc câu trả lời khi bạn hỏi bằng giọng nói",
+      "bargeIn": "Đang đọc mà bạn bắt đầu nói thì dừng đọc và nghe bạn",
+      "test": "Nghe thử",
+      "sample": "Xin chào, mình là trợ lý của bạn. Hôm nay mình giúp gì được nè?",
+      "privacy": "Nhận giọng nói chạy trên máy bạn. Ghi âm gốc chỉ lưu trên máy, tự xoá sau 7 ngày.",
+      "update": "Cập nhật (chỉ tải gói thay đổi, giữ model)"
+    }
   }
 }

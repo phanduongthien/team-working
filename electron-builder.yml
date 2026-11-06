@@ -23,6 +23,8 @@ extraResources:
     to: mizuki-mcp-bridge.cjs
   - from: resources/sidecar
     to: sidecar
+    # Test + file WAV mẫu chỉ dùng trong CI, không đóng gói.
+    filter: ["**/*", "!tests/**", "!*.in"]
   - from: resources/stickers
     to: stickers
     filter: ['desktop_server.py', 'requirements.txt']

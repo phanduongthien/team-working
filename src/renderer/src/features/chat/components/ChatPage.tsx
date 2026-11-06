@@ -136,7 +136,7 @@ export function ChatPage() {
             onModeChange={onModeChange}
             streaming={isStreaming}
             disabled={!cliOk}
-            onSend={(text, attachmentIds) => void send(text, mode, attachmentIds)}
+            onSend={(text, attachmentIds, voice) => void send(text, mode, attachmentIds, undefined, voice)}
             onSendMedia={(m) =>
               void send('', mode, [], { kind: m.kind, source: m.source, id: m.id })
             }

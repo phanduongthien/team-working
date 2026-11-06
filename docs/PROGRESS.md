@@ -8,9 +8,10 @@
 | #6 | Đọc log Unity/Blender; đọc cửa sổ và cây UI qua Python sidecar (uv) |
 | #7 | Dán ảnh (Ctrl+V), kéo thả, thumbnail, tự thu nhỏ ảnh cho Claude |
 | #8 | Kết nối agent: Mizuki làm MCP server cho Claude Code / Claude Desktop (kèm cầu nối stdio), Mizuki dùng MCP server khác, Ctrl+Alt+Q dùng chung. Gồm cả bản sửa: trả `not_approved` ngay khi chờ duyệt lần đầu; lịch sử trao đổi tự làm mới (5 giây/lần và khi quay lại cửa sổ app) |
+| #10 | Chat biểu cảm (GĐ 3): emoji, GIF/sticker GIPHY, sticker trên máy, thả cảm xúc, trợ lý biểu cảm theo mức |
 
 ## PR đang mở
-- **GĐ 3 `feat/expressive-chat`** — Chat biểu cảm: emoji, GIF/sticker GIPHY, sticker trên máy, Yêu thích, thả cảm xúc, trợ lý biểu cảm theo mức (có "Tự động"). Chờ CI xanh và test tay.
+- **GĐ 2 `feat/voice`** — Giọng nói: faster-whisper (GPU/CPU), edge-tts + Piper, đọc dần từng câu, ngắt lời, ghi âm gốc 7 ngày; kèm góp ý GĐ 3 (hỏi lỗi kỹ thuật → tối đa 2 emoji). Chờ CI xanh và test tay.
 
 ## Lưu ý còn treo
 - ⚠️ Token "Claude Code" cũ đã lộ trong ảnh chụp màn hình: thu hồi trong trang Kết nối agent và tạo token mới (nếu chưa làm).
@@ -18,7 +19,7 @@
 
 ## Bước tiếp theo (chờ người dùng chọn — chưa bắt đầu)
 1. Thao tác chuột/bàn phím (GĐ 1, phần điều khiển): chỉ làm khi người dùng đồng ý riêng.
-2. Giọng nói (GĐ 2), Gmail/Telegram (GĐ 4), Artifacts (GĐ 5).
+2. Gmail/Telegram (GĐ 4), Artifacts (GĐ 5).
 3. A2A và mở kết nối ra LAN: chỉ có đề xuất (`docs/agents.md`), chưa code, chờ duyệt.
 
 ## Quyết định đã duyệt
@@ -40,4 +41,13 @@
   - Trợ lý gửi biểu cảm bằng thẻ `[[react:😂]]`, `[[gif:từ khoá]]`, `[[sticker:từ khoá]]`, `[[sticker:local/tên]]`. Thẻ chỉ chứa TỪ KHOÁ, không bao giờ nhận URL; thẻ sai / không tìm được thì ẩn. Trả lời agent khác qua MCP: bỏ thẻ, chữ thường.
   - Tối đa 1 GIF/sticker + 1 reaction mỗi câu trả lời, giãn cách theo mức. Emoji trong chữ không giới hạn cứng, theo mức + bắt chước người dùng; ngữ cảnh nghiêm túc/buồn được ưu tiên. Hướng dẫn kèm ví dụ: `assistant-skills/expressive/SKILL.md`.
   - Mức: Tắt / Ít / Vừa / Nhiều / Tự động (bắt đầu Ít, mỗi bậc chờ ≥ 3 ngày, có trần, nút đặt lại). Mặc định TẮT với mọi người (không hard-code máy ai trong repo public) — người dùng tự chọn "Tự động" một lần trong Cài đặt.
+  - Hỏi lỗi kỹ thuật / làm việc nghiêm túc: tối đa 2 emoji kể cả ở mức Nhiều (code cắt bớt, không chỉ dựa vào lời nhắc).
   - Sticker: GIPHY Stickers + thư mục local + Yêu thích (GIPHY chỉ lưu ID) + 6 sticker SVG mẫu nguyên bản.
+- **Giọng nói (GĐ 2)**
+  - STT faster-whisper trong tiến trình Python riêng (`voice_server.py`, cùng venv sidecar). Có GPU NVIDIA + đã tải CUDA → large-v3-turbo (float16); không thì small (int8, CPU); GPU lỗi → tự lùi small/CPU. Chọn được base / small / medium / large-v3-turbo. KHÔNG khoá ngôn ngữ; initial_prompt có câu mẫu lẫn Việt/Anh/Nhật + từ vựng mặc định + từ vựng riêng.
+  - Báo dung lượng trước khi tải; mỗi phần tải riêng khi người dùng bấm; model khoá commit Hugging Face + SHA-256.
+  - "Nói xong": điền vào ô nhập (mặc định) / gửi luôn. Mặc định với mọi người là điền vào ô nhập (repo public, không hard-code máy ai) — người dùng tự chọn "Gửi luôn" một lần trong Cài đặt.
+  - Tin giọng nói có nhãn "🎤 nói"; Claude được báo là chữ chép lại; chỉ trêu khi đang chat vui; yêu cầu hành động → hỏi xác nhận (skill `assistant-skills/voice/SKILL.md`). Ghi âm gốc lưu `workspace/voice/`, tự xoá sau 7 ngày.
+  - Đọc to: nút loa + tự đọc khi hỏi bằng giọng; đọc dần từng câu; bỏ code/đường dẫn/log/emoji/thẻ; dừng bằng Esc, Ctrl+Alt+Q (giữ phím chỉ lúc đang đọc), hoặc khi người dùng bắt đầu nói (ngắt lời, tắt được).
+  - Sửa sau test tay #11: faster-whisper 1.2.1 gọi av.open(metadata_errors=…) đã bị bỏ từ PyAV 15 → app tự giải mã WAV thành numpy (không qua av.open), khoá av==14.2.0 (14.3+ không có wheel Windows), cài với --no-build. Chỉ lùi về CPU khi lỗi thật sự do GPU/CUDA. Marker thư viện lưu SHA-256 file khoá → đổi file khoá thì hiện "Cập nhật" (chỉ tải gói thay đổi, giữ model + CUDA). CI có job chép lời thật (model base, WAV mẫu).
+  - TTS: Edge (gửi chữ cho Microsoft, có ghi chú trong Cài đặt), lỗi thì Piper (vi_VN-vais1000-medium, offline).

@@ -1,0 +1,3 @@
+# Thư viện CUDA cho faster-whisper trên GPU NVIDIA (chỉ tải khi có GPU và người dùng đồng ý).
+nvidia-cublas-cu12
+nvidia-cudnn-cu12==9.*

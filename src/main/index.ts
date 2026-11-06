@@ -9,6 +9,7 @@ import {
   Notification,
   safeStorage,
   screen,
+  session,
   shell,
   type IpcMainInvokeEvent
 } from 'electron'
@@ -83,6 +84,10 @@ import { createLogger } from './services/logger'
 import { SavedAccountStore } from './services/savedAccounts'
 import { SecretStore } from './services/secrets'
 import { FakeChatProvider } from './ai/FakeChatProvider'
+import { registerVoiceIpc } from './ipc/voice'
+import { VoiceInstaller } from './voice/installer'
+import { VoiceService, voiceSkillPrompt } from './voice/service'
+import { DEFAULT_VOICE_SETTINGS, STT_MODELS, voiceSettingsSchema } from '@shared/voice'
 import { affinityStatsSchema } from './expressive/affinity'
 import { GiphyClient, readEnvKey } from './expressive/giphy'
 import { ExpressiveService } from './expressive/service'
@@ -103,6 +108,12 @@ app.setPath(
   'userData',
   process.env.TEAM_WORKING_USER_DATA || join(app.getPath('appData'), LEGACY_USER_DATA_DIR)
 )
+
+// Micro giả (tiếng bíp) cho test e2e giọng nói — chỉ bản chưa đóng gói.
+if (!app.isPackaged && process.env.MMC_FAKE_VOICE === '1') {
+  app.commandLine.appendSwitch('use-fake-device-for-media-stream')
+  app.commandLine.appendSwitch('use-fake-ui-for-media-stream')
+}
 
 /** Tài nguyên đóng gói (extraResources) khi đã build, thư mục nguồn khi dev. */
 function resourcePath(packaged: string, dev: string): string {
@@ -131,7 +142,9 @@ function createWindow(): BrowserWindow {
       contextIsolation: true,
       nodeIntegration: false,
       sandbox: true,
-      webSecurity: true
+      webSecurity: true,
+      // Tự đọc câu trả lời (giọng nói) không cần bấm chuột trước.
+      autoplayPolicy: 'no-user-gesture-required'
     }
   })
 
@@ -335,6 +348,86 @@ async function bootstrap(): Promise<void> {
     loadSkill: () => loadSkill(resourcePath('assistant-skills', 'assistant-skills'), 'expressive'),
     log
   })
+  // Giọng nói: tiến trình Python riêng (voice_server.py) trong venv của sidecar; gói + model chỉ tải khi người dùng bấm.
+  const fakeVoice = !app.isPackaged && process.env.MMC_FAKE_VOICE === '1'
+  const voiceInstallerReal = new VoiceInstaller({
+    modelsDir: join(userData, 'voice-models'),
+    sidecar: () => ({ installed: sidecarInstaller.state.state === 'installed', paths: sidecarInstaller.paths }),
+    requirements: {
+      packages: resourcePath('sidecar/requirements-voice.txt', 'resources/sidecar/requirements-voice.txt'),
+      cuda: resourcePath('sidecar/requirements-cuda.txt', 'resources/sidecar/requirements-cuda.txt')
+    },
+    fetch: (url, init) => net.fetch(url, init),
+    run: runProcess,
+    emit: (state) => mainWindow?.webContents.send(IPC.voicePackEvent, state),
+    log
+  })
+  // Test e2e (bản chưa đóng gói + MMC_FAKE_VOICE): coi như đã cài, chép lời / đọc giả lập — không cần Python.
+  const voiceInstaller = fakeVoice
+    ? Object.assign(Object.create(voiceInstallerReal) as VoiceInstaller, {
+        installed: async () => Object.fromEntries(['packages', 'piper', ...STT_MODELS].map((k) => [k, true]).concat([['cuda', false]]))
+      })
+    : voiceInstallerReal
+  const voiceScript = resourcePath('sidecar/voice_server.py', 'resources/sidecar/voice_server.py')
+  const voiceClient = new SidecarClient({
+    command: () => (sidecarInstaller.state.state === 'installed' ? pythonCommand(sidecarInstaller.paths.venvPython, voiceScript) : null),
+    log,
+    timeoutMs: 120_000
+  })
+  app.on('before-quit', () => voiceClient.stop())
+  // 2 giây im lặng (8 kHz, 16-bit) cho đọc giả lập — đủ dài để test thấy trạng thái "đang đọc".
+  const SILENT_WAV = (() => {
+    const data = 16_000 * 2
+    const b = Buffer.alloc(44 + data)
+    b.write('RIFF', 0)
+    b.writeUInt32LE(36 + data, 4)
+    b.write('WAVEfmt ', 8)
+    b.writeUInt32LE(16, 16)
+    b.writeUInt16LE(1, 20)
+    b.writeUInt16LE(1, 22)
+    b.writeUInt32LE(8_000, 24)
+    b.writeUInt32LE(16_000, 28)
+    b.writeUInt16LE(2, 32)
+    b.writeUInt16LE(16, 34)
+    b.write('data', 36)
+    b.writeUInt32LE(data, 40)
+    return b.toString('base64')
+  })()
+  const voice = new VoiceService({
+    getSettings: () => settings.get('voice', voiceSettingsSchema, DEFAULT_VOICE_SETTINGS),
+    setSettings: (value) => settings.set('voice', value),
+    installer: voiceInstaller,
+    sidecarInstalled: () => fakeVoice || sidecarInstaller.state.state === 'installed',
+    call: fakeVoice
+      ? (async (method: string) =>
+          method === 'stt' ? { text: 'xin chào Mizuki, giọng nói giả lập' } : { audio: SILENT_WAV, mime: 'audio/wav' }) as never
+      : (method, params, timeoutMs) => voiceClient.call(method, params, timeoutMs),
+    stop: () => voiceClient.stop(),
+    recordingsDir: join(workspaceDir, 'voice'),
+    detectGpu: async () => {
+      const r = await runProcess('nvidia-smi', ['--query-gpu=name,memory.total', '--format=csv,noheader,nounits'], {
+        env: {},
+        signal: new AbortController().signal,
+        timeoutMs: 5_000
+      }).catch(() => null)
+      const [name, mb] = r?.code === 0 ? r.stdout.trim().split('\n')[0].split(',').map((s) => s.trim()) : []
+      return name ? { name, vramMb: Number(mb) || 0 } : null
+    },
+    assistantName: () => accountScope.getAssistant().name,
+    log
+  })
+  const pruneRecordings = (): void =>
+    void voice.prune().then((n) => n && log.info(`Giọng nói: xoá ${n} ghi âm cũ hơn 7 ngày`))
+  pruneRecordings()
+  setInterval(pruneRecordings, 6 * 60 * 60 * 1000).unref()
+  // Micro: chỉ cửa sổ chính, chỉ âm thanh (không camera). Quyền khác giữ như mặc định của Electron.
+  session.defaultSession.setPermissionRequestHandler((wc, permission, callback, details) => {
+    if (permission !== 'media') return callback(true)
+    const types = (details as { mediaTypes?: string[] }).mediaTypes ?? []
+    callback(wc === mainWindow?.webContents && types.length > 0 && types.every((t) => t === 'audio'))
+  })
+  killSwitch.onStop(() => mainWindow?.webContents.send(IPC.voiceStopEvent))
+
   // Claude giả chỉ cho test e2e ở bản chưa đóng gói.
   const fakeChat =
     !app.isPackaged && process.env.MMC_FAKE_CHAT === '1' ? new FakeChatProvider() : null
@@ -390,7 +483,11 @@ async function bootstrap(): Promise<void> {
       mcpApprovals.cancelConversation(conversationId)
     },
     appToolsFor: () => computer.toolsFor(),
-    expressive
+    expressive,
+    voicePrompt: async (tease) => {
+      const skill = await loadSkill(skillsDir, 'voice')
+      return skill ? voiceSkillPrompt(skill, tease) : ''
+    }
   })
   app.on('before-quit', () => chat.abortAll())
 
@@ -409,6 +506,7 @@ async function bootstrap(): Promise<void> {
     chat,
     resolveMedia: (ref) => expressive.resolve(ref),
     fakeCli: !!fakeChat,
+    hasRecording: (id) => voice.hasRecording(id),
     memory,
     attachments: new AttachmentStore(join(workspaceDir, 'attachments'), electronImages),
     // Clipboard giả chỉ cho test e2e ở bản chưa đóng gói — không bao giờ có trong bản phát hành.
@@ -527,12 +625,22 @@ async function bootstrap(): Promise<void> {
     }
   })
   registerExpressiveIpc({ handle, expressive, giphyKey: giphyUserKey })
+  registerVoiceIpc({
+    handle,
+    voice,
+    installer: voiceInstaller,
+    // Đang đọc → Ctrl+Alt+Q dừng đọc (dùng chung phím dừng khẩn cấp; app khác giữ phím thì vẫn có Esc).
+    setSpeaking: (on) => (on ? killSwitch.arm('voice') : killSwitch.disarm('voice'))
+  })
   registerComputerIpc({
     handle,
     computer,
     logsDir: actionsDir,
     sidecar: sidecarInstaller,
-    stopSidecar: () => sidecarClient.stop()
+    stopSidecar: () => {
+      sidecarClient.stop()
+      voiceClient.stop()
+    }
   })
   registerWorkIpc({
     handle,

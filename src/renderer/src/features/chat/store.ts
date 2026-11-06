@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import type { ChatMode } from '@shared/ai'
 import type { MediaRef } from '@shared/expressive'
+import type { MessageVoice } from '@shared/voice'
 import type { ChatStreamPayload, Conversation, Message } from '@shared/types'
 import { api } from '@renderer/lib/api'
 import { applyChatEvent, isTerminalEvent } from './chatEvents'
@@ -35,7 +36,7 @@ type ChatState = {
   chooseFolder(): Promise<void>
   setCodeWrite(id: string, enabled: boolean): Promise<void>
   remove(id: string): Promise<void>
-  send(text: string, mode: ChatMode, attachmentIds?: string[], media?: MediaRef): Promise<boolean>
+  send(text: string, mode: ChatMode, attachmentIds?: string[], media?: MediaRef, voice?: MessageVoice): Promise<boolean>
   /** Thả / bỏ cảm xúc của người dùng cho một tin. */
   react(message: Message, emoji: string): Promise<void>
   stop(): Promise<void>
@@ -152,7 +153,7 @@ export const useChat = create<ChatState>((set, get) => {
       }
     },
 
-    async send(text, mode, attachmentIds = [], media) {
+    async send(text, mode, attachmentIds = [], media, voice) {
       let id = get().activeId
       if (!id) id = (await get().create(mode)).id
       else if (get().conversations.find((c) => c.id === id)?.mode !== mode)
@@ -162,7 +163,9 @@ export const useChat = create<ChatState>((set, get) => {
       try {
         const res = media
           ? await api.chat.sendMedia(conversationId, text, media)
-          : await api.chat.send(conversationId, text, attachmentIds)
+          : voice
+            ? await api.chat.sendVoice(conversationId, text, voice)
+            : await api.chat.send(conversationId, text, attachmentIds)
         set((s) => ({
           messages: {
             ...s.messages,

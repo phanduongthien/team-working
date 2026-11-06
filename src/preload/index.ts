@@ -32,6 +32,19 @@ const api: TeamWorkingApi = {
   messages: {
     list: (conversationId) => ipcRenderer.invoke(IPC.messagesList, conversationId)
   },
+  voice: {
+    status: () => ipcRenderer.invoke(IPC.voiceStatus),
+    setSettings: (value) => ipcRenderer.invoke(IPC.voiceSetSettings, value),
+    install: (component) => ipcRenderer.invoke(IPC.voiceInstall, component),
+    cancel: () => ipcRenderer.invoke(IPC.voiceCancel),
+    removeModel: (component) => ipcRenderer.invoke(IPC.voiceRemoveModel, component),
+    transcribe: (wav, durationMs) => ipcRenderer.invoke(IPC.voiceTranscribe, { wav, durationMs }),
+    speak: (text) => ipcRenderer.invoke(IPC.voiceSpeak, text),
+    setSpeaking: (on) => ipcRenderer.invoke(IPC.voiceSpeaking, on),
+    recording: (id) => ipcRenderer.invoke(IPC.voiceRecording, id),
+    onPack: (listener) => subscribe(IPC.voicePackEvent, listener),
+    onStop: (listener) => subscribe(IPC.voiceStopEvent, () => listener())
+  },
   expressive: {
     status: () => ipcRenderer.invoke(IPC.expressiveStatus),
     setSettings: (value) => ipcRenderer.invoke(IPC.expressiveSetSettings, value),
@@ -56,6 +69,7 @@ const api: TeamWorkingApi = {
     attachmentPreview: (id, size) => ipcRenderer.invoke(IPC.chatAttachmentPreview, { id, size }),
     sendMedia: (conversationId, text, media) =>
       ipcRenderer.invoke(IPC.chatSend, { conversationId, text, media }),
+    sendVoice: (conversationId, text, voice) => ipcRenderer.invoke(IPC.chatSend, { conversationId, text, voice }),
     react: (messageId, emoji) => ipcRenderer.invoke(IPC.chatReact, { messageId, emoji })
   },
   memory: {

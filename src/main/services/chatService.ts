@@ -9,6 +9,7 @@ import type {
   ToolEvent
 } from '@shared/types'
 import { stripExpressTags, type MessageMedia, type Reaction } from '@shared/expressive'
+import type { MessageVoice } from '@shared/voice'
 import type { AIProvider, HistoryMessage } from '../ai/AIProvider'
 import type { TurnPlan } from '../expressive/affinity'
 import type { FinalizedReply } from '../expressive/service'
@@ -32,6 +33,8 @@ export type ChatServiceDeps = {
   /** Tool của app được bật cho lượt này (vd xem màn hình) + hướng dẫn chèn vào system prompt. */
   appToolsFor?(conversationId: string): { names: string[]; context: string } | null
   /** Chat biểu cảm (emoji / reaction / GIF / sticker). Không có → chỉ bỏ thẻ khỏi câu trả lời. */
+  /** Hướng dẫn cho tin nhắn giọng nói (skill `voice`); tease = được trêu nhẹ lỗi chép lời. */
+  voicePrompt?(tease: boolean): Promise<string>
   expressive?: {
     onUserMessage(input: { text: string; media: boolean; mode: string }): TurnPlan
     onUserReaction(): void
@@ -45,6 +48,9 @@ export const mediaNote = (media: MessageMedia): string =>
   `[Người dùng gửi ${media.kind === 'gif' ? 'GIF' : 'sticker'}: "${media.title || 'không tên'}"]`
 
 const MAX_NOTES = 3
+
+/** Đánh dấu cho Claude: chữ do máy chép lại từ giọng nói. */
+export const VOICE_NOTE = '[🎤 nói — chữ do máy chép lại từ giọng nói, có thể nghe sai]'
 
 const TITLE_MAX = 60
 const PERSIST_INTERVAL_MS = 1_000
@@ -177,7 +183,8 @@ export class ChatService {
     conversationId: string,
     text: string,
     attachments: StoredAttachment[] = [],
-    media: MessageMedia | null = null
+    media: MessageMedia | null = null,
+    voice: MessageVoice | null = null
   ): ChatSendResult {
     const { conversations, messages } = this.deps
     const conversation = conversations.get(conversationId)
@@ -190,7 +197,8 @@ export class ChatService {
       role: 'user',
       content: text,
       attachments,
-      media
+      media,
+      voice
     })
     const plan =
       this.deps.expressive?.onUserMessage({ text, media: !!media, mode: conversation.mode }) ?? null
@@ -231,7 +239,8 @@ export class ChatService {
       mode: conversation.mode,
       sessionId: conversation.cliSessionId ?? undefined,
       // Chỉ gửi ảnh/file không kèm chữ → vẫn cần một câu nhắc cho Claude.
-      text: this.promptText(conversationId, text, media, attachments.length > 0),
+      text: this.promptText(conversationId, voice ? `${VOICE_NOTE}\n${text}` : text, media, attachments.length > 0),
+      voice: !!voice,
       userMessageId: userMessage.id,
       plan,
       history,
@@ -309,6 +318,7 @@ export class ChatService {
     text: string
     userMessageId: string
     plan: TurnPlan | null
+    voice: boolean
     history: Message[]
     attachments: StoredAttachment[]
     options: RunOptions
@@ -338,7 +348,11 @@ export class ChatService {
       memories: memory.memories,
       extraContext: [
         args.options.context,
-        args.plan && deps.expressive ? await deps.expressive.promptFor(args.plan) : ''
+        args.plan && deps.expressive ? await deps.expressive.promptFor(args.plan) : '',
+        // Chỉ trêu lỗi chép lời khi đang chat vui (biểu cảm bật, không nghiêm túc / buồn).
+        args.voice && deps.voicePrompt
+          ? await deps.voicePrompt(!!args.plan && args.plan.level !== 'off' && args.plan.mood === 'normal')
+          : ''
       ]
         .filter(Boolean)
         .join('\n\n')

@@ -22,7 +22,7 @@ import {
 } from './affinity'
 import { GiphyError, type GiphyClient } from './giphy'
 import type { StickerLibrary } from './stickers'
-import { parseExpressTags } from './tags'
+import { limitEmoji, parseExpressTags } from './tags'
 
 export type ExpressiveDeps = {
   getSettings(): ExpressiveSettings
@@ -124,7 +124,9 @@ export class ExpressiveService {
       }
     }
     this.deps.setStats(afterReply(this.stats(), { reaction: !!reaction, media: !!media }))
-    return { text: parsed.text, reaction, media }
+    // Hỏi lỗi kỹ thuật / làm việc nghiêm túc: tối đa 2 emoji — code bảo đảm, không chỉ dựa vào lời nhắc.
+    const text = plan.mood === 'serious' ? limitEmoji(parsed.text, 2) : parsed.text
+    return { text, reaction, media }
   }
 
   /** GIF/sticker người dùng chọn: renderer chỉ gửi id, main tự lấy lại thông tin (không nhận URL). */

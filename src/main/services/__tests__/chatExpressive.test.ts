@@ -82,7 +82,8 @@ describe('ChatService + biểu cảm', () => {
       workspaceDir: 'C:\\ws',
       emit: (p) => emitted.push(p),
       log: { info: vi.fn(), error: vi.fn() },
-      expressive
+      expressive,
+      voicePrompt: async (tease) => (tease ? 'VOICE_TEASE' : 'VOICE_NO_TEASE')
     })
   }
 
@@ -147,6 +148,26 @@ describe('ChatService + biểu cảm', () => {
       /^\(Người dùng vừa thả ❤️ vào một câu trả lời của bạn\. Người dùng vừa thả 😂/
     )
     expect(provider.calls[1].prompt).toContain('tiếp nha')
+  })
+
+  it('tin giọng nói: đánh dấu "🎤 nói" cho Claude; trêu chỉ khi đang chat vui, hỏi lỗi thì không', async () => {
+    const provider = new ScriptProvider('ok')
+    const chat = make(provider)
+    const conv = convs.create('free')
+    const voice = { recordingId: crypto.randomUUID(), durationMs: 1200 }
+    chat.send(conv.id, 'bin bị e rơ', [], null, voice)
+    await done(conv.id)
+    expect(provider.calls[0].prompt).toContain('🎤 nói — chữ do máy chép lại')
+    expect(provider.calls[0].systemPrompt).toContain('VOICE_TEASE')
+    expect(msgs.list(conv.id)[0].voice).toEqual(voice)
+    emitted = []
+    chat.send(conv.id, 'app bị lỗi khi build', [], null, voice)
+    await done(conv.id)
+    expect(provider.calls[1].systemPrompt).toContain('VOICE_NO_TEASE')
+    emitted = []
+    chat.send(conv.id, 'gõ phím thường')
+    await done(conv.id)
+    expect(provider.calls[2].systemPrompt).not.toContain('VOICE_')
   })
 
   it('không thả cảm xúc được vào tin không tồn tại', () => {
