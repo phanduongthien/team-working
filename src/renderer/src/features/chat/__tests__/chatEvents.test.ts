@@ -14,6 +14,7 @@ const msg = (id: string, patch: Partial<Message> = {}): Message => ({
   usage: null,
   reactions: [],
   media: null,
+  voice: null,
   createdAt: 0,
   ...patch
 })

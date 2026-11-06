@@ -5,6 +5,15 @@
 ## [Unreleased]
 
 ### Thêm mới
+- **Giọng nói** (mặc định tắt): nút micro trong khung chat — nhận giọng nói bằng faster-whisper chạy trên máy (GPU NVIDIA: large-v3-turbo; không có GPU hoặc GPU lỗi: small trên CPU), không khoá ngôn ngữ (nói lẫn Việt / Anh / Nhật), có từ vựng riêng. Nói xong điền vào ô nhập để sửa hoặc gửi luôn (tuỳ chọn). Tin gửi bằng giọng có nhãn "🎤 nói" và nghe lại được ghi âm gốc (chỉ trên máy, tự xoá sau 7 ngày).
+- **Đọc to câu trả lời**: nút loa trên mỗi câu trả lời; tự đọc khi bạn hỏi bằng giọng. Đọc dần từng câu, bỏ qua code / đường dẫn / log / emoji. Dừng bằng Esc, Ctrl+Alt+Q, hoặc khi bạn bắt đầu nói. Giọng Edge (tự nhiên, cần mạng), lỗi thì tự chuyển sang Piper (offline).
+- Thư viện và model chỉ tải khi bạn bấm, báo dung lượng trước (gói giọng nói ~120 MB, CUDA ~1,2 GB nếu có GPU, model 148 MB–1,5 GB, giọng Piper 64 MB); mọi file khoá phiên bản / mã kiểm tra.
+- Trợ lý biết tin nhắn là chữ chép từ giọng nói: đoán ý khi bị nghe sai, chỉ trêu nhẹ khi đang chat vui, và hỏi xác nhận trước mọi yêu cầu hành động.
+
+### Thay đổi
+- Chat biểu cảm: khi hỏi lỗi kỹ thuật / làm việc nghiêm túc, câu trả lời có tối đa 2 emoji kể cả ở mức Nhiều.
+
+### Thêm mới
 - **Chat biểu cảm**: bộ chọn emoji (tìm tiếng Việt, gõ không dấu cũng được, mục "dùng gần đây"); gửi GIF và sticker GIPHY (có ô tìm, mục thịnh hành, "Powered by GIPHY"); sticker trên máy (6 sticker mẫu kèm app + thư mục bạn tự chép png/webp/gif/svg vào); tab Yêu thích (GIPHY chỉ lưu ID).
 - **Thả cảm xúc** cho từng tin nhắn (rê chuột → 6 cảm xúc nhanh hoặc chọn thêm), lưu trong lịch sử; trợ lý biết bạn đã thả gì ở lượt sau.
 - **Trợ lý biểu cảm** theo mức Tắt / Ít / Vừa / Nhiều / Tự động (tăng dần theo độ thân thiết, có trần và nút đặt lại về Ít; dữ liệu chỉ trên máy). Mặc định **Tắt**. Trợ lý bắt chước số emoji bạn dùng, tự giảm khi bạn đang sửa lỗi / làm việc nghiêm túc / buồn. Tối đa 1 reaction và 1 GIF/sticker mỗi câu trả lời, có giãn cách chống spam.

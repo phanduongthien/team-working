@@ -57,6 +57,13 @@
       "when": 1793929845069,
       "tag": "0007_message_expressive",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1793941700822,
+      "tag": "0008_message_voice",
+      "breakpoints": true
     }
   ]
 }

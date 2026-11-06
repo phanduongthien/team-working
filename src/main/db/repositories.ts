@@ -1,3 +1,4 @@
+import type { MessageVoice } from '@shared/voice'
 import type { MessageMedia, Reaction } from '@shared/expressive'
 import { randomUUID } from 'node:crypto'
 import { and, asc, desc, eq, gt, inArray, or, sql } from 'drizzle-orm'
@@ -46,6 +47,7 @@ const toMessage = (r: MessageRow): Message => ({
   usage: r.usage ?? null,
   reactions: r.reactions ?? [],
   media: r.media ?? null,
+  voice: r.voice ?? null,
   createdAt: r.createdAt
 })
 
@@ -187,6 +189,7 @@ export type NewMessage = {
   status?: MessageStatus
   attachments?: StoredAttachment[]
   media?: MessageMedia | null
+  voice?: MessageVoice | null
 }
 
 export type MessagePatch = {
@@ -249,6 +252,7 @@ export class MessageRepository {
         status: input.status ?? 'done',
         attachments: input.attachments ?? [],
         media: input.media ?? null,
+        voice: input.voice ?? null,
         createdAt: Date.now()
       })
       .returning()

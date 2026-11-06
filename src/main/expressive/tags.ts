@@ -37,3 +37,23 @@ export function parseExpressTags(raw: string): ParsedTags {
   }
   return result
 }
+
+const EMOJI_RUN =
+  /\p{Extended_Pictographic}(?:\p{Emoji_Modifier}|\uFE0F|\u200D\p{Extended_Pictographic})*/gu
+
+/** Giữ tối đa `max` emoji ngoài khối code (hỏi lỗi kỹ thuật: 1–2 emoji kể cả ở mức Nhiều). */
+export function limitEmoji(text: string, max: number): string {
+  let seen = 0
+  return text
+    .split(/(```[\s\S]*?(?:```|$))/)
+    .map((part, i) =>
+      i % 2 === 1
+        ? part
+        : part
+            .replace(EMOJI_RUN, (m) => (++seen <= max ? m : ''))
+            .replace(/ {2,}/g, ' ')
+            .replace(/ +([.,!?])/g, '$1')
+    )
+    .join('')
+    .trim()
+}

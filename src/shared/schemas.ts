@@ -1,3 +1,4 @@
+import { messageVoiceSchema } from './voice'
 import { MEDIA_KINDS, mediaRefSchema } from './expressive'
 import { z } from 'zod'
 import { CHAT_MODES } from './ai'
@@ -68,7 +69,9 @@ export const chatSendSchema = z
     /** ID file đã đính kèm (chọn / dán / kéo thả) qua main — renderer không bao giờ gửi đường dẫn. */
     attachmentIds: z.array(idSchema).max(MAX_ATTACHMENTS).default([]),
     /** GIF / sticker: chỉ id — main tự tra lại (không bao giờ nhận URL từ renderer). */
-    media: mediaRefSchema.optional()
+    media: mediaRefSchema.optional(),
+    /** Gửi bằng giọng nói: id ghi âm main đã lưu lúc chép lời. */
+    voice: messageVoiceSchema.optional()
   })
   // Gửi được chỉ ảnh hoặc chỉ GIF/sticker (không chữ), nhưng không được gửi tin rỗng hoàn toàn.
   .refine((v) => v.text.length > 0 || v.attachmentIds.length > 0 || !!v.media, 'empty_message')

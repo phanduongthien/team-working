@@ -1,3 +1,4 @@
+import type { MessageVoice } from '@shared/voice'
 import type { MessageMedia, Reaction } from '@shared/expressive'
 import { sql } from 'drizzle-orm'
 import { index, integer, sqliteTable, text } from 'drizzle-orm/sqlite-core'
@@ -51,6 +52,7 @@ export const messages = sqliteTable(
     usage: text('usage', { mode: 'json' }).$type<ChatUsage>(),
     reactions: text('reactions', { mode: 'json' }).$type<Reaction[]>().notNull().default([]),
     media: text('media', { mode: 'json' }).$type<MessageMedia>(),
+    voice: text('voice', { mode: 'json' }).$type<MessageVoice>(),
     createdAt: integer('created_at').notNull().default(now)
   },
   (t) => [index('messages_conversation_idx').on(t.conversationId, t.createdAt)]

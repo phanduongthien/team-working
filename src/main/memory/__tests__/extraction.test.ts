@@ -24,6 +24,7 @@ const msg = (role: 'user' | 'assistant', content: string): Message => ({
   usage: null,
   reactions: [],
   media: null,
+  voice: null,
   createdAt: 0
 })
 

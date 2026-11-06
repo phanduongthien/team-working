@@ -1,3 +1,4 @@
+import type { MessageVoice, SpeakChunk, TranscribeResult, VoiceComponent, VoicePackState, VoiceSettings, VoiceStatus } from './voice'
 import type {
   ExpressiveSettings,
   ExpressiveStatus,
@@ -104,6 +105,8 @@ export type Message = {
   reactions: Reaction[]
   /** GIF / sticker kèm tin. */
   media: MessageMedia | null
+  /** Tin gửi bằng giọng nói (chữ do máy chép lại) + ghi âm gốc. */
+  voice: MessageVoice | null
   createdAt: number
 }
 
@@ -198,8 +201,28 @@ export interface TeamWorkingApi {
     attachmentPreview(id: string, size: 'thumb' | 'large'): Promise<string | null>
     /** Gửi GIF / sticker (chỉ id; có thể kèm chữ). */
     sendMedia(conversationId: string, text: string, media: MediaRef): Promise<ChatSendResult>
+    /** Gửi chữ chép từ giọng nói (đánh dấu "🎤 nói"). */
+    sendVoice(conversationId: string, text: string, voice: MessageVoice): Promise<ChatSendResult>
     /** Thả cảm xúc (null = bỏ). Mỗi người tối đa 1 cảm xúc mỗi tin. */
     react(messageId: string, emoji: string | null): Promise<Message>
+  }
+  voice: {
+    status(): Promise<VoiceStatus>
+    setSettings(value: VoiceSettings): Promise<VoiceStatus>
+    /** Tải một phần của gói giọng nói (thư viện / CUDA / model) — chỉ khi người dùng bấm. */
+    install(component: VoiceComponent): Promise<VoiceStatus>
+    cancel(): Promise<void>
+    removeModel(component: Exclude<VoiceComponent, 'packages' | 'cuda'>): Promise<VoiceStatus>
+    /** WAV 16 kHz mono từ micro → chữ (ghi âm gốc giữ 7 ngày trên máy). */
+    transcribe(wav: Uint8Array, durationMs: number): Promise<TranscribeResult>
+    /** Đọc một câu → data URL âm thanh. */
+    speak(text: string): Promise<SpeakChunk>
+    /** Đang đọc: giữ phím dừng khẩn cấp Ctrl+Alt+Q để dừng đọc. */
+    setSpeaking(on: boolean): Promise<void>
+    recording(id: string): Promise<string | null>
+    onPack(listener: (state: VoicePackState) => void): () => void
+    /** Ctrl+Alt+Q → dừng đọc. */
+    onStop(listener: () => void): () => void
   }
   expressive: {
     status(): Promise<ExpressiveStatus>

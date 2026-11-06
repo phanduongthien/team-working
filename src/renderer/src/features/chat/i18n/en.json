@@ -187,5 +187,84 @@
       },
       "openStickers": "Open sticker folder"
     }
+  },
+  "voice": {
+    "record": "Speak (click again to stop; also stops after 1.5 s of silence)",
+    "stopRecording": "Stop recording",
+    "transcribing": "Transcribing…",
+    "badge": "🎤 spoken",
+    "playOriginal": "Play original recording",
+    "stopOriginal": "Stop",
+    "playOriginalHint": "Recordings stay on this PC and are deleted after 7 days",
+    "speak": "Read aloud",
+    "stopSpeaking": "Stop reading",
+    "stopSpeakingHint": "Stop reading (Esc or Ctrl+Alt+Q)",
+    "dismiss": "Dismiss",
+    "errors": {
+      "generic": "Voice error ({{code}}).",
+      "mic_denied": "Could not open the microphone — check Windows microphone permissions.",
+      "nothing_heard": "Nothing heard, try again closer to the mic.",
+      "pack_missing": "Voice pack not downloaded — see Settings → Voice.",
+      "model_missing": "The selected speech model is not downloaded — see Settings → Voice.",
+      "cuda_failed_small_missing": "The GPU failed and the small fallback model is not downloaded — see Settings → Voice.",
+      "stt_failed": "Transcription failed, try again.",
+      "piper_missing": "Offline voice (Piper) not downloaded — see Settings → Voice.",
+      "edge_failed": "Edge reading failed (offline?) and no Piper fallback is installed.",
+      "tts_failed": "Reading aloud failed.",
+      "voice_disabled": "Voice is turned off.",
+      "bad_audio": "Invalid recording."
+    },
+    "settings": {
+      "heading": "Voice",
+      "description": "Talk to {{name}} and hear {{name}} read replies. Off by default; libraries and models download only when you click.",
+      "enable": "Enable voice",
+      "enableHelp": "Shows a mic button in the chat box and a speaker button on replies.",
+      "needSidecar": "Install the Python sidecar first (Settings → Experimental → Computer control → Python sidecar).",
+      "downloads": "Downloads (sizes shown first, stored in the app data folder)",
+      "gpu": "NVIDIA GPU found: {{name}} ({{vram}}). Speech recognition runs on the GPU once the CUDA libraries are downloaded.",
+      "noGpu": "No NVIDIA GPU found — speech recognition runs on the CPU.",
+      "parts": {
+        "packages": "Voice libraries (edge-tts, Piper, faster-whisper)",
+        "cuda": "CUDA libraries for NVIDIA GPUs",
+        "model": "Speech model: {{model}}",
+        "fallback": "Small fallback model (if the GPU fails)",
+        "piper": "Offline Vietnamese voice (Piper, fallback when offline)"
+      },
+      "installed": "Downloaded",
+      "installing": "Installing…",
+      "download": "Download ({{size}})",
+      "cancel": "Cancel",
+      "remove": "Remove {{name}}",
+      "errors": {
+        "network": "Download failed — check your connection and retry. ({{message}})",
+        "checksum": "The download did not match its checksum and was deleted for safety. Try again later.",
+        "failed": "Installation failed: {{message}}",
+        "busy": "Another download is running — please wait.",
+        "sidecar_missing": "Install the Python sidecar first."
+      },
+      "sttModel": "Speech model",
+      "auto": "Automatic (GPU: large-v3-turbo, CPU: small)",
+      "using": "Using: {{model}} on {{device}}. Language is not locked — mixing Vietnamese / English / Japanese works.",
+      "afterSpeech": "After speaking",
+      "fill": "Put the text in the box to edit first",
+      "send": "Send right away",
+      "vocabulary": "Custom vocabulary",
+      "vocabularyHelp": "Names and terms you often say (comma separated) — improves recognition. Built in: Unity, Blender, After Effects, DaVinci Resolve, build, bug, script, prefab, shader, arigatou, kawaii, sugoi…",
+      "engine": "Reading voice",
+      "edge": "Edge (natural, needs internet; falls back to Piper)",
+      "piper": "Piper (offline, private)",
+      "voice": "Edge voice",
+      "voices": {
+        "vi-VN-HoaiMyNeural": "Hoai My (female)",
+        "vi-VN-NamMinhNeural": "Nam Minh (male)"
+      },
+      "rate": "Speed ({{rate}}%)",
+      "edgePrivacy": "Edge: the text to read is sent to Microsoft's reading service. Choose Piper to keep everything on this PC.",
+      "autoRead": "Read replies aloud when you asked by voice",
+      "bargeIn": "Stop reading when you start speaking",
+      "test": "Test voice",
+      "sample": "Hi, I am your assistant. What can I do for you today?",
+      "privacy": "Speech recognition runs on your PC. Recordings stay on this PC and are deleted after 7 days."
+    }
   }
 }

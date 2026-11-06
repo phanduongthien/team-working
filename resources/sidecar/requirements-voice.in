@@ -1,0 +1,4 @@
+# Gói giọng nói (tải khi người dùng bật): đọc (edge-tts, Piper) + nghe (faster-whisper).
+edge-tts
+piper-tts
+faster-whisper
