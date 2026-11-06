@@ -93,5 +93,99 @@
   "tools": {
     "screenshot": "chụp màn hình",
     "list_displays": "xem danh sách màn hình"
+  },
+  "expressive": {
+    "button": "Emoji, GIF và sticker",
+    "tabs": {
+      "emoji": "Emoji",
+      "gif": "GIF",
+      "sticker": "Sticker",
+      "favorites": "Yêu thích"
+    },
+    "emojiSearch": "Tìm emoji (vd: cười, tim, mèo)",
+    "gifSearch": "Tìm GIF trên GIPHY",
+    "stickerSearch": "Tìm sticker trên GIPHY",
+    "recent": "Dùng gần đây",
+    "loading": "Đang tải…",
+    "noResults": "Không tìm thấy.",
+    "noFavorites": "Chưa có gì. Bấm ngôi sao trên GIF/sticker để lưu vào đây.",
+    "groups": {
+      "0": "Mặt cười & cảm xúc",
+      "1": "Người & cơ thể",
+      "3": "Động vật & thiên nhiên",
+      "4": "Đồ ăn & thức uống",
+      "5": "Du lịch & địa điểm",
+      "6": "Hoạt động",
+      "7": "Đồ vật",
+      "8": "Ký hiệu",
+      "9": "Cờ"
+    },
+    "send": "Gửi {{title}}",
+    "favorite": "Thêm vào Yêu thích",
+    "unfavorite": "Bỏ khỏi Yêu thích",
+    "stickerSource": {
+      "local": "Trên máy",
+      "giphy": "GIPHY"
+    },
+    "openFolder": "Mở thư mục",
+    "localHelp": "Chép file png, webp, gif hoặc svg vào thư mục sticker (mỗi thư mục con là một bộ) rồi mở lại tab này.",
+    "cannotSend": "Chưa gửi được lúc này (đang trả lời hoặc chưa có Claude).",
+    "noKey": {
+      "title": "Cần GIPHY API key để tìm GIF/sticker",
+      "step1": "Tạo tài khoản và app (loại API) miễn phí tại",
+      "step2": "Sao chép API key của app.",
+      "step3": "Dán key vào",
+      "settings": "Cài đặt → Chat biểu cảm"
+    },
+    "errors": {
+      "giphy_bad_key": "GIPHY từ chối key — kiểm tra lại key trong Cài đặt.",
+      "giphy_rate_limited": "Đã chạm giới hạn của GIPHY, thử lại sau ít phút.",
+      "giphy_network": "Không kết nối được GIPHY — kiểm tra mạng."
+    },
+    "you": "Bạn",
+    "reactedBy": "{{name}} đã thả",
+    "react": "Thả {{emoji}}",
+    "moreReactions": "Chọn cảm xúc khác",
+    "modes": {
+      "off": "Tắt",
+      "low": "Ít",
+      "medium": "Vừa",
+      "high": "Nhiều",
+      "auto": "Tự động (tăng dần)"
+    },
+    "settings": {
+      "heading": "Chat biểu cảm",
+      "description": "Mức emoji, reaction, GIF/sticker {{name}} dùng khi trò chuyện với bạn. Bộ chọn emoji/GIF/sticker và thả cảm xúc của bạn luôn dùng được.",
+      "mode": "Mức biểu cảm",
+      "max": "Mức tối đa",
+      "help": {
+        "off": "Trợ lý không dùng emoji, không thả cảm xúc, không gửi GIF/sticker.",
+        "low": "Thỉnh thoảng một emoji cuối câu; hiếm khi thả cảm xúc hay gửi GIF.",
+        "medium": "Vài emoji đúng chỗ cảm xúc; thỉnh thoảng thả cảm xúc, gửi GIF/sticker.",
+        "high": "Nhắn như bạn thân đang vui: chuỗi emoji, :)) hihi ^^; hay thả cảm xúc, gửi GIF/sticker hơn.",
+        "auto": "Bắt đầu ở \"Ít\" và tăng dần (vài ngày một bậc) theo số ngày trò chuyện và việc bạn hay dùng emoji/GIF/sticker. Khi bạn đang sửa lỗi, làm việc nghiêm túc hoặc buồn, trợ lý tự giảm biểu cảm."
+      },
+      "current": "Hiện tại: {{level}}",
+      "trend": {
+        "up": "đang tăng dần",
+        "down": "đang giảm dần"
+      },
+      "reset": "Đặt lại về Ít",
+      "autoPrivacy": "Dữ liệu tính độ thân thiết chỉ lưu trên máy này.",
+      "giphyKey": "GIPHY API key",
+      "giphyKeyPlaceholder": "Dán key mới…",
+      "giphyKeyStatus": {
+        "none": "Chưa có key — tab GIF/sticker GIPHY sẽ hiện hướng dẫn.",
+        "user": "Đã lưu key của bạn (mã hoá trên máy, chỉ gửi tới GIPHY).",
+        "env": "Đang dùng key trong file .env (chỉ bản dev)."
+      },
+      "removeKey": "Xoá key",
+      "giphyHelp": "Mỗi người dùng key riêng, lấy miễn phí tại",
+      "keyErrors": {
+        "invalid_key": "Key không hợp lệ (chỉ gồm chữ và số).",
+        "secure_storage_unavailable": "Máy không hỗ trợ lưu mã hoá nên không lưu được key."
+      },
+      "openStickers": "Mở thư mục sticker"
+    }
   }
 }

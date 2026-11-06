@@ -1,3 +1,13 @@
+import type {
+  ExpressiveSettings,
+  ExpressiveStatus,
+  MediaItem,
+  MediaKind,
+  MediaRef,
+  MediaSearchResult,
+  MessageMedia,
+  Reaction
+} from './expressive'
 import type { ChatEvent, ChatMode, ChatUsage, CliStatus } from './ai'
 import type {
   AgentExchange,
@@ -90,6 +100,10 @@ export type Message = {
   toolEvents: ToolEvent[]
   attachments: Attachment[]
   usage: ChatUsage | null
+  /** Cảm xúc đã thả (mỗi bên tối đa 1). */
+  reactions: Reaction[]
+  /** GIF / sticker kèm tin. */
+  media: MessageMedia | null
   createdAt: number
 }
 
@@ -152,7 +166,10 @@ export type MemoryEventPayload =
   | { type: 'suggestions'; pending: number }
   | { type: 'extracting'; conversationId: string; running: boolean }
 
-export type PickAttachmentsResult = { attachments: Attachment[]; rejected: { name: string; reason: string }[] }
+export type PickAttachmentsResult = {
+  attachments: Attachment[]
+  rejected: { name: string; reason: string }[]
+}
 
 /** API có kiểu mà preload expose tại `window.api`. */
 export interface TeamWorkingApi {
@@ -179,6 +196,24 @@ export interface TeamWorkingApi {
     pasteClipboard(): Promise<PickAttachmentsResult>
     /** Ảnh xem trước (data URL); null nếu không phải ảnh hoặc không có quyền xem. */
     attachmentPreview(id: string, size: 'thumb' | 'large'): Promise<string | null>
+    /** Gửi GIF / sticker (chỉ id; có thể kèm chữ). */
+    sendMedia(conversationId: string, text: string, media: MediaRef): Promise<ChatSendResult>
+    /** Thả cảm xúc (null = bỏ). Mỗi người tối đa 1 cảm xúc mỗi tin. */
+    react(messageId: string, emoji: string | null): Promise<Message>
+  }
+  expressive: {
+    status(): Promise<ExpressiveStatus>
+    setSettings(value: ExpressiveSettings): Promise<ExpressiveStatus>
+    resetAuto(): Promise<ExpressiveStatus>
+    /** Key GIPHY của người dùng (mã hoá DPAPI); null = xoá. Key không bao giờ quay về renderer. */
+    setGiphyKey(key: string | null): Promise<ExpressiveStatus | { error: string }>
+    /** Tìm GIF / sticker GIPHY; query rỗng = thịnh hành. */
+    search(kind: MediaKind, query: string, offset?: number): Promise<MediaSearchResult>
+    stickers(): Promise<MediaItem[]>
+    stickerData(id: string): Promise<string | null>
+    openStickersFolder(): Promise<void>
+    favorites(): Promise<{ refs: MediaRef[]; items: MediaItem[] }>
+    toggleFavorite(ref: MediaRef): Promise<MediaRef[]>
   }
   memory: {
     getProfile(): Promise<UserProfile>
@@ -188,7 +223,12 @@ export interface TeamWorkingApi {
     update(id: string, content: string, category: MemoryCategory): Promise<Memory>
     remove(id: string): Promise<void>
     suggestions(): Promise<MemorySuggestion[]>
-    resolve(input: { id: string; accept: boolean; content?: string; category?: MemoryCategory }): Promise<void>
+    resolve(input: {
+      id: string
+      accept: boolean
+      content?: string
+      category?: MemoryCategory
+    }): Promise<void>
     extract(conversationId: string): Promise<ExtractResult>
     /** Báo đã rời một cuộc trò chuyện — main tự đề xuất memory nếu được bật và có đủ tin mới. */
     conversationLeft(conversationId: string): Promise<void>
@@ -233,7 +273,10 @@ export interface TeamWorkingApi {
     status(): Promise<ComputerStatus>
     onStatus(listener: (status: ComputerStatus) => void): () => void
     /** Bật lần đầu phải kèm acceptWarning (người dùng đã đọc cảnh báo). */
-    setEnabled(enabled: boolean, acceptWarning?: boolean): Promise<ComputerStatus | { error: string }>
+    setEnabled(
+      enabled: boolean,
+      acceptWarning?: boolean
+    ): Promise<ComputerStatus | { error: string }>
     /** Cho trợ lý xem màn hình trong phiên này (tắt khi khởi động lại app hoặc dừng khẩn cấp). */
     setScreenAccess(on: boolean): Promise<ComputerStatus | { error: string }>
     emergencyStop(): Promise<void>
@@ -277,9 +320,12 @@ export interface TeamWorkingApi {
   }
   ideas: {
     /** Trợ lý chuẩn hóa ý tưởng/báo lỗi thành GitHub issue (bản nháp để người dùng sửa). */
-    format(input: { title: string; description: string; kind: 'idea' | 'bug'; language: 'vi' | 'en' }): Promise<
-      AiResult<{ title: string; body: string; labels: string[] }>
-    >
+    format(input: {
+      title: string
+      description: string
+      kind: 'idea' | 'bug'
+      language: 'vi' | 'en'
+    }): Promise<AiResult<{ title: string; body: string; labels: string[] }>>
   }
   auth: {
     /** Mở trình duyệt tới link đăng nhập Supabase và chờ mã trả về qua cổng loopback. */
@@ -312,7 +358,12 @@ export interface TeamWorkingApi {
     addManual(input: TimeManualInput): Promise<TimeEntry>
     update(input: TimeUpdateInput): Promise<TimeEntry>
     remove(id: string): Promise<void>
-    exportCsv(input: { from: number; to: number; headers: CsvHeaders; kinds: Record<TimeEntryKind, string> }): Promise<string | null>
+    exportCsv(input: {
+      from: number
+      to: number
+      headers: CsvHeaders
+      kinds: Record<TimeEntryKind, string>
+    }): Promise<string | null>
     onChanged(listener: () => void): () => void
     getWorkday(): Promise<Workday>
     setWorkday(workday: Workday): Promise<Workday>
@@ -349,6 +400,26 @@ export interface TeamWorkingApi {
 
 export type SavedAccount = SavedAccountInfo & { remembered: boolean; lastUsedAt: number }
 
-export type TimeStartInput = { taskId?: string | null; projectId?: string | null; title: string; projectName?: string | null; kind?: 'timer' | 'pomodoro' }
-export type TimeManualInput = { taskId?: string | null; projectId?: string | null; title: string; projectName?: string | null; startedAt: number; endedAt: number; note?: string }
-export type TimeUpdateInput = { id: string; title: string; note: string; startedAt: number; endedAt: number }
+export type TimeStartInput = {
+  taskId?: string | null
+  projectId?: string | null
+  title: string
+  projectName?: string | null
+  kind?: 'timer' | 'pomodoro'
+}
+export type TimeManualInput = {
+  taskId?: string | null
+  projectId?: string | null
+  title: string
+  projectName?: string | null
+  startedAt: number
+  endedAt: number
+  note?: string
+}
+export type TimeUpdateInput = {
+  id: string
+  title: string
+  note: string
+  startedAt: number
+  endedAt: number
+}

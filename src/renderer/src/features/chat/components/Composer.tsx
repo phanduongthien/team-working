@@ -1,5 +1,5 @@
 import { Loader2, Paperclip, Send, Square } from 'lucide-react'
-import { useState, type ClipboardEvent, type KeyboardEvent } from 'react'
+import { useRef, useState, type ClipboardEvent, type KeyboardEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 import { CHAT_MODES, type ChatMode } from '@shared/ai'
 import { MAX_ATTACHMENTS } from '@shared/schemas'
@@ -7,7 +7,9 @@ import { Button } from '@renderer/components/ui/button'
 import { Select, Textarea } from '@renderer/components/ui/input'
 import { ScreenAccessToggle } from '@renderer/features/computer/components/ScreenAccessToggle'
 import { usePreferences } from '@renderer/stores/preferences'
+import type { MediaItem } from '@shared/expressive'
 import { pasteKind, useDraft } from '../draft'
+import { ExpressPicker } from '../expressive/ExpressPicker'
 import { AttachmentChip } from './AttachmentChip'
 import { ImageThumb } from './ImageThumb'
 
@@ -18,20 +20,46 @@ type Props = {
   /** Không gửi được (vd chưa có Claude CLI). Vẫn cho soạn chữ và đính kèm sẵn. */
   disabled: boolean
   onSend(text: string, attachmentIds: string[]): void
+  /** Gửi ngay GIF / sticker đã chọn. */
+  onSendMedia(media: MediaItem): void
   onStop(): void
 }
 
-export function Composer({ mode, onModeChange, streaming, disabled, onSend, onStop }: Props) {
+export function Composer({
+  mode,
+  onModeChange,
+  streaming,
+  disabled,
+  onSend,
+  onSendMedia,
+  onStop
+}: Props) {
   const { t } = useTranslation('chat')
   const name = usePreferences((s) => s.assistant.name)
   const [text, setText] = useState('')
+  const box = useRef<HTMLTextAreaElement>(null)
+
+  // Emoji chèn vào đúng vị trí con trỏ.
+  const insertEmoji = (emoji: string): void => {
+    const el = box.current
+    const start = el?.selectionStart ?? text.length
+    const end = el?.selectionEnd ?? text.length
+    setText(text.slice(0, start) + emoji + text.slice(end))
+    requestAnimationFrame(() => {
+      el?.focus()
+      el?.setSelectionRange(start + emoji.length, start + emoji.length)
+    })
+  }
   const { items, problems, busy, addFiles, addFromClipboard, pick, remove, clear } = useDraft()
 
   const canSend = !streaming && !disabled && !busy && (text.trim().length > 0 || items.length > 0)
 
   const submit = (): void => {
     if (!canSend) return
-    onSend(text.trim(), items.map((a) => a.id))
+    onSend(
+      text.trim(),
+      items.map((a) => a.id)
+    )
     setText('')
     clear()
   }
@@ -55,13 +83,19 @@ export function Composer({ mode, onModeChange, streaming, disabled, onSend, onSt
   const problemText = (p: { name?: string; reason: string }): string =>
     p.reason === 'too_many'
       ? t('attach.tooMany', { max: MAX_ATTACHMENTS })
-      : t('attach.rejected', { name: p.name ?? '', reason: t(`attach.reasons.${p.reason}`, { defaultValue: p.reason }) })
+      : t('attach.rejected', {
+          name: p.name ?? '',
+          reason: t(`attach.reasons.${p.reason}`, { defaultValue: p.reason })
+        })
 
   const images = items.filter((a) => a.mimeType.startsWith('image/'))
   const files = items.filter((a) => !a.mimeType.startsWith('image/'))
 
   return (
-    <div className="rounded-xl border bg-card p-2 shadow-sm focus-within:ring-2 focus-within:ring-primary/30" data-testid="composer">
+    <div
+      className="rounded-xl border bg-card p-2 shadow-sm focus-within:ring-2 focus-within:ring-primary/30"
+      data-testid="composer"
+    >
       {(items.length > 0 || busy) && (
         <div className="flex flex-wrap items-end gap-2 px-1 pt-1.5" data-testid="draft-attachments">
           {images.map((a) => (
@@ -70,7 +104,12 @@ export function Composer({ mode, onModeChange, streaming, disabled, onSend, onSt
           {files.map((a) => (
             <AttachmentChip key={a.id} attachment={a} onRemove={() => remove(a.id)} />
           ))}
-          {busy && <Loader2 className="mb-1 size-4 animate-spin text-muted-foreground" aria-label={t('attach.adding')} />}
+          {busy && (
+            <Loader2
+              className="mb-1 size-4 animate-spin text-muted-foreground"
+              aria-label={t('attach.adding')}
+            />
+          )}
         </div>
       )}
       {problems.length > 0 && (
@@ -81,6 +120,7 @@ export function Composer({ mode, onModeChange, streaming, disabled, onSend, onSt
         </ul>
       )}
       <Textarea
+        ref={box}
         aria-label={t('placeholder', { name })}
         className="max-h-48 min-h-14 border-0 focus-visible:ring-0"
         placeholder={t('placeholder', { name })}
@@ -115,6 +155,11 @@ export function Composer({ mode, onModeChange, streaming, disabled, onSend, onSt
           >
             <Paperclip />
           </Button>
+          <ExpressPicker
+            disabled={streaming || disabled}
+            onEmoji={insertEmoji}
+            onMedia={onSendMedia}
+          />
           {/* Quyền xem màn hình không phụ thuộc việc gửi tin được hay không — luôn phải tắt được. */}
           <ScreenAccessToggle />
         </div>

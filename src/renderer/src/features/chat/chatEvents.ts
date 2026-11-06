@@ -2,7 +2,14 @@ import type { ChatEvent } from '@shared/ai'
 import type { Message } from '@shared/types'
 
 /** Áp một sự kiện stream vào danh sách tin nhắn (hàm thuần). */
-export function applyChatEvent(messages: Message[], messageId: string, event: ChatEvent): Message[] {
+export function applyChatEvent(
+  messages: Message[],
+  messageId: string,
+  event: ChatEvent
+): Message[] {
+  // Cảm xúc thuộc tin khác (thường là tin của người dùng mà trợ lý vừa thả reaction).
+  if (event.type === 'reactions')
+    return messages.map((m) => (m.id === event.targetId ? { ...m, reactions: event.reactions } : m))
   return messages.map((m) => {
     if (m.id !== messageId) return m
     switch (event.type) {
@@ -10,6 +17,8 @@ export function applyChatEvent(messages: Message[], messageId: string, event: Ch
         return { ...m, content: m.content + event.delta }
       case 'tool':
         return { ...m, toolEvents: [...m.toolEvents, { name: event.name, input: event.input }] }
+      case 'final':
+        return { ...m, content: event.content, media: event.media }
       case 'done':
         return { ...m, status: 'done', usage: event.usage ?? null }
       case 'error':
@@ -22,4 +31,5 @@ export function applyChatEvent(messages: Message[], messageId: string, event: Ch
   })
 }
 
-export const isTerminalEvent = (event: ChatEvent): boolean => event.type === 'done' || event.type === 'error'
+export const isTerminalEvent = (event: ChatEvent): boolean =>
+  event.type === 'done' || event.type === 'error'

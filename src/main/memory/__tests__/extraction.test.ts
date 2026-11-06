@@ -22,6 +22,8 @@ const msg = (role: 'user' | 'assistant', content: string): Message => ({
   toolEvents: [],
   attachments: [],
   usage: null,
+  reactions: [],
+  media: null,
   createdAt: 0
 })
 

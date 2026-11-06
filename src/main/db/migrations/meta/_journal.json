@@ -50,6 +50,13 @@
       "when": 1793885819788,
       "tag": "0006_agent_exchanges",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "6",
+      "when": 1793929845069,
+      "tag": "0007_message_expressive",
+      "breakpoints": true
     }
   ]
 }

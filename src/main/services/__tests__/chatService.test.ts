@@ -97,7 +97,7 @@ describe('ChatService', () => {
     const [, assistant] = msgs.list(conv.id)
     expect(assistant).toMatchObject({ content: 'Xin chào', status: 'done', usage: { outputTokens: 3 } })
     expect(convs.get(conv.id)).toMatchObject({ cliSessionId: 's-1', title: 'Giải thích closure trong JS' })
-    expect(emitted.map((e) => e.event.type)).toEqual(['text', 'text', 'done'])
+    expect(emitted.map((e) => e.event.type)).toEqual(['text', 'text', 'final', 'done'])
 
     const req = provider.calls[0]
     expect(req.prompt).toBe('Giải thích   closure trong JS')
@@ -309,7 +309,7 @@ describe('runOptions (chế độ Code)', () => {
 
 describe('helpers', () => {
   it('toHistory bỏ tin trợ lý lỗi/dừng và ghi chú file đính kèm cũ', () => {
-    const base = { conversationId: 'c', error: null, toolEvents: [], usage: null, createdAt: 0 }
+    const base = { conversationId: 'c', error: null, toolEvents: [], usage: null, reactions: [], media: null, createdAt: 0 }
     const history = toHistory([
       { ...base, id: '1', role: 'user', content: 'xem file', status: 'done', attachments: [{ id: 'a', name: 'x.png', mimeType: 'image/png', size: 1 }] },
       { ...base, id: '2', role: 'assistant', content: 'lỗi giữa chừng', status: 'error', attachments: [] },

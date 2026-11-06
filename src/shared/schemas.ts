@@ -1,3 +1,4 @@
+import { MEDIA_KINDS, mediaRefSchema } from './expressive'
 import { z } from 'zod'
 import { CHAT_MODES } from './ai'
 
@@ -27,19 +28,50 @@ export const MAX_ATTACHMENT_UPLOAD_BYTES = 30 * 1024 * 1024
 /** Một file từ renderer (kéo thả / dán) — gửi nội dung, không bao giờ gửi đường dẫn. */
 export const chatAddFileSchema = z.object({
   name: z.string().trim().min(1).max(260),
-  data: z.instanceof(Uint8Array).refine((d) => d.byteLength > 0 && d.byteLength <= MAX_ATTACHMENT_UPLOAD_BYTES, 'file_size')
+  data: z
+    .instanceof(Uint8Array)
+    .refine((d) => d.byteLength > 0 && d.byteLength <= MAX_ATTACHMENT_UPLOAD_BYTES, 'file_size')
 })
-export const chatAttachmentPreviewSchema = z.object({ id: z.uuid(), size: z.enum(['thumb', 'large']) })
+export const chatAttachmentPreviewSchema = z.object({
+  id: z.uuid(),
+  size: z.enum(['thumb', 'large'])
+})
+
+/** Một emoji (có thể ghép bằng ZWJ / màu da) hoặc null để bỏ cảm xúc. */
+export const reactionEmojiSchema = z
+  .string()
+  .min(1)
+  .max(16)
+  .regex(
+    /^(?:\p{Extended_Pictographic}|\p{Regional_Indicator}|\p{Emoji_Modifier}|\uFE0F|\u200D)+$/u
+  )
+export const chatReactSchema = z.object({
+  messageId: z.uuid(),
+  emoji: reactionEmojiSchema.nullable()
+})
+export const expressiveSearchSchema = z.object({
+  kind: z.enum(MEDIA_KINDS),
+  query: z.string().max(100),
+  offset: z.number().int().min(0).max(4_999).default(0)
+})
+/** Key GIPHY: chuỗi chữ-số; null = xoá. */
+export const giphyKeySchema = z
+  .string()
+  .trim()
+  .regex(/^[A-Za-z0-9]{16,64}$/)
+  .nullable()
 
 export const chatSendSchema = z
   .object({
     conversationId: idSchema,
     text: z.string().trim().max(100_000),
     /** ID file đã đính kèm (chọn / dán / kéo thả) qua main — renderer không bao giờ gửi đường dẫn. */
-    attachmentIds: z.array(idSchema).max(MAX_ATTACHMENTS).default([])
+    attachmentIds: z.array(idSchema).max(MAX_ATTACHMENTS).default([]),
+    /** GIF / sticker: chỉ id — main tự tra lại (không bao giờ nhận URL từ renderer). */
+    media: mediaRefSchema.optional()
   })
-  // Gửi được chỉ ảnh (không chữ), nhưng không được gửi tin rỗng hoàn toàn.
-  .refine((v) => v.text.length > 0 || v.attachmentIds.length > 0, 'empty_message')
+  // Gửi được chỉ ảnh hoặc chỉ GIF/sticker (không chữ), nhưng không được gửi tin rỗng hoàn toàn.
+  .refine((v) => v.text.length > 0 || v.attachmentIds.length > 0 || !!v.media, 'empty_message')
 
 export const chatAbortSchema = z.object({
   requestId: idSchema
@@ -102,7 +134,14 @@ export const accountRememberSchema = z.object({
 
 // ---- Trí nhớ ----
 
-export const MEMORY_CATEGORIES = ['goal', 'skill', 'preference', 'project', 'deadline', 'other'] as const
+export const MEMORY_CATEGORIES = [
+  'goal',
+  'skill',
+  'preference',
+  'project',
+  'deadline',
+  'other'
+] as const
 export const MEMORY_ACTIONS = ['add', 'update', 'delete'] as const
 export const SUGGESTION_STATUSES = ['pending', 'accepted', 'rejected'] as const
 
@@ -273,7 +312,11 @@ export const desktopNotificationSchema = z.object({
   title: z.string().trim().min(1).max(120),
   body: z.string().max(300).default(''),
   /** Route trong app mở khi bấm vào thông báo, ví dụ "/projects/<id>?task=<id>". */
-  route: z.string().regex(/^\/[\w\-/?=&%.]*$/).max(300).optional()
+  route: z
+    .string()
+    .regex(/^\/[\w\-/?=&%.]*$/)
+    .max(300)
+    .optional()
 })
 
 export type DesktopNotification = z.infer<typeof desktopNotificationSchema>
@@ -324,7 +367,10 @@ export const quizGradeRequestSchema = z.object({
 export const dayPlanRequestSchema = z.object({
   today: isoDate,
   now: z.string().regex(/^\d{2}:\d{2}$/),
-  workday: z.object({ start: z.string().regex(/^\d{2}:\d{2}$/), end: z.string().regex(/^\d{2}:\d{2}$/) }),
+  workday: z.object({
+    start: z.string().regex(/^\d{2}:\d{2}$/),
+    end: z.string().regex(/^\d{2}:\d{2}$/)
+  }),
   loggedMinutesToday: z.number().min(0).max(1440),
   language: lang,
   tasks: z
@@ -349,7 +395,9 @@ export const reportRequestSchema = z.object({
   done: z.array(z.string().max(200)).max(100),
   inProgress: z.array(z.string().max(200)).max(100),
   blocked: z.array(z.string().max(200)).max(100),
-  timeByTask: z.array(z.object({ title: z.string().max(200), minutes: z.number().min(0) })).max(100),
+  timeByTask: z
+    .array(z.object({ title: z.string().max(200), minutes: z.number().min(0) }))
+    .max(100),
   notes: z.string().max(3000).default('')
 })
 
@@ -360,8 +408,17 @@ export type QuizGradeRequest = z.infer<typeof quizGradeRequestSchema>
 export type DayPlanRequest = z.infer<typeof dayPlanRequestSchema>
 export type ReportRequest = z.infer<typeof reportRequestSchema>
 
-export type PlannedStep = { title: string; description: string; resources: string[]; estimatedHours: number | null; dueDate: string | null }
-export type QuizGrade = { results: { index: number; correct: boolean; feedback: string }[]; weakPoints: string[] }
+export type PlannedStep = {
+  title: string
+  description: string
+  resources: string[]
+  estimatedHours: number | null
+  dueDate: string | null
+}
+export type QuizGrade = {
+  results: { index: number; correct: boolean; feedback: string }[]
+  weakPoints: string[]
+}
 export type DayBlock = { start: string; end: string; taskId: string | null; note: string }
 
 export type AiResult<T> = T | { error: string }
@@ -378,17 +435,39 @@ const taskRef = {
   projectName: z.string().max(120).nullable().default(null)
 }
 
-export const timeStartSchema = z.object({ ...taskRef, kind: z.enum(['timer', 'pomodoro']).default('timer') })
+export const timeStartSchema = z.object({
+  ...taskRef,
+  kind: z.enum(['timer', 'pomodoro']).default('timer')
+})
 
 export const timeManualSchema = z
-  .object({ ...taskRef, startedAt: z.number().int().positive(), endedAt: z.number().int().positive(), note: z.string().max(500).default('') })
-  .refine((v) => v.endedAt > v.startedAt && v.endedAt - v.startedAt <= 24 * 3600_000, 'invalid_range')
+  .object({
+    ...taskRef,
+    startedAt: z.number().int().positive(),
+    endedAt: z.number().int().positive(),
+    note: z.string().max(500).default('')
+  })
+  .refine(
+    (v) => v.endedAt > v.startedAt && v.endedAt - v.startedAt <= 24 * 3600_000,
+    'invalid_range'
+  )
 
 export const timeUpdateSchema = z
-  .object({ id: idSchema, title: z.string().trim().min(1).max(200), note: z.string().max(500), startedAt: z.number().int().positive(), endedAt: z.number().int().positive() })
-  .refine((v) => v.endedAt > v.startedAt && v.endedAt - v.startedAt <= 24 * 3600_000, 'invalid_range')
+  .object({
+    id: idSchema,
+    title: z.string().trim().min(1).max(200),
+    note: z.string().max(500),
+    startedAt: z.number().int().positive(),
+    endedAt: z.number().int().positive()
+  })
+  .refine(
+    (v) => v.endedAt > v.startedAt && v.endedAt - v.startedAt <= 24 * 3600_000,
+    'invalid_range'
+  )
 
-export const timeRangeSchema = z.object({ from: z.number().int(), to: z.number().int() }).refine((v) => v.to > v.from, 'invalid_range')
+export const timeRangeSchema = z
+  .object({ from: z.number().int(), to: z.number().int() })
+  .refine((v) => v.to > v.from, 'invalid_range')
 
 export const workdaySchema = z.object({
   start: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/),
@@ -397,7 +476,12 @@ export const workdaySchema = z.object({
   breakMinutes: z.number().int().min(1).max(60)
 })
 export type Workday = z.infer<typeof workdaySchema>
-export const DEFAULT_WORKDAY: Workday = { start: '09:00', end: '17:30', focusMinutes: 25, breakMinutes: 5 }
+export const DEFAULT_WORKDAY: Workday = {
+  start: '09:00',
+  end: '17:30',
+  focusMinutes: 25,
+  breakMinutes: 5
+}
 
 // ---- Cập nhật app ----
 
@@ -421,10 +505,18 @@ export const computerUseSettingsSchema = z.object({
   warningAcceptedAt: z.number().int().nullable()
 })
 export type ComputerUseSettings = z.infer<typeof computerUseSettingsSchema>
-export const DEFAULT_COMPUTER_USE_SETTINGS: ComputerUseSettings = { enabled: false, warningAcceptedAt: null }
+export const DEFAULT_COMPUTER_USE_SETTINGS: ComputerUseSettings = {
+  enabled: false,
+  warningAcceptedAt: null
+}
 
-export const computerSetEnabledSchema = z.object({ enabled: z.boolean(), acceptWarning: z.boolean().optional() })
-export const computerPreviewSchema = z.object({ display: z.number().int().min(1).max(16).optional() })
+export const computerSetEnabledSchema = z.object({
+  enabled: z.boolean(),
+  acceptWarning: z.boolean().optional()
+})
+export const computerPreviewSchema = z.object({
+  display: z.number().int().min(1).max(16).optional()
+})
 
 // ---- Cấu hình AI ----
 
@@ -505,7 +597,13 @@ export const mcpServerInputSchema = z.discriminatedUnion('type', [
 ])
 export type McpServerInput = z.input<typeof mcpServerInputSchema>
 
-export const agentLimitsSchema = z.object({ perHour: z.number().int().min(1).max(500), concurrency: z.number().int().min(1).max(4) })
+export const agentLimitsSchema = z.object({
+  perHour: z.number().int().min(1).max(500),
+  concurrency: z.number().int().min(1).max(4)
+})
 export const agentClientNameSchema = z.string().trim().min(1).max(60)
 export const agentPairingSchema = z.object({ clientId: z.uuid(), allow: z.boolean() })
-export const mcpApprovalResponseSchema = z.object({ id: z.uuid(), decision: z.enum(['once', 'always', 'deny']) })
+export const mcpApprovalResponseSchema = z.object({
+  id: z.uuid(),
+  decision: z.enum(['once', 'always', 'deny'])
+})

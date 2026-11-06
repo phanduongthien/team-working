@@ -1,3 +1,4 @@
+import type { MediaRef, MessageMedia } from '@shared/expressive'
 import { writeFile } from 'node:fs/promises'
 import { dialog, ipcMain, shell, type BrowserWindow, type IpcMainInvokeEvent } from 'electron'
 import { z } from 'zod'
@@ -11,6 +12,7 @@ import {
   assistantProfileSchema,
   chatAbortSchema,
   chatSendSchema,
+  chatReactSchema,
   chatAddFileSchema,
   chatAttachmentPreviewSchema,
   conversationCreateSchema,
@@ -33,7 +35,11 @@ import type {
 } from '../db/repositories'
 import type { AccountScope } from '../memory/accountScope'
 import type { MemoryService } from '../memory/memoryService'
-import { ATTACHMENT_EXTENSIONS, type AttachmentStore, type ClipboardPort } from '../services/attachments'
+import {
+  ATTACHMENT_EXTENSIONS,
+  type AttachmentStore,
+  type ClipboardPort
+} from '../services/attachments'
 import type { ChatService } from '../services/chatService'
 import type { Logger } from '../services/logger'
 import type { SecretStore } from '../services/secrets'
@@ -46,6 +52,10 @@ export type IpcDeps = {
   settings: SettingsRepository
   account: Pick<AccountScope, 'getAssistant' | 'setAssistant'>
   chat: ChatService
+  /** GIF / sticker người dùng chọn (theo id) → thông tin đầy đủ do main tra lại. */
+  resolveMedia(ref: MediaRef): Promise<MessageMedia | null>
+  /** Test e2e (bản chưa đóng gói + MMC_FAKE_CHAT): coi như đã có Claude CLI. */
+  fakeCli?: boolean
   memory: MemoryService
   attachments: AttachmentStore
   /** Clipboard của Windows (Ctrl+V ảnh / file copy từ Explorer). */
@@ -93,11 +103,17 @@ export function registerIpc(deps: IpcDeps): void {
   const none = z.undefined()
   const getAi = () => deps.settings.get('ai', aiSettingsSchema, DEFAULT_AI_SETTINGS)
 
-  handle(deps, IPC.cliCheck, none, () => checkClaudeCli())
+  handle(deps, IPC.cliCheck, none, () =>
+    deps.fakeCli ? { state: 'ok' as const, version: 'fake' } : checkClaudeCli()
+  )
 
   // ---- Hội thoại & chat ----
-  handle(deps, IPC.conversationsList, conversationListSchema, ({ query }) => deps.conversations.list(query))
-  handle(deps, IPC.conversationsCreate, conversationCreateSchema, ({ mode }) => deps.conversations.create(mode))
+  handle(deps, IPC.conversationsList, conversationListSchema, ({ query }) =>
+    deps.conversations.list(query)
+  )
+  handle(deps, IPC.conversationsCreate, conversationCreateSchema, ({ mode }) =>
+    deps.conversations.create(mode)
+  )
   handle(deps, IPC.conversationsUpdate, conversationUpdateSchema, (input) => {
     const updated = deps.conversations.update(input)
     if (!updated) throw new Error('conversation_not_found')
@@ -109,8 +125,18 @@ export function registerIpc(deps: IpcDeps): void {
     deps.conversations.get(conversationId) ? deps.messages.list(conversationId) : []
   )
 
-  handle(deps, IPC.chatSend, chatSendSchema, ({ conversationId, text, attachmentIds }) =>
-    deps.chat.send(conversationId, text, deps.attachments.take(attachmentIds))
+  handle(
+    deps,
+    IPC.chatSend,
+    chatSendSchema,
+    async ({ conversationId, text, attachmentIds, media }) => {
+      const resolved = media ? await deps.resolveMedia(media) : null
+      if (media && !resolved) throw new Error('media_not_found')
+      return deps.chat.send(conversationId, text, deps.attachments.take(attachmentIds), resolved)
+    }
+  )
+  handle(deps, IPC.chatReact, chatReactSchema, ({ messageId, emoji }) =>
+    deps.chat.react(messageId, emoji)
   )
   handle(deps, IPC.chatAbort, chatAbortSchema, ({ requestId }) => deps.chat.abort(requestId))
   handle(deps, IPC.chatPickAttachments, none, async () => {
@@ -119,23 +145,33 @@ export function registerIpc(deps: IpcDeps): void {
       properties: ['openFile', 'multiSelections'],
       filters: [{ name: 'Files', extensions: ATTACHMENT_EXTENSIONS }]
     }
-    const picked = win ? await dialog.showOpenDialog(win, options) : await dialog.showOpenDialog(options)
+    const picked = win
+      ? await dialog.showOpenDialog(win, options)
+      : await dialog.showOpenDialog(options)
     if (picked.canceled) return { attachments: [], rejected: [] }
     return deps.attachments.add(picked.filePaths)
   })
   handle(deps, IPC.chatAddFile, chatAddFileSchema, ({ name, data }) =>
-    deps.attachments.addBuffers([{ name, data: Buffer.from(data.buffer, data.byteOffset, data.byteLength) }])
+    deps.attachments.addBuffers([
+      { name, data: Buffer.from(data.buffer, data.byteOffset, data.byteLength) }
+    ])
   )
-  handle(deps, IPC.chatPasteClipboard, none, () => deps.attachments.addFromClipboard(deps.clipboard))
+  handle(deps, IPC.chatPasteClipboard, none, () =>
+    deps.attachments.addFromClipboard(deps.clipboard)
+  )
   // Chỉ xem được ảnh đang chờ gửi hoặc nằm trong hội thoại của tài khoản hiện tại.
   handle(deps, IPC.chatAttachmentPreview, chatAttachmentPreviewSchema, async ({ id, size }) =>
-    deps.attachments.isPending(id) || deps.conversations.hasAttachment(id) ? deps.attachments.preview(id, size) : null
+    deps.attachments.isPending(id) || deps.conversations.hasAttachment(id)
+      ? deps.attachments.preview(id, size)
+      : null
   )
 
   // ---- Trí nhớ ----
   handle(deps, IPC.memoryGetProfile, none, () => deps.memory.getProfile())
   handle(deps, IPC.memorySetProfile, userProfileSchema, (p) => deps.memory.setProfile(p))
-  handle(deps, IPC.memoryList, z.string().trim().max(200).optional(), (query) => deps.memories.list(query))
+  handle(deps, IPC.memoryList, z.string().trim().max(200).optional(), (query) =>
+    deps.memories.list(query)
+  )
   handle(deps, IPC.memoryCreate, memoryCreateSchema, ({ content, category }) =>
     deps.memories.create(content, category)
   )
@@ -158,7 +194,9 @@ export function registerIpc(deps: IpcDeps): void {
       defaultPath: `team-working-memory-${new Date().toISOString().slice(0, 10)}.json`,
       filters: [{ name: 'JSON', extensions: ['json'] }]
     }
-    const target = win ? await dialog.showSaveDialog(win, options) : await dialog.showSaveDialog(options)
+    const target = win
+      ? await dialog.showSaveDialog(win, options)
+      : await dialog.showSaveDialog(options)
     if (target.canceled || !target.filePath) return null
     await writeFile(target.filePath, JSON.stringify(deps.memory.exportData(), null, 2), 'utf8')
     return target.filePath
@@ -167,11 +205,15 @@ export function registerIpc(deps: IpcDeps): void {
   // ---- Cài đặt ----
   // Tên/tính cách trợ lý theo tài khoản đang đăng nhập.
   handle(deps, IPC.settingsGetAssistant, none, () => deps.account.getAssistant())
-  handle(deps, IPC.settingsSetAssistant, assistantProfileSchema, (p) => deps.account.setAssistant(p))
+  handle(deps, IPC.settingsSetAssistant, assistantProfileSchema, (p) =>
+    deps.account.setAssistant(p)
+  )
   handle(deps, IPC.settingsGetAppearance, none, () =>
     deps.settings.get('appearance', appearanceSchema, DEFAULT_APPEARANCE)
   )
-  handle(deps, IPC.settingsSetAppearance, appearanceSchema, (a) => deps.settings.set('appearance', a))
+  handle(deps, IPC.settingsSetAppearance, appearanceSchema, (a) =>
+    deps.settings.set('appearance', a)
+  )
   // Không bao giờ trả API key về renderer — chỉ báo có/không.
   handle(deps, IPC.settingsGetAi, none, () => ({
     ...getAi(),
@@ -182,7 +224,8 @@ export function registerIpc(deps: IpcDeps): void {
   handle(deps, IPC.settingsSetApiKey, apiKeySchema, (key) => deps.secrets.set(key))
   handle(deps, IPC.settingsClearApiKey, none, () => {
     deps.secrets.clear()
-    if (getAi().provider === 'anthropic-api') deps.settings.set('ai', { ...getAi(), provider: 'claude-cli' })
+    if (getAi().provider === 'anthropic-api')
+      deps.settings.set('ai', { ...getAi(), provider: 'claude-cli' })
   })
 
   handle(deps, IPC.appOpenExternal, externalUrlSchema, (url) => shell.openExternal(url))

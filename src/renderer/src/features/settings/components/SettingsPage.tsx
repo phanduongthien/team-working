@@ -18,8 +18,17 @@ import { usePreferences } from '@renderer/stores/preferences'
 import { PRESET_AVATARS, imageFileToAvatar } from '../avatar'
 import { AiSection } from './AiSection'
 import { UpdateSection } from './UpdateSection'
+import { ExpressiveSettings } from '@renderer/features/chat/expressive/ExpressiveSettings'
 
-function Section({ title, description, children }: { title: string; description?: string; children: ReactNode }) {
+function Section({
+  title,
+  description,
+  children
+}: {
+  title: string
+  description?: string
+  children: ReactNode
+}) {
   return (
     <section className="rounded-lg border bg-card p-5">
       <h2 className="font-semibold">{title}</h2>
@@ -56,7 +65,12 @@ function AssistantSection() {
     <Section title={t('assistant.heading')} description={t('assistant.description')}>
       <div className="space-y-1.5">
         <Label htmlFor="assistant-name">{t('assistant.name')}</Label>
-        <Input id="assistant-name" value={draft.name} maxLength={40} onChange={(e) => update({ name: e.target.value })} />
+        <Input
+          id="assistant-name"
+          value={draft.name}
+          maxLength={40}
+          onChange={(e) => update({ name: e.target.value })}
+        />
       </div>
 
       <div className="space-y-1.5">
@@ -68,7 +82,10 @@ function AssistantSection() {
               key={a}
               type="button"
               aria-label={a}
-              className={cn('rounded-full p-0.5 hover:bg-muted', draft.avatar === a && 'ring-2 ring-primary')}
+              className={cn(
+                'rounded-full p-0.5 hover:bg-muted',
+                draft.avatar === a && 'ring-2 ring-primary'
+              )}
               onClick={() => update({ avatar: a })}
             >
               <AssistantAvatar avatar={a} />
@@ -87,7 +104,9 @@ function AssistantSection() {
             </label>
           </Button>
         </div>
-        {status === 'uploadError' && <p className="text-sm text-destructive">{t('assistant.uploadError')}</p>}
+        {status === 'uploadError' && (
+          <p className="text-sm text-destructive">{t('assistant.uploadError')}</p>
+        )}
       </div>
 
       <div className="grid grid-cols-2 gap-4">
@@ -202,6 +221,19 @@ function AppearanceSection() {
   )
 }
 
+function ExpressiveSection() {
+  const { t } = useTranslation('chat')
+  const name = usePreferences((s) => s.assistant.name)
+  return (
+    <Section
+      title={t('expressive.settings.heading')}
+      description={t('expressive.settings.description', { name })}
+    >
+      <ExpressiveSettings />
+    </Section>
+  )
+}
+
 export function SettingsPage() {
   const { t } = useTranslation('settings')
   return (
@@ -210,6 +242,7 @@ export function SettingsPage() {
         <h1 className="text-2xl font-semibold">{t('title')}</h1>
         <AppearanceSection />
         <AssistantSection />
+        <ExpressiveSection />
         <Section title={t('claude.heading')} description={t('claude.description')}>
           <AiSection />
         </Section>
