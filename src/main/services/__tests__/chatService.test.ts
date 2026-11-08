@@ -332,12 +332,20 @@ describe('tool của app (xem màn hình)', () => {
   })
 })
 
-describe('runOptions (chế độ Code)', () => {
+describe('runOptions (thư mục dự án)', () => {
   const base = { conversationId: 'c1', workspaceDir: 'C:\\ws' }
 
-  it('không phải Code hoặc chưa chọn thư mục → workspace riêng, không tool', () => {
-    expect(runOptions({ ...base, mode: 'free', cwd: 'D:\\proj', codeWrite: true })).toEqual({ cwd: 'C:\\ws' })
+  it('chưa chọn thư mục → workspace riêng, không tool (mọi chế độ)', () => {
+    expect(runOptions({ ...base, mode: 'free', cwd: null, codeWrite: true })).toEqual({ cwd: 'C:\\ws' })
     expect(runOptions({ ...base, mode: 'code', cwd: null, codeWrite: true })).toEqual({ cwd: 'C:\\ws' })
+  })
+
+  it('thư mục gắn với cuộc trò chuyện, không gắn với chế độ: Tự do / Học tập cũng đọc được', () => {
+    for (const mode of ['free', 'study', 'project'] as const) {
+      const o = runOptions({ ...base, mode, cwd: 'D:\\proj', codeWrite: false })
+      expect(o).toMatchObject({ cwd: 'D:\\proj', tools: ['Read', 'Grep', 'Glob'] })
+    }
+    expect(runOptions({ ...base, mode: 'free', cwd: 'D:\\proj', codeWrite: true }).approval).toEqual({ conversationId: 'c1' })
   })
 
   it('chỉ đọc: Read/Grep/Glob tự duyệt, không Edit/Write, không duyệt quyền', () => {

@@ -3,7 +3,7 @@ import { api } from '@renderer/lib/api'
 import { onSync } from '@renderer/lib/sync'
 import type { FeatureDefinition } from '../types'
 import { ChatPage } from './components/ChatPage'
-import { CodeApprovalOverlay } from './components/CodeApprovalOverlay'
+import { ChatOverlays } from './components/ChatOverlays'
 import { useChat } from './store'
 import { setupVoice } from './voice/store'
 import { setupRecent } from './expressive/recentStore'
@@ -34,5 +34,5 @@ export const chatFeature: FeatureDefinition = {
       offRecent()
     }
   },
-  overlay: CodeApprovalOverlay
+  overlay: ChatOverlays
 }

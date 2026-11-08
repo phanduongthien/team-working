@@ -35,6 +35,7 @@ import {
   parseQuiz
 } from '../assistant/study'
 import type { CodeApprovals } from '../code/approvals'
+import type { FolderAccessRequests } from '../code/folderAccess'
 import type { ConversationRepository, SettingsRepository } from '../db/repositories'
 import type { TimeRepository } from '../db/timeRepository'
 import { cleanText } from '../feedback/prompts'
@@ -47,6 +48,7 @@ export type WorkIpcDeps = {
   settings: SettingsRepository
   time: TimeRepository
   approvals: CodeApprovals
+  folderAccess: FolderAccessRequests
   memory: MemoryService
   getProvider(): AIProvider
   loadSkill(name: string): Promise<string | undefined>
@@ -88,6 +90,22 @@ export function registerWorkIpc(deps: WorkIpcDeps): void {
     deps.approvals.cancelConversation(conversationId)
     return deps.conversations.setCwd(conversationId, picked.filePaths[0])
   })
+  // Gỡ thư mục = thu hồi mọi quyền đọc/sửa của trợ lý trong hội thoại này.
+  handle(
+    IPC.codeClearFolder,
+    idSchema,
+    (conversationId) => {
+      deps.approvals.cancelConversation(conversationId)
+      return deps.conversations.setCwd(conversationId, null)
+    },
+    { changes: 'conversations' }
+  )
+  handle(
+    IPC.folderAccessRespond,
+    z.object({ id: idSchema, grant: z.boolean(), write: z.boolean() }),
+    ({ id, grant, write }) => deps.folderAccess.respond(id, grant, write),
+    { changes: 'conversations' }
+  )
   handle(IPC.codeSetWrite, z.object({ conversationId: idSchema, enabled: z.boolean() }), ({ conversationId, enabled }) => {
     const conv = deps.conversations.get(conversationId)
     if (!conv?.cwd) throw new Error('no_project_folder')

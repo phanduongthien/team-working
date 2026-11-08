@@ -50,7 +50,7 @@
   "code": {
     "chooseFolder": "Choose project folder",
     "changeFolder": "Change folder",
-    "noFolder": "No folder chosen — the assistant can only chat and cannot read your code.",
+    "noFolder": "No folder chosen — the assistant only chats; it will ask for folder access when needed.",
     "readOnly": "Read only",
     "writeOn": "Can edit files (each change approved)",
     "enableTitle": "Allow the assistant to edit files?",
@@ -64,7 +64,9 @@
     "approveHint": "Chat: {{title}}. Review the change before accepting.",
     "accept": "Accept change",
     "reject": "Reject",
-    "more": "{{count}} more requests"
+    "more": "{{count}} more requests",
+    "clearFolder": "Remove folder",
+    "clearFolderHint": "Revoke access: the assistant can no longer read/edit this folder"
   },
   "suggest": {
     "button": "Suggest memories",
@@ -322,5 +324,17 @@
       "invalid_input": "Invalid group name."
     },
     "matchedIn": "Matched in messages"
+  },
+  "folderAccess": {
+    "title": "The assistant asks to read a folder",
+    "titleWrite": "The assistant asks to read and edit a folder",
+    "hint": "Chat: {{title}}. You pick the folder — the assistant only sees that folder.",
+    "suggested": "Suggested:",
+    "write": "Allow editing files",
+    "writeHint": "Every edit still shows a diff for you to Accept / Reject. Binary files (.blend, .drp…) and generated folders (Library/, .meta…) are always blocked.",
+    "choose": "Choose folder…",
+    "deny": "Don't allow",
+    "pickAgain": "No folder chosen — click \"Choose folder…\" again, or Don't allow.",
+    "continue": "I've granted folder access, please continue."
   }
 }

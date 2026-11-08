@@ -17,6 +17,8 @@ export function errorCode(err: unknown): string {
 
 /** Sự kiện tới trước khi `send` trả về (hiếm) — đệm lại theo messageId rồi áp sau. */
 const early = new Map<string, ChatStreamPayload[]>()
+/** Vừa cấp quyền thư mục giữa lượt → lượt xong thì tự gửi câu "tiếp tục" (tool CLI chỉ đổi từ lượt sau). */
+const continueAfterRun = new Map<string, string>()
 
 type ChatState = {
   conversations: Conversation[]
@@ -49,6 +51,15 @@ type ChatState = {
   /** Chế độ Code: chọn thư mục dự án (tạo hội thoại mới nếu chưa có). */
   chooseFolder(): Promise<void>
   setCodeWrite(id: string, enabled: boolean): Promise<void>
+  /** Gỡ thư mục = thu hồi quyền đọc/sửa của trợ lý. */
+  clearFolder(id: string): Promise<void>
+  /** Thẻ trợ lý xin quyền thư mục: grant → mở hộp chọn thư mục; cấp xong thì tự gửi `continueText` khi lượt kết thúc. */
+  respondFolderAccess(
+    request: { id: string; conversationId: string },
+    grant: boolean,
+    write: boolean,
+    continueText: string
+  ): Promise<'granted' | 'pending' | 'denied' | 'expired'>
   remove(id: string): Promise<void>
   send(
     text: string,
@@ -241,11 +252,35 @@ export const useChat = create<ChatState>((set, get) => {
 
     async chooseFolder() {
       let id = get().activeId
+      // Thư mục gắn với cuộc trò chuyện ở mọi chế độ — không đổi chế độ.
       if (!id) id = (await get().create('code')).id
-      else if (get().conversations.find((c) => c.id === id)?.mode !== 'code')
-        await get().setMode(id, 'code')
       const updated = await api.code.chooseFolder(id)
       if (updated) replaceConversation(updated)
+    },
+
+    async clearFolder(id) {
+      try {
+        const updated = await api.code.clearFolder(id)
+        if (updated) replaceConversation(updated)
+      } catch (err) {
+        set({ error: errorCode(err) })
+      }
+    },
+
+    async respondFolderAccess(request, grant, write, continueText) {
+      try {
+        const res = await api.code.respondFolderAccess(request.id, grant, write)
+        if (res.status !== 'granted') return res.status
+        replaceConversation(res.conversation)
+        const { conversationId } = request
+        // Lượt đang chạy sẽ kết thúc ngay sau khi tool trả lời → handleEvent gửi tiếp; đã xong thì gửi luôn.
+        if (get().streaming[conversationId]) continueAfterRun.set(conversationId, continueText)
+        else if (get().activeId === conversationId) void get().send(continueText, res.conversation.mode)
+        return 'granted'
+      } catch (err) {
+        set({ error: errorCode(err) })
+        return 'expired'
+      }
     },
 
     async setCodeWrite(id, enabled) {
@@ -350,6 +385,13 @@ export const useChat = create<ChatState>((set, get) => {
         }
         return next
       })
+      const followUp = isTerminalEvent(event) ? continueAfterRun.get(conversationId) : undefined
+      if (followUp !== undefined) {
+        continueAfterRun.delete(conversationId)
+        const conv = get().conversations.find((c) => c.id === conversationId)
+        // send() gửi vào hội thoại đang mở — chỉ tự tiếp tục khi người dùng vẫn ở cuộc này.
+        if (conv && get().activeId === conversationId) void get().send(followUp, conv.mode)
+      }
     },
 
     clearError() {

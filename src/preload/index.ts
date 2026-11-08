@@ -7,6 +7,8 @@ import type { AgentNotice, AgentServerStatus, McpApprovalRequest } from '@shared
 import type {
   ChatStreamPayload,
   CodeApprovalRequest,
+  FolderAccessClosed,
+  FolderAccessRequest,
   MemoryEventPayload,
   TeamWorkingApi
 } from '@shared/types'
@@ -248,7 +250,11 @@ const api: TeamWorkingApi = {
     setWrite: (conversationId, enabled) =>
       ipcRenderer.invoke(IPC.codeSetWrite, { conversationId, enabled }),
     respond: (id, allow) => ipcRenderer.invoke(IPC.codeRespond, { id, allow }),
-    onApproval: (listener) => subscribe<CodeApprovalRequest>(IPC.codeApproval, listener)
+    onApproval: (listener) => subscribe<CodeApprovalRequest>(IPC.codeApproval, listener),
+    clearFolder: (conversationId) => ipcRenderer.invoke(IPC.codeClearFolder, conversationId),
+    respondFolderAccess: (id, grant, write) => ipcRenderer.invoke(IPC.folderAccessRespond, { id, grant, write }),
+    onFolderAccess: (listener) =>
+      subscribe<FolderAccessRequest | FolderAccessClosed>(IPC.folderAccessEvent, listener)
   },
   time: {
     current: () => ipcRenderer.invoke(IPC.timeCurrent),

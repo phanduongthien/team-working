@@ -275,8 +275,8 @@ export class ConversationRepository {
     return !!row
   }
 
-  /** Chọn thư mục dự án mới → tắt quyền sửa (phải bật lại cho thư mục mới). */
-  setCwd(id: string, cwd: string): Conversation | null {
+  /** Chọn thư mục dự án mới → tắt quyền sửa (phải bật lại cho thư mục mới). null = gỡ thư mục (thu hồi quyền). */
+  setCwd(id: string, cwd: string | null): Conversation | null {
     const row = this.db.update(conversations).set({ cwd, codeWrite: false }).where(this.mine(id)).returning().get()
     return row ? toConversation(row) : null
   }

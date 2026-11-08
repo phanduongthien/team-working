@@ -90,6 +90,7 @@ import { emitApproval, registerWorkIpc } from './ipc/work'
 import { OAuthLoopback } from './services/oauthLoopback'
 import { RateLimiter } from './agents/rateLimiter'
 import { DraftApprovals } from './connectors/approvals'
+import { FolderAccessRequests } from './code/folderAccess'
 import { FakeGmailBackend } from './connectors/gmail/fake'
 import { gmailTokenFileName, GoogleGmailBackend } from './connectors/gmail/google'
 import { GmailService } from './connectors/gmail/service'
@@ -257,7 +258,7 @@ async function bootstrap(): Promise<void> {
   const approvals = new CodeApprovals({
     writableRoot: (id) => {
       const conv = conversations.get(id)
-      return conv && conv.mode === 'code' && conv.codeWrite && conv.cwd ? conv.cwd : null
+      return conv && conv.codeWrite && conv.cwd ? conv.cwd : null
     },
     emit: (request) => emitApproval(mainWindow, request),
     mcpApproval: (conversationId, toolName, input) =>
@@ -274,6 +275,34 @@ async function bootstrap(): Promise<void> {
   await toolBridge.start()
   app.on('before-quit', () => toolBridge.stop())
   const appToolsScript = resourcePath('app-tools-mcp.cjs', 'resources/app-tools-mcp.cjs')
+
+  // Trợ lý tự xin quyền thư mục (mọi chế độ): người dùng tự chọn thư mục trong hộp thoại mới có quyền.
+  const folderAccess = new FolderAccessRequests({
+    getConversation: (id) => conversations.get(id),
+    pickFolder: async (suggested) => {
+      // Hộp chọn thư mục giả chỉ cho e2e ở bản chưa đóng gói — không bao giờ có trong bản phát hành.
+      const fake = app.isPackaged ? undefined : process.env.MMC_FAKE_FOLDER
+      if (fake !== undefined) return fake || null
+      const options: Electron.OpenDialogOptions = {
+        properties: ['openDirectory'],
+        ...(suggested && existsSync(suggested) ? { defaultPath: suggested } : {})
+      }
+      const picked = mainWindow ? await dialog.showOpenDialog(mainWindow, options) : await dialog.showOpenDialog(options)
+      return picked.canceled ? null : (picked.filePaths[0] ?? null)
+    },
+    grant: (id, path, write) => {
+      approvals.cancelConversation(id)
+      const conv = conversations.setCwd(id, path)
+      return conv && write ? conversations.setCodeWrite(id, true) : conv
+    },
+    emit: (event) => {
+      mainWindow?.webContents.send(IPC.folderAccessEvent, event)
+      if (!('closed' in event) && mainWindow && !mainWindow.isFocused()) mainWindow.flashFrame(true)
+    },
+    log
+  })
+  folderAccess.registerTools(tools)
+  app.on('before-quit', () => folderAccess.cancelAll())
 
   const actionsDir = join(userData, 'logs', 'computer-use')
   const actions = new ActionLog(actionsDir)
@@ -638,8 +667,10 @@ async function bootstrap(): Promise<void> {
       approvals.cancelConversation(conversationId)
       mcpApprovals.cancelConversation(conversationId)
       draftApprovals.cancelConversation(conversationId)
+      folderAccess.cancelConversation(conversationId)
     },
-    appToolsFor: () => combineToolSets([computer.toolsFor(), gmail.toolsFor(), telegram.toolsFor()]),
+    appToolsFor: (conversationId) =>
+      combineToolSets([folderAccess.toolsFor(conversationId), computer.toolsFor(), gmail.toolsFor(), telegram.toolsFor()]),
     expressive,
     voicePrompt: async (tease) => {
       const skill = await loadSkill(skillsDir, 'voice')
@@ -840,6 +871,7 @@ async function bootstrap(): Promise<void> {
     settings,
     time: new TimeRepository(db),
     approvals,
+    folderAccess,
     memory,
     getProvider,
     loadSkill: (name) => loadSkill(skillsDir, name),

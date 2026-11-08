@@ -195,6 +195,26 @@ export type MemorySuggestion = {
 export type ExtractResult = { added: number } | { error: string }
 
 /** Yêu cầu sửa file ở chế độ Code đang chờ người dùng duyệt. */
+/** Trợ lý xin quyền đọc (và có thể sửa) một thư mục trên máy — người dùng tự chọn thư mục mới có quyền. */
+export type FolderAccessRequest = {
+  id: string
+  conversationId: string
+  /** Đường dẫn trợ lý đề xuất (chỉ để gợi ý trong hộp chọn thư mục — KHÔNG tự cấp). */
+  suggestedPath: string | null
+  /** Xin cả quyền sửa (mỗi lần sửa vẫn phải duyệt diff). */
+  write: boolean
+  reason: string
+}
+/** Thẻ xin quyền đóng lại (hết giờ, dừng lượt…) mà người dùng chưa trả lời. */
+export type FolderAccessClosed = { id: string; closed: true }
+export type FolderAccessResult =
+  | { status: 'granted'; conversation: Conversation }
+  /** Người dùng đóng hộp chọn thư mục mà chưa chọn — thẻ vẫn chờ. */
+  | { status: 'pending' }
+  | { status: 'denied' }
+  /** Yêu cầu không còn (lượt chat đã kết thúc). */
+  | { status: 'expired' }
+
 export type CodeApprovalRequest = {
   id: string
   conversationId: string
@@ -506,6 +526,11 @@ export interface TeamWorkingApi {
     setWrite(conversationId: string, enabled: boolean): Promise<Conversation>
     respond(id: string, allow: boolean): Promise<void>
     onApproval(listener: (request: CodeApprovalRequest) => void): () => void
+    /** Gỡ thư mục khỏi hội thoại = thu hồi quyền đọc/sửa. */
+    clearFolder(conversationId: string): Promise<Conversation | null>
+    /** Trả lời thẻ trợ lý xin quyền thư mục (grant = mở hộp chọn thư mục). */
+    respondFolderAccess(id: string, grant: boolean, write: boolean): Promise<FolderAccessResult>
+    onFolderAccess(listener: (event: FolderAccessRequest | FolderAccessClosed) => void): () => void
   }
   time: {
     current(): Promise<TimeEntry | null>
