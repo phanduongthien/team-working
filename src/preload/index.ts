@@ -99,8 +99,8 @@ const api: TeamWorkingApi = {
     clearRecent: (kind) => ipcRenderer.invoke(IPC.expressiveClearRecent, kind)
   },
   chat: {
-    send: (conversationId, text, attachmentIds = []) =>
-      ipcRenderer.invoke(IPC.chatSend, { conversationId, text, attachmentIds }),
+    send: (conversationId, text, attachmentIds = [], replyToId) =>
+      ipcRenderer.invoke(IPC.chatSend, { conversationId, text, attachmentIds, replyToId }),
     abort: (requestId) => ipcRenderer.invoke(IPC.chatAbort, { requestId }),
     onEvent: (listener) => subscribe<ChatStreamPayload>(IPC.chatEvent, listener),
     pickAttachments: () => ipcRenderer.invoke(IPC.chatPickAttachments),
@@ -110,7 +110,10 @@ const api: TeamWorkingApi = {
     sendMedia: (conversationId, text, media) =>
       ipcRenderer.invoke(IPC.chatSend, { conversationId, text, media }),
     sendVoice: (conversationId, text, voice) => ipcRenderer.invoke(IPC.chatSend, { conversationId, text, voice }),
-    react: (messageId, emoji) => ipcRenderer.invoke(IPC.chatReact, { messageId, emoji })
+    react: (messageId, emoji) => ipcRenderer.invoke(IPC.chatReact, { messageId, emoji }),
+    pin: (messageId, pinned) => ipcRenderer.invoke(IPC.chatPin, { messageId, pinned }),
+    recall: (messageId) => ipcRenderer.invoke(IPC.chatRecall, messageId),
+    editResend: (messageId, text) => ipcRenderer.invoke(IPC.chatEditResend, { messageId, text })
   },
   memory: {
     getProfile: () => ipcRenderer.invoke(IPC.memoryGetProfile),

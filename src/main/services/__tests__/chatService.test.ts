@@ -84,6 +84,118 @@ describe('ChatService', () => {
   })
   afterEach(() => handle.close())
 
+  describe('trả lời / ghim / thu hồi / sửa & gửi lại', () => {
+    const ok = (): FakeProvider =>
+      new FakeProvider(() => events({ type: 'session', sessionId: 's1' }, { type: 'text', delta: 'trả lời' }, { type: 'done' }))
+
+    it('trả lời một tin: lưu replyToId và nói rõ cho trợ lý câu đang được trả lời; tin khác hội thoại bị bỏ qua', async () => {
+      const provider = ok()
+      const service = makeService(provider)
+      const conv = convs.create('free')
+      const other = convs.create('free')
+      const old = msgs.insert({ conversationId: conv.id, role: 'assistant', content: 'Dùng NavMeshAgent cho quái nhé', status: 'done' })
+      const foreign = msgs.insert({ conversationId: other.id, role: 'user', content: 'bí mật' })
+      convs.setSession(conv.id, 's0')
+
+      const res = service.send(conv.id, 'cái này cài sao?', [], null, null, old.id)
+      expect(res.userMessage.replyToId).toBe(old.id)
+      await waitForStatus(conv.id, 'done')
+      expect(provider.calls[0].prompt).toMatch(/câu trả lời trước đó của bạn: "Dùng NavMeshAgent cho quái nhé"\]\n\ncái này cài sao\?$/)
+
+      const res2 = service.send(conv.id, 'tiếp', [], null, null, foreign.id)
+      expect(res2.userMessage.replyToId).toBeNull()
+      await waitForStatus(conv.id, 'done')
+      expect(provider.calls[1].prompt).toBe('tiếp')
+    })
+
+    it('ghim tối đa 5 tin; bỏ ghim được; tin đang trả lời không ghim được', async () => {
+      const service = makeService(ok())
+      const conv = convs.create('free')
+      const list = Array.from({ length: 6 }, (_, i) => msgs.insert({ conversationId: conv.id, role: 'user', content: `tin ${i}` }))
+      for (const m of list.slice(0, 5)) expect(service.pin(m.id, true).pinnedAt).toEqual(expect.any(Number))
+      expect(() => service.pin(list[5].id, true)).toThrow('pin_limit')
+      // Ghim lại tin đã ghim không tính thêm.
+      expect(() => service.pin(list[0].id, true)).not.toThrow()
+      expect(service.pin(list[0].id, false).pinnedAt).toBeNull()
+      expect(service.pin(list[5].id, true).pinnedAt).not.toBeNull()
+      const streaming = msgs.insert({ conversationId: conv.id, role: 'assistant', content: '', status: 'streaming' })
+      expect(() => service.pin(streaming.id, true)).toThrow('message_not_editable')
+    })
+
+    it('thu hồi: xoá nội dung, bỏ ghim, không vào lịch sử; lượt sau nhắc trợ lý bỏ qua; chỉ tin của người dùng', async () => {
+      const provider = ok()
+      const service = makeService(provider)
+      const conv = convs.create('free')
+      const mine = msgs.insert({ conversationId: conv.id, role: 'user', content: 'mật khẩu wifi là 123' })
+      const reply = msgs.insert({ conversationId: conv.id, role: 'assistant', content: 'ok', status: 'done' })
+      service.pin(mine.id, true)
+
+      const recalled = service.recall(mine.id)
+      expect(recalled).toMatchObject({ content: '', pinnedAt: null, recalledAt: expect.any(Number) })
+      expect(msgs.get(mine.id)).toMatchObject({ content: '', recalledAt: expect.any(Number) })
+      expect(() => service.recall(reply.id)).toThrow('message_not_editable')
+      expect(toHistory(msgs.list(conv.id)).map((h) => h.content)).toEqual(['ok'])
+      expect(promptWithHistory(msgs.list(conv.id), 'x')).not.toContain('123')
+
+      convs.setSession(conv.id, 's0')
+      service.send(conv.id, 'hỏi tiếp')
+      await waitForStatus(conv.id, 'done')
+      expect(provider.calls[0].prompt).toMatch(/thu hồi một tin nhắn/)
+      expect(() => service.pin(mine.id, true)).toThrow('message_not_editable')
+    })
+
+    it('sửa & gửi lại: xoá tin đó + mọi tin sau, bỏ session, lượt mới gửi kèm lịch sử còn lại', async () => {
+      const provider = ok()
+      const service = makeService(provider)
+      const conv = convs.create('free')
+      msgs.insert({ conversationId: conv.id, role: 'user', content: 'Mình làm game Unity' })
+      msgs.insert({ conversationId: conv.id, role: 'assistant', content: 'Tuyệt!', status: 'done' })
+      const target = msgs.insert({ conversationId: conv.id, role: 'user', content: 'quái đi xuyên tường' })
+      msgs.insert({ conversationId: conv.id, role: 'assistant', content: 'trả lời cũ', status: 'done' })
+      convs.setSession(conv.id, 's-old')
+
+      const res = service.editAndResend(target.id, 'quái đi xuyên tường khi dùng Rigidbody')
+      await waitForStatus(conv.id, 'done')
+      expect(msgs.list(conv.id).map((m) => m.content)).toEqual([
+        'Mình làm game Unity',
+        'Tuyệt!',
+        'quái đi xuyên tường khi dùng Rigidbody',
+        'trả lời'
+      ])
+      expect(res.userMessage.content).toBe('quái đi xuyên tường khi dùng Rigidbody')
+      expect(provider.calls[0].sessionId).toBeUndefined()
+      expect(provider.calls[0].prompt).toContain('Người dùng: Mình làm game Unity')
+      expect(provider.calls[0].prompt).not.toContain('trả lời cũ')
+      expect(convs.get(conv.id)?.cliSessionId).toBe('s1')
+    })
+
+    it('sửa & gửi lại / thu hồi: không được khi đang trả lời, tin có file, tin của trợ lý', async () => {
+      let release: () => void = () => {}
+      const gate = new Promise<void>((r) => (release = r))
+      const provider = new FakeProvider(async function* () {
+        await gate
+        yield { type: 'done' }
+      })
+      const service = makeService(provider)
+      const conv = convs.create('free')
+      const first = msgs.insert({ conversationId: conv.id, role: 'user', content: 'a' })
+      const withFile = msgs.insert({
+        conversationId: conv.id,
+        role: 'user',
+        content: 'xem ảnh',
+        attachments: [{ id: '00000000-0000-4000-8000-000000000001', name: 'x.png', mimeType: 'image/png', size: 1, path: 'C:\\x.png' }]
+      })
+      expect(() => service.editAndResend(withFile.id, 'b')).toThrow('message_not_editable')
+      service.send(conv.id, 'đang chạy')
+      expect(() => service.editAndResend(first.id, 'b')).toThrow('message_busy')
+      expect(() => service.recall(first.id)).toThrow('message_busy')
+      release()
+      await waitForStatus(conv.id, 'done')
+      const assistantMsg = msgs.list(conv.id).at(-1)!
+      expect(() => service.editAndResend(assistantMsg.id, 'b')).toThrow('message_not_editable')
+    })
+  })
+
   it('nhánh (fork) chưa có session: lượt đầu gửi kèm lịch sử tới tin được tách', async () => {
     const provider = new FakeProvider(() => events({ type: 'session', sessionId: 's-f' }, { type: 'text', delta: 'ok' }, { type: 'done' }))
     const parent = convs.create('free')
@@ -366,7 +478,7 @@ describe('runOptions (thư mục dự án)', () => {
 
 describe('helpers', () => {
   it('toHistory bỏ tin trợ lý lỗi/dừng và ghi chú file đính kèm cũ', () => {
-    const base = { conversationId: 'c', error: null, toolEvents: [], usage: null, reactions: [], media: null, voice: null, artifacts: [], createdAt: 0 }
+    const base = { conversationId: 'c', error: null, toolEvents: [], usage: null, reactions: [], media: null, voice: null, artifacts: [], replyToId: null, pinnedAt: null, recalledAt: null, createdAt: 0 }
     const history = toHistory([
       { ...base, id: '1', role: 'user', content: 'xem file', status: 'done', attachments: [{ id: 'a', name: 'x.png', mimeType: 'image/png', size: 1 }] },
       { ...base, id: '2', role: 'assistant', content: 'lỗi giữa chừng', status: 'error', attachments: [] },

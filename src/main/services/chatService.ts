@@ -1,12 +1,13 @@
 import { randomUUID } from 'node:crypto'
 import type { ChatEvent, ChatMode, ChatUsage } from '@shared/ai'
 import type { AssistantProfile } from '@shared/schemas'
-import type {
-  ChatSendResult,
-  ChatStreamPayload,
-  Message,
-  StoredAttachment,
-  ToolEvent
+import {
+  MAX_PINNED_MESSAGES,
+  type ChatSendResult,
+  type ChatStreamPayload,
+  type Message,
+  type StoredAttachment,
+  type ToolEvent
 } from '@shared/types'
 import { stripExpressTags, type MessageMedia, type Reaction } from '@shared/expressive'
 import type { MessageVoice } from '@shared/voice'
@@ -79,6 +80,13 @@ export class ChatBusyError extends Error {
   }
 }
 
+/** Không thao tác được trên tin này (đang trả lời, sai loại tin, quá số ghim…) — message là mã lỗi cho UI. */
+export class MessageActionError extends Error {
+  constructor(code: 'message_busy' | 'message_not_editable' | 'pin_limit') {
+    super(code)
+  }
+}
+
 export class ConversationNotFoundError extends Error {
   constructor() {
     super('conversation_not_found')
@@ -93,10 +101,21 @@ export function titleFromText(text: string): string {
 /** Dựng lại ngữ cảnh khi session CLI bị mất (ví dụ người dùng xóa ~/.claude). */
 export function promptWithHistory(history: Message[], text: string): string {
   const lines = history
-    .filter((m) => m.content.trim())
+    .filter((m) => !m.recalledAt && m.content.trim())
     .map((m) => `${m.role === 'user' ? 'Người dùng' : 'Trợ lý'}: ${m.content.trim()}`)
   if (lines.length === 0) return text
   return `Đoạn hội thoại trước đó (để nắm ngữ cảnh):\n${lines.join('\n\n')}\n\n---\n\n${text}`
+}
+
+const QUOTE_MAX = 400
+
+/** Người dùng trả lời một tin cụ thể → nói rõ cho trợ lý đang trả lời câu nào (đoạn trích cắt ngắn). */
+export function withReplyQuote(text: string, quoted: Message | null): string {
+  if (!quoted) return text
+  const body = stripExpressTags(hideArtifactBlocks(quoted.content).text, false).replace(/\s+/g, ' ').trim()
+  const excerpt = body.length > QUOTE_MAX ? `${body.slice(0, QUOTE_MAX)}…` : body || '(tin không có chữ)'
+  const who = quoted.role === 'user' ? 'tin trước đó của chính người dùng' : 'câu trả lời trước đó của bạn'
+  return `[Người dùng đang trả lời ${who}: "${excerpt}"]\n\n${text}`
 }
 
 /** Prompt khi người dùng chỉ gửi file/ảnh, không gõ chữ. */
@@ -172,7 +191,7 @@ export function runOptions(input: {
 /** Tin nhắn cũ → lịch sử cho provider; file đính kèm cũ chỉ còn tên. */
 export function toHistory(messages: Message[]): HistoryMessage[] {
   return messages
-    .filter((m) => m.status === 'done' || m.role === 'user')
+    .filter((m) => !m.recalledAt && (m.status === 'done' || m.role === 'user'))
     .map((m) => ({
       role: m.role,
       content: [
@@ -191,6 +210,8 @@ export class ChatService {
   private active = new Map<string, ActiveRequest>()
   /** Cảm xúc người dùng thả vào câu trả lời của trợ lý — báo cho trợ lý ở lượt sau. */
   private notes = new Map<string, string[]>()
+  /** Vừa "sửa & gửi lại" → lượt kế tiếp dựng lại ngữ cảnh từ lịch sử (session CLI cũ còn nhớ phần đã xoá). */
+  private rebuildNext = new Set<string>()
 
   constructor(private readonly deps: ChatServiceDeps) {}
 
@@ -203,13 +224,17 @@ export class ChatService {
     text: string,
     attachments: StoredAttachment[] = [],
     media: MessageMedia | null = null,
-    voice: MessageVoice | null = null
+    voice: MessageVoice | null = null,
+    replyToId: string | null = null
   ): ChatSendResult {
     const { conversations, messages } = this.deps
     const conversation = conversations.get(conversationId)
     if (!conversation) throw new ConversationNotFoundError()
     if (this.isBusy(conversationId)) throw new ChatBusyError()
 
+    // Chỉ trích tin trong cùng hội thoại và chưa thu hồi; không hợp lệ → gửi như tin thường.
+    const quotedRaw = replyToId ? messages.get(replyToId) : null
+    const quoted = quotedRaw && quotedRaw.conversationId === conversationId && !quotedRaw.recalledAt ? quotedRaw : null
     const history = messages.recent(conversationId, HISTORY_LIMIT)
     const userMessage = messages.insert({
       conversationId,
@@ -217,7 +242,8 @@ export class ChatService {
       content: text,
       attachments,
       media,
-      voice
+      voice,
+      replyToId: quoted?.id ?? null
     })
     const plan =
       this.deps.expressive?.onUserMessage({ text, media: !!media, mode: conversation.mode }) ?? null
@@ -259,12 +285,16 @@ export class ChatService {
       mode: conversation.mode,
       sessionId: conversation.cliSessionId ?? undefined,
       // Chỉ gửi ảnh/file không kèm chữ → vẫn cần một câu nhắc cho Claude.
-      text: this.promptText(conversationId, voice ? `${VOICE_NOTE}\n${text}` : text, media, attachments.length > 0),
+      text: withReplyQuote(
+        this.promptText(conversationId, voice ? `${VOICE_NOTE}\n${text}` : text, media, attachments.length > 0),
+        quoted
+      ),
       voice: !!voice,
       userMessageId: userMessage.id,
       plan,
       history,
-      forked: !!conversation.forkedFromMessageId,
+      // Nhánh, hoặc vừa "sửa & gửi lại" (session CLI đã bỏ): chưa có session → lượt đầu gửi kèm lịch sử.
+      forked: !!conversation.forkedFromMessageId || this.rebuildNext.delete(conversationId),
       attachments,
       options,
       signal: controller.signal
@@ -312,6 +342,59 @@ export class ChatService {
       this.deps.expressive?.onUserReaction()
     }
     return { ...message, reactions }
+  }
+
+  /** Tin trong hội thoại của tài khoản hiện tại, hoặc lỗi. */
+  private ownMessage(messageId: string): Message {
+    const message = this.deps.messages.get(messageId)
+    if (!message || !this.deps.conversations.get(message.conversationId)) throw new ConversationNotFoundError()
+    return message
+  }
+
+  /** Ghim / bỏ ghim một tin (tối đa MAX_PINNED_MESSAGES mỗi cuộc). */
+  pin(messageId: string, pinned: boolean): Message {
+    const message = this.ownMessage(messageId)
+    if (message.status === 'streaming' || message.recalledAt) throw new MessageActionError('message_not_editable')
+    if (pinned && !message.pinnedAt && this.deps.messages.pinnedCount(message.conversationId) >= MAX_PINNED_MESSAGES)
+      throw new MessageActionError('pin_limit')
+    const pinnedAt = pinned ? (message.pinnedAt ?? Date.now()) : null
+    this.deps.messages.update(messageId, { pinnedAt })
+    return { ...message, pinnedAt }
+  }
+
+  /**
+   * Thu hồi tin của người dùng: xoá nội dung (chữ, file, GIF, giọng nói), bỏ ghim, không gửi lại cho trợ lý.
+   * Trợ lý (CLI) có thể đã đọc tin này trong session → lượt sau nhắc trợ lý bỏ qua nó.
+   */
+  recall(messageId: string): Message {
+    const message = this.ownMessage(messageId)
+    if (message.role !== 'user') throw new MessageActionError('message_not_editable')
+    if (this.isBusy(message.conversationId)) throw new MessageActionError('message_busy')
+    if (message.recalledAt) return message
+    const recalledAt = Date.now()
+    this.deps.messages.update(messageId, { content: '', attachments: [], media: null, voice: null, pinnedAt: null, recalledAt })
+    const list = [
+      ...(this.notes.get(message.conversationId) ?? []),
+      'Người dùng đã thu hồi một tin nhắn trước đó — coi như tin đó không tồn tại, đừng nhắc lại nội dung của nó.'
+    ]
+    this.notes.set(message.conversationId, list.slice(-MAX_NOTES))
+    return { ...message, content: '', attachments: [], media: null, voice: null, pinnedAt: null, recalledAt }
+  }
+
+  /**
+   * Sửa & gửi lại (giống ChatGPT/Claude): xoá tin này và mọi tin sau nó, bỏ session CLI (trợ lý quên phần đã xoá),
+   * rồi gửi nội dung mới — lượt đầu gửi kèm lịch sử còn lại. Chỉ tin chữ (không file / GIF / giọng nói).
+   */
+  editAndResend(messageId: string, text: string): ChatSendResult {
+    const message = this.ownMessage(messageId)
+    if (message.role !== 'user' || message.recalledAt || message.attachments.length || message.media || message.voice)
+      throw new MessageActionError('message_not_editable')
+    if (this.isBusy(message.conversationId)) throw new MessageActionError('message_busy')
+    this.deps.conversations.setSession(message.conversationId, null)
+    this.deps.messages.deleteFrom(messageId)
+    this.notes.delete(message.conversationId)
+    this.rebuildNext.add(message.conversationId)
+    return this.send(message.conversationId, text, [], null, null, message.replyToId)
   }
 
   abort(requestId: string): void {

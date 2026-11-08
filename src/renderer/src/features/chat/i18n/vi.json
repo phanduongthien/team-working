@@ -91,7 +91,10 @@
     "already_running": "Đang lấy đề xuất, chờ chút nhé.",
     "approval_unavailable": "Không khởi động được bước duyệt thay đổi file. Hãy tắt quyền sửa hoặc khởi động lại app.",
     "no_project_folder": "Hãy chọn thư mục dự án trước.",
-    "message_not_found": "Không tìm thấy tin nhắn để tách nhánh."
+    "message_not_found": "Không tìm thấy tin nhắn để tách nhánh.",
+    "pin_limit": "Mỗi cuộc trò chuyện chỉ ghim tối đa 5 tin — bỏ bớt một tin đã ghim trước.",
+    "message_busy": "Đợi trợ lý trả lời xong rồi thử lại.",
+    "message_not_editable": "Không thao tác được trên tin này."
   },
   "tools": {
     "screenshot": "chụp màn hình",
@@ -336,5 +339,25 @@
     "deny": "Không cho phép",
     "pickAgain": "Bạn chưa chọn thư mục — bấm \"Chọn thư mục…\" lại, hoặc Không cho phép.",
     "continue": "Mình đã cấp quyền thư mục rồi, bạn tiếp tục nhé."
+  },
+  "messages": {
+    "reply": "Trả lời",
+    "replyingTo": "Đang trả lời {{name}}",
+    "cancelReply": "Bỏ trả lời",
+    "quoteGone": "Tin gốc không còn",
+    "pin": "Ghim",
+    "unpin": "Bỏ ghim",
+    "pinned": "Đã ghim",
+    "pinnedMore": "+{{count}} tin đã ghim khác",
+    "pinnedLess": "Thu gọn",
+    "edit": "Sửa & gửi lại",
+    "editHint": "Gửi lại sẽ bỏ các tin phía sau và để trợ lý trả lời lại.",
+    "editSend": "Gửi lại",
+    "recall": "Thu hồi",
+    "recallConfirm": "Bấm lần nữa để thu hồi",
+    "recalled": "Tin nhắn đã được thu hồi",
+    "more": "Thêm",
+    "gif": "[GIF]",
+    "sticker": "[Sticker]"
   }
 }

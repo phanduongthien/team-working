@@ -78,6 +78,12 @@ export const messages = sqliteTable(
     media: text('media', { mode: 'json' }).$type<MessageMedia>(),
     voice: text('voice', { mode: 'json' }).$type<MessageVoice>(),
     artifacts: text('artifacts', { mode: 'json' }).$type<MessageArtifact[]>().notNull().default([]),
+    /** Trả lời một tin cụ thể (tin gốc có thể đã bị xoá khi sửa & gửi lại → hiện "tin gốc không còn"). */
+    replyToId: text('reply_to_id'),
+    /** Ghim tin trong cuộc trò chuyện (tối đa MAX_PINNED_MESSAGES). */
+    pinnedAt: integer('pinned_at'),
+    /** Thu hồi: nội dung đã xoá, chỉ còn dòng "đã thu hồi"; không gửi lại cho trợ lý. */
+    recalledAt: integer('recalled_at'),
     createdAt: integer('created_at').notNull().default(now)
   },
   (t) => [index('messages_conversation_idx').on(t.conversationId, t.createdAt)]

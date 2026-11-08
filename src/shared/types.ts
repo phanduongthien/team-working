@@ -143,8 +143,17 @@ export type Message = {
   voice: MessageVoice | null
   /** Artifact tạo / sửa trong câu trả lời này. */
   artifacts: MessageArtifact[]
+  /** Tin này trả lời tin nào (tin gốc có thể không còn). */
+  replyToId: string | null
+  /** Đã ghim (thời điểm ghim). */
+  pinnedAt: number | null
+  /** Đã thu hồi — nội dung đã xoá. */
+  recalledAt: number | null
   createdAt: number
 }
+
+/** Mỗi cuộc trò chuyện ghim tối đa từng này tin — ghim quá nhiều thì như không ghim. */
+export const MAX_PINNED_MESSAGES = 5
 
 export type ChatSendResult = {
   requestId: string
@@ -262,7 +271,7 @@ export interface TeamWorkingApi {
     list(conversationId: string): Promise<Message[]>
   }
   chat: {
-    send(conversationId: string, text: string, attachmentIds?: string[]): Promise<ChatSendResult>
+    send(conversationId: string, text: string, attachmentIds?: string[], replyToId?: string): Promise<ChatSendResult>
     abort(requestId: string): Promise<void>
     onEvent(listener: (payload: ChatStreamPayload) => void): () => void
     pickAttachments(): Promise<PickAttachmentsResult>
@@ -278,6 +287,12 @@ export interface TeamWorkingApi {
     sendVoice(conversationId: string, text: string, voice: MessageVoice): Promise<ChatSendResult>
     /** Thả cảm xúc (null = bỏ). Mỗi người tối đa 1 cảm xúc mỗi tin. */
     react(messageId: string, emoji: string | null): Promise<Message>
+    /** Ghim / bỏ ghim (lỗi pin_limit khi đã đủ MAX_PINNED_MESSAGES). */
+    pin(messageId: string, pinned: boolean): Promise<Message>
+    /** Thu hồi tin của người dùng (xoá nội dung, không gửi lại cho trợ lý). */
+    recall(messageId: string): Promise<Message>
+    /** Sửa & gửi lại: xoá tin này và mọi tin sau nó rồi gửi nội dung mới. */
+    editResend(messageId: string, text: string): Promise<ChatSendResult>
   }
   skills: {
     /** Skill người dùng cài + skill có sẵn của app (chỉ xem). */

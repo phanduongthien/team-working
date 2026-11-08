@@ -2,7 +2,7 @@ import { create } from 'zustand'
 import type { ChatMode } from '@shared/ai'
 import type { MediaRef } from '@shared/expressive'
 import type { MessageVoice } from '@shared/voice'
-import type { ChatStreamPayload, Conversation, ConversationGroup, Message } from '@shared/types'
+import type { ChatSendResult, ChatStreamPayload, Conversation, ConversationGroup, Message } from '@shared/types'
 import { api } from '@renderer/lib/api'
 import { coalesce, optimistic } from '@renderer/lib/sync'
 import { applyChatEvent, isTerminalEvent } from './chatEvents'
@@ -70,6 +70,17 @@ type ChatState = {
   ): Promise<boolean>
   /** Thả / bỏ cảm xúc của người dùng cho một tin. */
   react(message: Message, emoji: string): Promise<void>
+  /** Tin đang được trả lời (hiện trên ô nhập) theo từng hội thoại. */
+  replyTo: Record<string, Message>
+  setReplyTo(conversationId: string, message: Message | null): void
+  /** Ghim / bỏ ghim — hiện ngay, lỗi thì hoàn tác + báo. */
+  pin(message: Message, pinned: boolean): Promise<void>
+  /** Thu hồi tin của người dùng. */
+  recall(message: Message): Promise<void>
+  /** Sửa & gửi lại: bỏ tin này và mọi tin sau nó, gửi nội dung mới. */
+  editResend(message: Message, text: string): Promise<boolean>
+  /** Tải lại tin của hội thoại đang mở (sync 'messages'); bỏ qua khi đang trả lời để không đè luồng stream. */
+  reloadMessages(): Promise<void>
   stop(): Promise<void>
   handleEvent(payload: ChatStreamPayload): void
   clearError(): void
@@ -82,6 +93,32 @@ export const useChat = create<ChatState>((set, get) => {
     set((s) => ({ conversations: s.conversations.map((x) => (x.id === c.id ? c : x)) }))
   const patchConversation = (id: string, patch: Partial<Conversation>): void =>
     set((s) => ({ conversations: s.conversations.map((x) => (x.id === id ? { ...x, ...patch } : x)) }))
+  /** Sửa một tin trong danh sách đang hiện. */
+  const patchMessage = (message: Message, patch: Partial<Message>): void =>
+    set((s) => ({
+      messages: {
+        ...s.messages,
+        [message.conversationId]: (s.messages[message.conversationId] ?? []).map((m) =>
+          m.id === message.id ? { ...m, ...patch } : m
+        )
+      }
+    }))
+  /** Lượt mới vừa gửi: thêm tin người dùng + tin trợ lý đang trả lời, áp sự kiện tới sớm. */
+  const applySent = (conversationId: string, res: ChatSendResult): void => {
+    set((s) => ({
+      messages: {
+        ...s.messages,
+        [conversationId]: [...(s.messages[conversationId] ?? []), res.userMessage, res.assistantMessage]
+      },
+      streaming: {
+        ...s.streaming,
+        [conversationId]: { requestId: res.requestId, messageId: res.assistantMessage.id }
+      }
+    }))
+    const buffered = early.get(res.assistantMessage.id) ?? []
+    early.delete(res.assistantMessage.id)
+    for (const payload of buffered) get().handleEvent(payload)
+  }
   const patchGroup = (id: string, patch: Partial<ConversationGroup>): void =>
     set((s) => ({ groups: s.groups.map((g) => (g.id === id ? { ...g, ...patch } : g)) }))
   /** Thao tác lạc quan trên một hội thoại: hiện ngay, lỗi → về lại bản cũ + báo. */
@@ -110,6 +147,7 @@ export const useChat = create<ChatState>((set, get) => {
     activeId: null,
     messages: {},
     streaming: {},
+    replyTo: {},
     error: null,
 
     async loadConversations() {
@@ -331,34 +369,75 @@ export const useChat = create<ChatState>((set, get) => {
       const conversationId = id
 
       try {
+        // Trả lời một tin: chỉ với tin chữ / file (GIF, giọng nói gửi như tin thường).
+        const replyToId = get().replyTo[conversationId]?.id
         const res = media
           ? await api.chat.sendMedia(conversationId, text, media)
           : voice
             ? await api.chat.sendVoice(conversationId, text, voice)
-            : await api.chat.send(conversationId, text, attachmentIds)
-        set((s) => ({
-          messages: {
-            ...s.messages,
-            [conversationId]: [
-              ...(s.messages[conversationId] ?? []),
-              res.userMessage,
-              res.assistantMessage
-            ]
-          },
-          streaming: {
-            ...s.streaming,
-            [conversationId]: { requestId: res.requestId, messageId: res.assistantMessage.id }
-          }
-        }))
-        const buffered = early.get(res.assistantMessage.id) ?? []
-        early.delete(res.assistantMessage.id)
-        for (const payload of buffered) get().handleEvent(payload)
+            : await api.chat.send(conversationId, text, attachmentIds, replyToId)
+        if (!media && !voice) get().setReplyTo(conversationId, null)
+        applySent(conversationId, res)
         // Danh sách (tiêu đề tạm, thứ tự) tự cập nhật qua sync 'conversations'.
         return true
       } catch (err) {
         set({ error: errorCode(err) })
         return false
       }
+    },
+
+    setReplyTo(conversationId, message) {
+      set((s) => {
+        const replyTo = { ...s.replyTo }
+        if (message) replyTo[conversationId] = message
+        else delete replyTo[conversationId]
+        return { replyTo }
+      })
+    },
+
+    async pin(message, pinned) {
+      const pinnedAt = pinned ? Date.now() : null
+      patchMessage(message, { pinnedAt })
+      try {
+        patchMessage(message, await api.chat.pin(message.id, pinned))
+      } catch (err) {
+        patchMessage(message, { pinnedAt: message.pinnedAt })
+        set({ error: errorCode(err) })
+      }
+    },
+
+    async recall(message) {
+      try {
+        patchMessage(message, await api.chat.recall(message.id))
+        if (get().replyTo[message.conversationId]?.id === message.id) get().setReplyTo(message.conversationId, null)
+      } catch (err) {
+        set({ error: errorCode(err) })
+      }
+    },
+
+    async editResend(message, text) {
+      const { conversationId } = message
+      try {
+        const res = await api.chat.editResend(message.id, text)
+        // Bỏ tin đã sửa và mọi tin sau nó (main đã xoá), rồi thêm lượt mới.
+        set((s) => {
+          const list = s.messages[conversationId] ?? []
+          const cut = list.findIndex((m) => m.id === message.id)
+          return { messages: { ...s.messages, [conversationId]: cut < 0 ? list : list.slice(0, cut) } }
+        })
+        applySent(conversationId, res)
+        return true
+      } catch (err) {
+        set({ error: errorCode(err) })
+        return false
+      }
+    },
+
+    async reloadMessages() {
+      const id = get().activeId
+      if (!id || get().streaming[id]) return
+      const list = await api.messages.list(id)
+      if (get().activeId === id && !get().streaming[id]) set((s) => ({ messages: { ...s.messages, [id]: list } }))
     },
 
     async stop() {
@@ -407,6 +486,7 @@ export const useChat = create<ChatState>((set, get) => {
         activeId: null,
         messages: {},
         streaming: {},
+        replyTo: {},
         error: null
       })
       await get().loadConversations()

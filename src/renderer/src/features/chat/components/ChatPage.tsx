@@ -16,6 +16,7 @@ import { ArtifactPanel } from '../artifacts/ArtifactPanel'
 import { ConversationSidebar } from './ConversationSidebar'
 import { GroupSuggestion } from './GroupSuggestion'
 import { MessageItem } from './MessageItem'
+import { PinnedBar, ReplyPreview } from './MessageActions'
 
 const EMPTY: never[] = []
 
@@ -98,6 +99,7 @@ export function ChatPage() {
           canSuggest={messages.length > 0}
           busy={isStreaming}
         />
+        <PinnedBar messages={messages} />
         <div className="flex-1 overflow-y-auto">
           <div className="mx-auto max-w-3xl space-y-6 px-6 py-6">
             {messages.length === 0 ? (
@@ -138,6 +140,7 @@ export function ChatPage() {
           {active && <GroupSuggestion conversation={active} />}
           {/* Thư mục gắn với cuộc trò chuyện: chế độ Code luôn hiện; chế độ khác hiện khi đã có thư mục (vd trợ lý xin quyền). */}
           {(mode === 'code' || active?.cwd) && <CodeBar conversation={active} busy={isStreaming} />}
+          <ReplyPreview conversationId={activeId} />
           <Composer
             mode={mode}
             onModeChange={onModeChange}
