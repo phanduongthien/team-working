@@ -4,6 +4,19 @@
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-11-08
+
+### Tóm tắt
+- **Trợ lý tự đọc được code của bạn ở mọi chế độ**: khi bạn nhắc tới một thư mục / dự án trên máy (Unity, Blender, DaVinci, code…), trợ lý hiện thẻ xin quyền thay vì bảo bạn copy-dán. Bạn bấm **Chọn thư mục…** và tự chọn đúng thư mục — trợ lý chỉ thấy thư mục đó, sau đó tự làm tiếp.
+  - Mặc định **chỉ đọc**. Tick "Cho phép sửa file" thì trợ lý được đề xuất sửa, nhưng mỗi lần sửa vẫn hiện diff để bạn Đồng ý / Từ chối.
+  - Tự chặn những chỗ không nên sửa tay: `Library/`, `Temp/`, file `.meta` của Unity; file nhị phân như `.blend`, `.drp`, ảnh, âm thanh, video.
+  - Nút **Gỡ thư mục** trên thanh thư mục để thu hồi quyền bất cứ lúc nào.
+- **Trả lời một tin cụ thể** (giống Messenger): rê chuột lên tin → ⋮ → **Trả lời**. Tin gửi đi có khung trích dẫn, bấm vào để nhảy về tin gốc; trợ lý biết bạn đang nói về câu nào.
+- **Ghim tin**: ⋮ → **Ghim** (tối đa 5 tin mỗi cuộc). Tin đã ghim hiện ở thanh ngay dưới tiêu đề, bấm để nhảy tới.
+- **Thu hồi tin** của bạn: ⋮ → **Thu hồi** (bấm hai lần để chắc chắn). Nội dung bị xoá và không gửi lại cho trợ lý.
+- **Sửa & gửi lại**: ⋮ → **Sửa & gửi lại** trên tin của bạn — các tin phía sau được bỏ đi và trợ lý trả lời lại theo nội dung mới.
+- Windows SmartScreen có thể cảnh báo vì bộ cài chưa có chữ ký số: bấm "More info" → "Run anyway".
+
 ## [0.4.0] - 2026-11-06
 
 > Các tính năng cá nhân (điều khiển máy tính, kết nối agent, giọng nói, Gmail/Telegram) đều **mặc định tắt**, ai cần thì tự bật trong Cài đặt → Tính năng thử nghiệm. Dữ liệu chat được tự sao lưu lần đầu chạy bản mới.
