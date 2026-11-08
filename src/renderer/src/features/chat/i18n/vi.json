@@ -50,7 +50,7 @@
   "code": {
     "chooseFolder": "Chọn thư mục dự án",
     "changeFolder": "Đổi thư mục",
-    "noFolder": "Chưa chọn thư mục — trợ lý chỉ trò chuyện, không đọc được code của bạn.",
+    "noFolder": "Chưa chọn thư mục — trợ lý chỉ trò chuyện; khi cần nó sẽ xin quyền thư mục.",
     "readOnly": "Chỉ đọc",
     "writeOn": "Được sửa file (duyệt từng thay đổi)",
     "enableTitle": "Cho phép trợ lý sửa file?",
@@ -64,7 +64,9 @@
     "approveHint": "Cuộc trò chuyện: {{title}}. Xem kỹ thay đổi trước khi đồng ý.",
     "accept": "Đồng ý thay đổi",
     "reject": "Từ chối",
-    "more": "còn {{count}} yêu cầu"
+    "more": "còn {{count}} yêu cầu",
+    "clearFolder": "Gỡ thư mục",
+    "clearFolderHint": "Thu hồi quyền: trợ lý không đọc/sửa thư mục này nữa"
   },
   "suggest": {
     "button": "Gợi ý ghi nhớ",
@@ -322,5 +324,17 @@
       "invalid_input": "Tên nhóm không hợp lệ."
     },
     "matchedIn": "Khớp trong tin nhắn"
+  },
+  "folderAccess": {
+    "title": "Trợ lý xin quyền đọc một thư mục",
+    "titleWrite": "Trợ lý xin quyền đọc và sửa một thư mục",
+    "hint": "Cuộc trò chuyện: {{title}}. Bạn tự chọn thư mục — trợ lý chỉ thấy đúng thư mục đó.",
+    "suggested": "Trợ lý gợi ý:",
+    "write": "Cho phép sửa file",
+    "writeHint": "Mỗi lần sửa vẫn hiện diff để bạn Đồng ý / Từ chối. File nhị phân (.blend, .drp…) và thư mục tự sinh (Library/, .meta…) luôn bị chặn.",
+    "choose": "Chọn thư mục…",
+    "deny": "Không cho phép",
+    "pickAgain": "Bạn chưa chọn thư mục — bấm \"Chọn thư mục…\" lại, hoặc Không cho phép.",
+    "continue": "Mình đã cấp quyền thư mục rồi, bạn tiếp tục nhé."
   }
 }

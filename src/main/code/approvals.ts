@@ -82,6 +82,7 @@ export class CodeApprovals {
     const change = await describeChange(root, toolName, body.input)
     if ('error' in change) {
       this.deps.log.warn(`Từ chối tự động ${toolName}: ${change.error}`)
+      if (change.error === 'protected_path') return { allow: false, message: `Không được sửa file này. ${change.reason}` }
       const reasons = {
         outside_project: 'Chỉ được sửa file trong thư mục dự án đã chọn.',
         unsupported_tool: `Tool này không được phép trong ${APP_NAME}.`,

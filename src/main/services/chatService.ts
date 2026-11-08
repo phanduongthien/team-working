@@ -17,6 +17,7 @@ import type { FinalizedReply } from '../expressive/service'
 import { buildSystemPrompt, type UserProfileContext } from '../ai/systemPrompt'
 import { titleFromPrompt } from '../chat/organize'
 import type { ConversationRepository, MessageRepository } from '../db/repositories'
+import { detectProject, projectNotes } from '../code/projectProfile'
 
 export type ChatServiceDeps = {
   conversations: ConversationRepository
@@ -137,9 +138,9 @@ ${tools.context}`
 }
 
 /**
- * Chế độ Code có thư mục dự án: chỉ đọc → Read/Grep/Glob tự duyệt;
- * bật sửa file → thêm Edit/Write nhưng MỖI lần sửa phải người dùng duyệt (không tự duyệt).
- * Không bao giờ cho Bash/lệnh shell. Chế độ khác: workspace riêng của app, không tool.
+ * Hội thoại có thư mục dự án (ở MỌI chế độ — thư mục gắn với cuộc trò chuyện, không gắn với chế độ):
+ * chỉ đọc → Read/Grep/Glob tự duyệt; bật sửa file → thêm Edit/Write nhưng MỖI lần sửa phải người dùng
+ * duyệt (không tự duyệt). Không bao giờ cho Bash/lệnh shell. Chưa có thư mục: workspace riêng của app, không tool.
  */
 export function runOptions(input: {
   mode: ChatMode
@@ -148,13 +149,15 @@ export function runOptions(input: {
   conversationId: string
   workspaceDir: string
 }): RunOptions {
-  if (input.mode !== 'code' || !input.cwd) return { cwd: input.workspaceDir }
+  if (!input.cwd) return { cwd: input.workspaceDir }
+  const notes = projectNotes(detectProject(input.cwd))
+  const header = `Thư mục dự án: ${input.cwd}${notes ? `\n${notes}` : ''}`
   if (!input.codeWrite) {
     return {
       cwd: input.cwd,
       tools: READ_TOOLS,
       allowedTools: READ_TOOLS,
-      context: `Thư mục dự án: ${input.cwd}\nQuyền: CHỈ ĐỌC. Không sửa file; nếu cần thay đổi, đưa đề xuất dưới dạng diff để người dùng tự áp dụng.`
+      context: `${header}\nQuyền: CHỈ ĐỌC (Read/Grep/Glob). Hãy tự đọc file thay vì bảo người dùng copy-dán. Không sửa file; nếu cần thay đổi, đưa đề xuất dưới dạng diff, hoặc gọi request_folder_access với write=true để xin quyền sửa.`
     }
   }
   return {
@@ -162,7 +165,7 @@ export function runOptions(input: {
     tools: [...READ_TOOLS, ...WRITE_TOOLS],
     allowedTools: READ_TOOLS,
     approval: { conversationId: input.conversationId },
-    context: `Thư mục dự án: ${input.cwd}\nQuyền: ĐƯỢC SỬA FILE trong thư mục này bằng Edit/Write; mỗi thay đổi người dùng sẽ xem diff và duyệt, có thể bị từ chối — khi bị từ chối thì dừng và hỏi lại. Không có lệnh shell.`
+    context: `${header}\nQuyền: ĐƯỢC SỬA FILE trong thư mục này bằng Edit/Write; mỗi thay đổi người dùng sẽ xem diff và duyệt, có thể bị từ chối — khi bị từ chối thì dừng và hỏi lại. File nhị phân và thư mục tự sinh luôn bị từ chối. Không có lệnh shell.`
   }
 }
 

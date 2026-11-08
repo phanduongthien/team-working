@@ -1,4 +1,4 @@
-import { FolderOpen, Lock, ShieldAlert } from 'lucide-react'
+import { FolderOpen, FolderX, Lock, ShieldAlert } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { Conversation } from '@shared/types'
@@ -8,12 +8,12 @@ import { cn } from '@renderer/lib/utils'
 import { useChat } from '../store'
 
 /**
- * Chế độ Code: chọn thư mục dự án và bật/tắt quyền sửa file.
+ * Thư mục của cuộc trò chuyện (mọi chế độ): chọn / đổi / gỡ thư mục và bật/tắt quyền sửa file.
  * Mặc định chỉ đọc; bật sửa phải xác nhận, và mỗi lần sửa vẫn phải duyệt diff.
  */
 export function CodeBar({ conversation, busy }: { conversation: Conversation | undefined; busy: boolean }) {
   const { t } = useTranslation('chat')
-  const { chooseFolder, setCodeWrite } = useChat()
+  const { chooseFolder, setCodeWrite, clearFolder } = useChat()
   const [confirm, setConfirm] = useState(false)
 
   return (
@@ -23,9 +23,22 @@ export function CodeBar({ conversation, busy }: { conversation: Conversation | u
         {conversation?.cwd ? t('code.changeFolder') : t('code.chooseFolder')}
       </Button>
       {conversation?.cwd ? (
-        <code className="min-w-0 truncate" title={conversation.cwd}>
-          {conversation.cwd}
-        </code>
+        <>
+          <code className="min-w-0 truncate" title={conversation.cwd}>
+            {conversation.cwd}
+          </code>
+          <Button
+            size="icon-sm"
+            variant="ghost"
+            disabled={busy}
+            title={t('code.clearFolderHint')}
+            aria-label={t('code.clearFolder')}
+            data-testid="code-clear-folder"
+            onClick={() => void clearFolder(conversation.id)}
+          >
+            <FolderX />
+          </Button>
+        </>
       ) : (
         <span className="text-muted-foreground">{t('code.noFolder')}</span>
       )}

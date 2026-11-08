@@ -1,6 +1,7 @@
 import { readFile } from 'node:fs/promises'
 import { isAbsolute, relative, resolve } from 'node:path'
 import { createTwoFilesPatch } from 'diff'
+import { detectProject, protectedReason } from './projectProfile'
 
 export type FileChange = {
   /** Đường dẫn tương đối trong thư mục dự án. */
@@ -11,7 +12,10 @@ export type FileChange = {
   removed: number
 }
 
-export type ChangeResult = FileChange | { error: 'outside_project' | 'unsupported_tool' | 'old_string_not_found' | 'invalid_input' }
+export type ChangeResult =
+  | FileChange
+  | { error: 'outside_project' | 'unsupported_tool' | 'old_string_not_found' | 'invalid_input' }
+  | { error: 'protected_path'; reason: string }
 
 const MAX_FILE_BYTES = 2 * 1024 * 1024
 
@@ -52,6 +56,8 @@ export async function describeChange(root: string, toolName: string, input: unkn
   if (typeof data.file_path !== 'string') return { error: 'invalid_input' }
   const rel = insideProject(root, data.file_path)
   if (!rel) return { error: 'outside_project' }
+  const reason = protectedReason(detectProject(root), rel)
+  if (reason) return { error: 'protected_path', reason }
   const abs = resolve(root, rel)
   const before = await readOrEmpty(abs)
 

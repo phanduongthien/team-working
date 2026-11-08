@@ -136,7 +136,8 @@ export function ChatPage() {
             </div>
           )}
           {active && <GroupSuggestion conversation={active} />}
-          {mode === 'code' && <CodeBar conversation={active} busy={isStreaming} />}
+          {/* Thư mục gắn với cuộc trò chuyện: chế độ Code luôn hiện; chế độ khác hiện khi đã có thư mục (vd trợ lý xin quyền). */}
+          {(mode === 'code' || active?.cwd) && <CodeBar conversation={active} busy={isStreaming} />}
           <Composer
             mode={mode}
             onModeChange={onModeChange}
