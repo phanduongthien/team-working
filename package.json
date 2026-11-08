@@ -1,7 +1,7 @@
 {
   "name": "team-working",
   "productName": "MMC studio",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "private": true,
   "description": "Trợ lý AI cho học tập, quản lý team, giao việc và feedback",
   "main": "./out/main/index.js",
