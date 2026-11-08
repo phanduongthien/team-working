@@ -23,18 +23,24 @@
   2. **Tab 🕘 Gần đây trong bộ chọn emoji:** tối đa 40 emoji, mới dùng xếp đầu; đầy thì loại mục có điểm thấp nhất (số lần dùng × ½ mỗi 7 ngày không dùng) → emoji hay dùng giữ lâu hơn. Mở bộ chọn: có gần đây → tab Gần đây, chưa có → mặt cười (chỉ chọn lúc mở, chọn emoji không làm tab nhảy). Bỏ dòng "Dùng gần đây" ở tab mặt cười. Tính: chọn trong bộ chọn (ngay), gõ thẳng trong tin (lúc gửi, trừ cái đã chọn để không tính trùng), thả cảm xúc (main). GIF / sticker: dải "Gần đây" riêng (18 mục mỗi loại), main ghi khi gửi. "Xoá gần đây" bấm hai lần (4 giây). Lưu settings `expressiveRecent` trên máy, sync mục `expressiveRecent`; emoji cũ trong localStorage chuyển sang một lần.
   3. **Đề xuất chờ duyệt (trang Trí nhớ):** mục thu gọn được (bấm tiêu đề, có số, nhớ trạng thái — localStorage vì chỉ là cách xem); dòng gọn một dòng + nhãn loại + ✓ / ✕, bấm dòng mở ô sửa tự giãn (`field-sizing: content`, không thanh cuộn); 5 dòng đầu + "Xem thêm N"; lọc theo loại; tick / Chọn tất cả → Đồng ý / Bỏ qua đã chọn (IPC `memory:resolveMany`, bỏ qua đề xuất đã duyệt nơi khác); "Đồng ý tất cả" bấm hai lần. Duyệt lạc quan, sync mục `memory`. E2E `memory-suggestions.spec.ts` (FakeChat `FAKE_MEMORIES:<n>`).
   - Kèm: sửa e2e `update.spec.ts` ghi cứng "0.3.0" (hỏng từ khi nâng lên 0.4.0-beta.1) → đọc từ package.json.
-- **`feat/folder-access`** — team góp ý: trợ lý ở chế độ Tự do bảo người dùng copy-dán code thay vì tự đọc. Nguyên nhân: quyền thư mục chỉ có ở chế độ Code. Sửa:
+- **`feat/folder-access`** (#19, đã merge) — team góp ý: trợ lý ở chế độ Tự do bảo người dùng copy-dán code thay vì tự đọc. Nguyên nhân: quyền thư mục chỉ có ở chế độ Code. Sửa:
   1. **Thư mục gắn với cuộc trò chuyện, không gắn với chế độ:** mọi chế độ có thư mục → Read/Grep/Glob (chỉ đọc) hoặc thêm Edit/Write (duyệt diff từng lần). Thanh thư mục hiện ở chế độ Code, hoặc ở chế độ khác khi đã có thư mục; nút **Gỡ thư mục** = thu hồi quyền (IPC `code:clearFolder`).
   2. **Trợ lý tự xin quyền:** tool app `request_folder_access` (path gợi ý, write, reason) — chỉ có khi chưa có thư mục / chỉ đọc. Thẻ "Trợ lý xin quyền…" → người dùng bấm *Chọn thư mục…* (hộp thoại Windows, gợi ý sẵn path) → quyền chỉ có khi người dùng TỰ chọn (path trợ lý đưa không bao giờ tự cấp). Huỷ hộp thoại → thẻ vẫn chờ; dừng lượt / 10 phút → từ chối. Tool CLI cố định theo lượt → cấp xong renderer tự gửi "Mình đã cấp quyền thư mục rồi, bạn tiếp tục nhé." khi lượt kết thúc (chỉ khi vẫn đang mở cuộc đó).
   3. **Hồ sơ dự án** (`src/main/code/projectProfile.ts`): Unity (chặn `Library/`, `Temp/`, `Logs/`, `obj/`, `Build(s)/`, `UserSettings/`, `.meta`), Blender, DaVinci, Node; mọi dự án chặn `.git/`, `node_modules/` và file nhị phân (`.blend`, `.drp`, ảnh, âm thanh, video, dll…). Lưu ý theo loại dự án đưa vào ngữ cảnh. Thêm phần mềm mới = thêm một mục `PROFILES`.
   - Test: `src/main/code/__tests__/folderAccess.test.ts`, `chatService.test.ts`; e2e `folder-access.spec.ts` (`MMC_FAKE_FOLDER` = hộp chọn thư mục giả, chỉ bản chưa đóng gói).
 
+- **`feat/message-reply-pin-recall`** (#20) — góp ý của team (kiểu Messenger). Menu ⋮ trên mỗi tin (mở lên, gần mép trên thì mở xuống):
+  1. **Trả lời một tin:** cột `messages.reply_to_id` (migration `0011_message_reply_pin_recall`); khung "Đang trả lời …" trên ô nhập (bỏ bằng ✕), khối trích dẫn trên tin đã gửi (bấm → cuộn tới tin gốc và nháy nền; tin gốc mất → "Tin gốc không còn"). Prompt gửi trợ lý thêm dòng `[Người dùng đang trả lời …: "<trích ≤400 ký tự>"]`. Chỉ tin cùng hội thoại, chưa thu hồi; GIF / giọng nói gửi như tin thường.
+  2. **Ghim tin:** `pinned_at`, tối đa 5 tin mỗi cuộc (`pin_limit`); thanh "tin đã ghim" dưới tiêu đề (1 tin + "+N tin đã ghim khác"), bấm → cuộn tới, ✕ bỏ ghim; dấu 📌 trên tin. Ghim lạc quan (lỗi → hoàn tác + báo).
+  3. **Thu hồi** (chỉ tin của người dùng, không khi đang trả lời, bấm hai lần): `recalled_at`, xoá chữ / file / GIF / giọng nói, bỏ ghim; không vào lịch sử gửi trợ lý; lượt sau nhắc trợ lý bỏ qua tin đó (session CLI có thể đã đọc).
+  4. **Sửa & gửi lại** (tin chữ của người dùng): xoá tin đó + mọi tin sau, bỏ session CLI, lượt mới gửi kèm lịch sử còn lại (cờ `rebuildNext`, chỉ cho lượt này).
+  - IPC `chat:pin` / `chat:recall` / `chat:editResend` báo sync mục mới `messages` → cuộc đang mở tải lại tin (bỏ qua khi đang stream).
+  - Test: `chatService.test.ts` (5 test mới); e2e `message-actions.spec.ts`.
+
 ## Việc tiếp theo
-1. Test tay PR beta.2 → người dùng merge → phát hành 0.4.0-beta.2.
-2. Test tay PR `feat/folder-access` với Claude thật (chế độ Tự do, nhắc đường dẫn dự án Unity).
-3. Các mức quyền sau (để sẵn khung, chưa làm): "sửa không hỏi lại suốt phiên"; chạy lệnh theo danh sách cho phép (build Unity batchmode, `blender --background --python`, git status) — vẫn phải hỏi; thêm thư mục phụ; trang Cài đặt liệt kê quyền đang cấp + nhật ký thao tác.
-4. Góp ý của team chưa làm: trả lời một tin cụ thể (quote), ghim tin, thu hồi tin (với AI nên là "sửa & trả lời lại").
-5. Để sau: thao tác chuột/bàn phím (chỉ khi người dùng đồng ý riêng); A2A + mở kết nối ra LAN (chỉ có đề xuất trong `docs/agents.md`).
+1. Test tay với Claude thật: #19 (chế độ Tự do, nhắc đường dẫn dự án Unity → thẻ xin quyền) và #20 (trả lời một câu cũ của trợ lý xem nó có hiểu đúng ngữ cảnh không).
+2. Các mức quyền sau (để sẵn khung, chưa làm): "sửa không hỏi lại suốt phiên"; chạy lệnh theo danh sách cho phép (build Unity batchmode, `blender --background --python`, git status) — vẫn phải hỏi; thêm thư mục phụ; trang Cài đặt liệt kê quyền đang cấp + nhật ký thao tác; "thư mục gần đây" nếu team thấy phải cấp lại nhiều lần.
+3. Để sau: thao tác chuột/bàn phím (chỉ khi người dùng đồng ý riêng); A2A + mở kết nối ra LAN (chỉ có đề xuất trong `docs/agents.md`).
 
 ## Quyết định đã duyệt
 - **Quyền thư mục:** theo mức (chưa có → đọc → sửa có duyệt → [sau] sửa cả phiên → [sau] chạy lệnh theo danh sách cho phép → [sau] thư mục phụ). Trợ lý không tự nâng quyền — chỉ xin, người dùng chọn thư mục. Quyền lưu theo cuộc trò chuyện. Không bao giờ: ngoài thư mục đã chọn, cài đặt hệ thống, lệnh xoá hàng loạt.

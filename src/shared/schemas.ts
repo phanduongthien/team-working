@@ -94,10 +94,15 @@ export const chatSendSchema = z
     /** GIF / sticker: chỉ id — main tự tra lại (không bao giờ nhận URL từ renderer). */
     media: mediaRefSchema.optional(),
     /** Gửi bằng giọng nói: id ghi âm main đã lưu lúc chép lời. */
-    voice: messageVoiceSchema.optional()
+    voice: messageVoiceSchema.optional(),
+    /** Trả lời một tin cụ thể (main kiểm tra tin cùng hội thoại, chưa thu hồi). */
+    replyToId: idSchema.optional()
   })
   // Gửi được chỉ ảnh hoặc chỉ GIF/sticker (không chữ), nhưng không được gửi tin rỗng hoàn toàn.
   .refine((v) => v.text.length > 0 || v.attachmentIds.length > 0 || !!v.media, 'empty_message')
+
+export const chatPinSchema = z.object({ messageId: idSchema, pinned: z.boolean() })
+export const chatEditResendSchema = z.object({ messageId: idSchema, text: z.string().trim().min(1).max(100_000) })
 
 export const chatAbortSchema = z.object({
   requestId: idSchema

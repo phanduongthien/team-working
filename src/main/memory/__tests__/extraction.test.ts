@@ -26,6 +26,9 @@ const msg = (role: 'user' | 'assistant', content: string): Message => ({
   media: null,
   voice: null,
   artifacts: [],
+  replyToId: null,
+  pinnedAt: null,
+  recalledAt: null,
   createdAt: 0
 })
 

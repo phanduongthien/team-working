@@ -91,7 +91,10 @@
     "already_running": "Already fetching suggestions, hang on.",
     "approval_unavailable": "Could not start file-change approval. Turn off editing or restart the app.",
     "no_project_folder": "Choose a project folder first.",
-    "message_not_found": "Message to branch from was not found."
+    "message_not_found": "Message to branch from was not found.",
+    "pin_limit": "You can pin at most 5 messages per chat — unpin one first.",
+    "message_busy": "Wait for the assistant to finish, then try again.",
+    "message_not_editable": "This message can't be changed."
   },
   "tools": {
     "screenshot": "screenshot",
@@ -336,5 +339,25 @@
     "deny": "Don't allow",
     "pickAgain": "No folder chosen — click \"Choose folder…\" again, or Don't allow.",
     "continue": "I've granted folder access, please continue."
+  },
+  "messages": {
+    "reply": "Reply",
+    "replyingTo": "Replying to {{name}}",
+    "cancelReply": "Cancel reply",
+    "quoteGone": "Original message is gone",
+    "pin": "Pin",
+    "unpin": "Unpin",
+    "pinned": "Pinned",
+    "pinnedMore": "+{{count}} more pinned",
+    "pinnedLess": "Show less",
+    "edit": "Edit & resend",
+    "editHint": "Resending drops the messages after this one and lets the assistant answer again.",
+    "editSend": "Resend",
+    "recall": "Unsend",
+    "recallConfirm": "Click again to unsend",
+    "recalled": "Message unsent",
+    "more": "More",
+    "gif": "[GIF]",
+    "sticker": "[Sticker]"
   }
 }

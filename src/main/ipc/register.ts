@@ -13,6 +13,8 @@ import {
   chatAbortSchema,
   chatSendSchema,
   chatReactSchema,
+  chatPinSchema,
+  chatEditResendSchema,
   chatAddFileSchema,
   chatAttachmentPreviewSchema,
   DEFAULT_CHAT_ORGANIZE_SETTINGS,
@@ -223,18 +225,29 @@ export function registerIpc(deps: IpcDeps): void {
     deps,
     IPC.chatSend,
     chatSendSchema,
-    async ({ conversationId, text, attachmentIds, media, voice }) => {
+    async ({ conversationId, text, attachmentIds, media, voice, replyToId }) => {
       const resolved = media ? await deps.resolveMedia(media) : null
       if (media && !resolved) throw new Error('media_not_found')
       // Tin giọng nói: chỉ nhận id ghi âm do chính main đã lưu.
       if (voice && !deps.hasRecording?.(voice.recordingId)) throw new Error('recording_not_found')
-      return deps.chat.send(conversationId, text, deps.attachments.take(attachmentIds), resolved, voice ?? null)
+      return deps.chat.send(conversationId, text, deps.attachments.take(attachmentIds), resolved, voice ?? null, replyToId ?? null)
     },
     // Tiêu đề tạm / gợi ý nhóm / thứ tự trên thanh bên đổi ngay khi gửi.
     conv
   )
   handle(deps, IPC.chatReact, chatReactSchema, ({ messageId, emoji }) =>
     deps.chat.react(messageId, emoji)
+  )
+  // Ghim / thu hồi / sửa & gửi lại: đổi danh sách tin → báo 'messages' (sửa còn đổi thứ tự thanh bên).
+  const msgs = { changes: 'messages' } as const
+  handle(deps, IPC.chatPin, chatPinSchema, ({ messageId, pinned }) => deps.chat.pin(messageId, pinned), msgs)
+  handle(deps, IPC.chatRecall, idSchema, (messageId) => deps.chat.recall(messageId), msgs)
+  handle(
+    deps,
+    IPC.chatEditResend,
+    chatEditResendSchema,
+    ({ messageId, text }) => deps.chat.editAndResend(messageId, text),
+    { changes: ['messages', 'conversations'] }
   )
   handle(deps, IPC.chatAbort, chatAbortSchema, ({ requestId }) => deps.chat.abort(requestId))
   handle(deps, IPC.chatPickAttachments, none, async () => {

@@ -2,7 +2,7 @@ import type { MessageArtifact } from '@shared/artifacts'
 import type { MessageVoice } from '@shared/voice'
 import type { MessageMedia, Reaction } from '@shared/expressive'
 import { randomUUID } from 'node:crypto'
-import { and, asc, desc, eq, gt, inArray, or, sql } from 'drizzle-orm'
+import { and, asc, desc, eq, gt, inArray, isNotNull, or, sql } from 'drizzle-orm'
 import type { z } from 'zod'
 import type { ChatMode, ChatUsage } from '@shared/ai'
 import type { AgentExchange } from '@shared/agents'
@@ -76,6 +76,9 @@ const toMessage = (r: MessageRow): Message => ({
   media: r.media ?? null,
   voice: r.voice ?? null,
   artifacts: r.artifacts ?? [],
+  replyToId: r.replyToId ?? null,
+  pinnedAt: r.pinnedAt ?? null,
+  recalledAt: r.recalledAt ?? null,
   createdAt: r.createdAt
 })
 
@@ -447,6 +450,7 @@ export type NewMessage = {
   attachments?: StoredAttachment[]
   media?: MessageMedia | null
   voice?: MessageVoice | null
+  replyToId?: string | null
 }
 
 export type MessagePatch = {
@@ -458,6 +462,10 @@ export type MessagePatch = {
   reactions?: Reaction[]
   media?: MessageMedia | null
   artifacts?: MessageArtifact[]
+  attachments?: StoredAttachment[]
+  voice?: MessageVoice | null
+  pinnedAt?: number | null
+  recalledAt?: number | null
 }
 
 export class MessageRepository {
@@ -511,6 +519,7 @@ export class MessageRepository {
         attachments: input.attachments ?? [],
         media: input.media ?? null,
         voice: input.voice ?? null,
+        replyToId: input.replyToId ?? null,
         createdAt: Date.now()
       })
       .returning()
@@ -526,6 +535,24 @@ export class MessageRepository {
   update(id: string, patch: MessagePatch): void {
     if (Object.keys(patch).length === 0) return
     this.db.update(messages).set(patch).where(eq(messages.id, id)).run()
+  }
+
+  /** Số tin đang ghim trong hội thoại. */
+  pinnedCount(conversationId: string): number {
+    return this.db
+      .select({ id: messages.id })
+      .from(messages)
+      .where(and(eq(messages.conversationId, conversationId), isNotNull(messages.pinnedAt)))
+      .all().length
+  }
+
+  /** Sửa & gửi lại: xoá tin này và mọi tin sau nó (theo thứ tự hiển thị). Trả số tin đã xoá. */
+  deleteFrom(messageId: string): number {
+    const target = this.get(messageId)
+    if (!target) return 0
+    const all = this.list(target.conversationId).map((m) => m.id)
+    const ids = all.slice(all.indexOf(messageId))
+    return this.db.delete(messages).where(inArray(messages.id, ids)).run().changes
   }
 
   /** Tin nhắn còn 'streaming' khi app tắt đột ngột → đánh dấu bị dừng. */

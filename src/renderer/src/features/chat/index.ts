@@ -24,12 +24,15 @@ export const chatFeature: FeatureDefinition = {
     const offChat = api.chat.onEvent((payload) => useChat.getState().handleEvent(payload))
     // Thanh bên: tiêu đề AI đặt, gợi ý nhóm, thay đổi từ nơi khác → cập nhật ngay.
     const offSidebar = onSync('conversations', () => useChat.getState().refreshSidebar())
+    // Ghim / thu hồi / sửa & gửi lại → tải lại tin của cuộc đang mở.
+    const offMessages = onSync('messages', () => void useChat.getState().reloadMessages())
     const offVoice = setupVoice()
     // Emoji / GIF / sticker gần đây: nạp sẵn để bộ chọn mở đúng tab ngay lần đầu.
     const offRecent = setupRecent()
     return () => {
       offChat()
       offSidebar()
+      offMessages()
       offVoice()
       offRecent()
     }
