@@ -104,7 +104,7 @@ export function MessageMenu({ message, onEdit }: { message: Message; onEdit?: ()
         <div
           role="menu"
           className={cn(
-            'absolute z-20 w-44 rounded-lg border bg-popover p-1 text-popover-foreground shadow-md',
+            'absolute z-30 w-44 rounded-lg border bg-card p-1 text-foreground shadow-lg',
             dropUp ? 'bottom-full mb-1' : 'top-full mt-1',
             mine ? 'right-0' : 'left-0'
           )}
