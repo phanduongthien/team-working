@@ -61,6 +61,20 @@ test('trả lời một tin: khung "đang trả lời" trên ô nhập → tin g
   await expect(replies().last()).toContainText('Người dùng đang trả lời câu trả lời trước đó của bạn')
 })
 
+test('menu ⋮ có nền đặc (không lộ chữ phía sau) ở cả theme sáng và tối', async () => {
+  for (const dark of [false, true]) {
+    await page.evaluate((d) => document.documentElement.classList.toggle('dark', d), dark)
+    await openMenu(replies().last())
+    const menu = page.getByRole('menu')
+    const bg = await menu.evaluate((el) => getComputedStyle(el).backgroundColor)
+    expect(bg).not.toMatch(/^(transparent|rgba\(0, 0, 0, 0\))$/)
+    await menu.screenshot({ path: `test-results/message-menu-${dark ? 'dark' : 'light'}.png` })
+    await page.keyboard.press('Escape')
+    await expect(menu).toHaveCount(0, FAST)
+  }
+  await page.evaluate(() => document.documentElement.classList.remove('dark'))
+})
+
 test('ghim: thanh "tin đã ghim" hiện ngay, bỏ ghim thì mất', async () => {
   await openMenu(users().first())
   await page.getByRole('menuitem', { name: 'Ghim' }).click()
